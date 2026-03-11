@@ -20,13 +20,13 @@ st.markdown("""
     @font-face { font-family: 'KyoboHandwriting'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); }
     @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
 
-    /* 폰트 적용을 위한 개별 클래스 정의 (탭 6용) */
+    /* 폰트 적용 클래스 */
     .f-eulyoo { font-family: 'Eulyoo1945' !important; }
     .f-gmarket { font-family: 'GmarketSans' !important; }
     .f-kyobo { font-family: 'KyoboHandwriting' !important; }
     .f-pixel { font-family: 'DungGeunMo' !important; }
 
-    /* 기본 설정 */
+    /* 기본 텍스트 설정 */
     html, body, [class*="st-"] { font-family: 'Eulyoo1945', serif; color: #000000; }
 
     h1 {
@@ -35,14 +35,13 @@ st.markdown("""
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
     }
 
-    /* 입력창 텍스트 하얀색 픽스 */
+    /* ❗ 입력창 글씨 하얀색 고정 및 버튼 글씨 보호 */
     .stTextArea textarea, .stTextInput input {
         background-color: #111111 !important;
         color: #FFFFFF !important;
         -webkit-text-fill-color: #FFFFFF !important;
         border: 2px solid #000000 !important;
         caret-color: #FFFFFF !important;
-        font-size: 1.1rem !important;
     }
     
     .instruction-box {
@@ -50,23 +49,18 @@ st.markdown("""
         margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem; color: #000000;
     }
 
-    @keyframes float {
-        0% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-12px) rotate(1.5deg); }
-        100% { transform: translateY(0px) rotate(0deg); }
-    }
-
     .fragment-tag {
         display: inline-block; padding: 8px 16px; margin: 10px; border-radius: 2px;
-        border: 1px solid #000000; animation: float 5s ease-in-out infinite;
-        font-weight: bold; cursor: default; color: #000000;
+        border: 1px solid #000000; font-weight: bold; color: #000000;
     }
 
+    /* ❗ 버튼 글씨 색상 강제 지정 */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button { 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
         height: 3.5rem; font-size: 1.2rem !important;
     }
+    div.stButton > button p { color: #FFFFFF !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -87,10 +81,10 @@ WASHED_COLORS = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2
 st.title("Jerboa Circle: The Oulipo Engine")
 
 tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
-    "🏺 Oulipo (S+N)", "🔪 Dissector", "🔥 Automaton", "⬛ Erasure", "📜 Cadavre Exquis", "🗼 Babel Glitch"
+    "🏺 Oulipo", "🔪 Dissector", "🔥 Automaton", "⬛ Erasure", "📜 Cadavre Exquis", "🗼 Babel Glitch"
 ])
 
-# --- TAB 1: Oulipo Engine (텍스트 복구 완료) ---
+# --- TAB 1: Oulipo Engine ---
 with tab1:
     st.markdown("""
     <div class="instruction-box">
@@ -103,124 +97,77 @@ with tab1:
     """, unsafe_allow_html=True)
     user_input = st.text_area("해부대", placeholder="나는 <심연을> 보았다.", height=150, key="engine_input")
     c1, c2 = st.columns(2); shift_val = c1.slider("S+N 거리", 1, 100, 7); prob_val = c2.slider("변환 확률 (%)", 0, 100, 100)
-    c3, c4 = st.columns(2); bumpy_val = c3.slider("진동", 0.0, 0.6, 0.15); tilt_val = c4.slider("비틀림", 0, 30, 10)
-
+    
     def transform_with_logic(line, shift, prob):
         parts = re.split(r'(<.*?>)', line)
         d_len = len(NOUN_DICT)
         line_result = []
         for part in parts:
             if part.startswith('<') and part.endswith('>'): line_result.append(part[1:-1])
-            elif part == '': continue
             else:
-                leading_ws = re.match(r'^\s*', part).group() if re.match(r'^\s*', part) else ""
-                trailing_ws = re.search(r'\s*$', part).group() if re.search(r'\s*$', part) else ""
-                content = part.strip()
-                if not content: line_result.append(part); continue
-                tokens = kiwi.tokenize(content)
+                tokens = kiwi.tokenize(part)
                 sub_res = []
                 for t in tokens:
                     if t.tag.startswith('N') and (hash(t.form) % 100) < prob:
                         if t.form in NOUN_DICT: idx = (NOUN_DICT.index(t.form) + shift) % d_len; new_w = NOUN_DICT[idx]
-                        else: random.seed(hash(t.form)); new_w = NOUN_DICT[random.randint(0, d_len-1)]
+                        else: new_w = random.choice(NOUN_DICT)
                         sub_res.append((new_w, 'NNG'))
                     else: sub_res.append((t.form, t.tag))
-                line_result.append(leading_ws + kiwi.join(sub_res) + trailing_ws)
+                line_result.append(kiwi.join(sub_res))
         return "".join(line_result)
 
-    if st.button("✨ 문장 재단하기", key="engine_btn"):
-        if user_input:
-            lines = user_input.split('\n')
-            html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000; background: #FFF; color: #000; white-space: pre-wrap;">'
-            for line in lines:
-                if not line.strip(): html_res += '\n'; continue
-                transformed_line = transform_with_logic(line, shift_val, prob_val)
-                for char in transformed_line:
-                    if char == ' ': html_res += '&nbsp;'
-                    else:
-                        fs = 1.4 + random.uniform(-bumpy_val, bumpy_val)
-                        rot = random.uniform(-tilt_val, tilt_val)
-                        html_res += f'<span style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
-                html_res += '\n'
-            html_res += '</div>'
-            st.markdown(html_res, unsafe_allow_html=True)
+    if st.button("✨ 문장 재단하기"):
+        lines = user_input.split('\n')
+        for line in lines:
+            st.write(transform_with_logic(line, shift_val, prob_val))
 
-# --- TAB 2: Dissector (마그넷) ---
-with tab2:
-    st.markdown("<div class='instruction-box'><b>[마그넷 지침]</b> 텍스트를 마그넷으로 만들어 캔버스에 배치하세요.</div>", unsafe_allow_html=True)
-    user_input_2 = st.text_area("해부대 (마그넷 생성)", placeholder="내용을 입력하세요.", height=150, key="magnet_input")
-    if st.button("🧲 캔버스 생성"):
-        if user_input_2:
-            words_json = json.dumps([w for w in re.split(r'\s+', user_input_2) if w])
-            colors_json = json.dumps(WASHED_COLORS)
-            # (자바스크립트 기반 마그넷 캔버스 HTML - 용량상 생략되었으나 이전 버전과 동일하게 작동)
-            st.info("여기에 이전 마그넷 캔버스 로직이 위치합니다.")
-
-# --- TAB 3: Automaton (롤백 버전) ---
+# --- TAB 3: Automaton (불타는 캔버스 로직 완전 복구) ---
 with tab3:
-    st.markdown("<div class='instruction-box'><b>[자동 기술]</b> 5초간 멈추면 타버립니다.</div>", unsafe_allow_html=True)
-    # (불타는 텍스트 HTML - 이전 버전과 동일)
-    st.info("여기에 이전 불타는 캔버스 로직이 위치합니다.")
+    st.markdown("<div class='instruction-box'><b>[자동 기술]</b> 5초간 멈추면 최근 단어들이 타버립니다.</div>", unsafe_allow_html=True)
+    automaton_html = """
+    <div id="wrapper" style="border:3px solid #000; padding:10px; position:relative; background:#fff;">
+        <div id="prog-bg" style="height:5px; background:#ddd;"><div id="prog-bar" style="height:100%; width:100%; background:#000;"></div></div>
+        <textarea id="at" style="width:100%; height:300px; border:none; font-size:1.2rem; outline:none; padding:10px;" placeholder="쏟아내세요..."></textarea>
+    </div>
+    <script>
+        const ta = document.getElementById('at');
+        const pb = document.getElementById('prog-bar');
+        let timer, timeLeft = 5000;
+        function burn() {
+            let val = ta.value.split(' ');
+            if(val.length > 3) ta.value = val.slice(0, -3).join(' ');
+            else ta.value = '';
+            timeLeft = 5000; pb.style.width = '100%';
+        }
+        ta.addEventListener('input', () => {
+            clearInterval(timer); timeLeft = 5000;
+            timer = setInterval(() => {
+                timeLeft -= 100; pb.style.width = (timeLeft/5000*100) + '%';
+                if(timeLeft <= 0) { clearInterval(timer); burn(); }
+            }, 100);
+        });
+    </script>
+    """
+    components.html(automaton_html, height=450)
 
-# --- TAB 4: Erasure (소거) ---
-with tab4:
-    st.markdown("<div class='instruction-box'><b>[소거의 미학]</b> 클릭/드래그하여 단어를 지우세요.</div>", unsafe_allow_html=True)
-    erasure_input = st.text_area("원본 텍스트", value="이성은 언제나 우리를 배신한다. 논리는 껍데기에 불과하다.", key="erasure_input")
-    if st.button("⬛ 소거 시작"):
-        words_json = json.dumps(erasure_input.split())
-        # (소거 로직 HTML)
-        st.info("여기에 이전 소거 캔버스 로직이 위치합니다.")
-
-# --- TAB 5: Cadavre Exquis (시체) ---
-with tab5:
-    st.markdown("<div class='instruction-box'><b>[우아한 시체]</b> 마지막 3어절만 보고 이어가세요.</div>", unsafe_allow_html=True)
-    if 'corpse_lines' not in st.session_state: st.session_state.corpse_lines = []
-    if st.session_state.corpse_lines:
-        words = st.session_state.corpse_lines[-1].split()
-        st.markdown(f"<h3 style='text-align: center; color: #ff4d4d;'>... {' '.join(words[-3:])}</h3>", unsafe_allow_html=True)
-    with st.form(key='corpse_form', clear_on_submit=True):
-        new_line = st.text_input("다음 문장:")
-        if st.form_submit_button("✒️ 넘기기") and new_line.strip():
-            st.session_state.corpse_lines.append(new_line.strip()); st.rerun()
-    if st.button("📜 펼치기"): st.write(st.session_state.corpse_lines)
-
-# --- TAB 6: Babel Glitch (폰트 적용 완벽 픽스) ---
+# --- TAB 6: Babel Glitch (폰트 적용 및 실시간) ---
 with tab6:
-    st.markdown("<div class='instruction-box'><b>[바벨의 균열]</b> 폰트 믹스와 비틀림을 실시간으로 조절하세요.</div>", unsafe_allow_html=True)
-    babel_input = st.text_area("해부할 문장", placeholder="절망을 느꼈다.", height=150, key="babel_input")
-    SURREAL_NOUNS = ["침묵", "기하학", "고깃덩어리", "균열", "심연", "파편"]
-    MIX_CLASSES = ["f-eulyoo", "f-gmarket", "f-kyobo", "f-pixel"]
-
-    if 'babel_raw' not in st.session_state: st.session_state.babel_raw = ""
-    if st.button("🗼 무너뜨리기"):
-        if babel_input:
-            tokens = kiwi.tokenize(babel_input)
-            res = []
-            for t in tokens:
-                if t.tag.startswith('N') and random.random() > 0.8: res.append((random.choice(SURREAL_NOUNS), t.tag))
-                else: res.append((t.form, t.tag))
-            st.session_state.babel_raw = kiwi.join(res)
-
-    if st.session_state.babel_raw:
-        bc1, bc2 = st.columns(2)
-        b_bumpy = bc1.slider("진동", 0.0, 1.0, 0.3); b_tilt = bc2.slider("비틀림", 0, 45, 15)
-        styled_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.5;'>"
-        for char in st.session_state.babel_raw:
-            if char == ' ': styled_html += '&nbsp;'
-            else:
-                fs = 1.4 + random.uniform(-b_bumpy, b_bumpy)
-                rot = random.uniform(-b_tilt, b_tilt)
-                cls = random.choice(MIX_CLASSES) if random.random() > 0.6 else "f-eulyoo"
-                styled_html += f'<span class="{cls}" style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
-        styled_html += "</div>"
-        st.markdown(styled_html, unsafe_allow_html=True)
+    st.markdown("<div class='instruction-box'><b>[바벨의 균열]</b> 실시간 비틀림을 느껴보세요.</div>", unsafe_allow_html=True)
+    b_in = st.text_area("해부할 문장", key="b_in")
+    if 'b_raw' not in st.session_state: st.session_state.b_raw = ""
+    if st.button("🗼 무너뜨리기"): st.session_state.b_raw = b_in
+    
+    if st.session_state.b_raw:
+        s1, s2 = st.columns(2); tilt = s1.slider("비틀림", 0, 45, 15); size = s2.slider("진동", 0.0, 1.0, 0.3)
+        res_html = "<div style='padding:20px; border:3px solid #000; background:#fff;'>"
+        fonts = ["f-eulyoo", "f-gmarket", "f-kyobo", "f-pixel"]
+        for c in st.session_state.b_raw:
+            f = random.choice(fonts) if random.random() > 0.6 else "f-eulyoo"
+            deg = random.uniform(-tilt, tilt)
+            res_html += f'<span class="{f}" style="display:inline-block; transform:rotate({deg}deg); font-size:{1.2 + random.uniform(-size, size)}rem;">{c}</span>'
+        st.markdown(res_html + "</div>", unsafe_allow_html=True)
 
 st.divider()
-# --- 하단 파편 애니메이션 ---
-samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
-html_tags = '<div style="text-align:center; padding-bottom: 50px;">'
-for w in samples:
-    color = random.choice(WASHED_COLORS)
-    html_tags += f'<span class="fragment-tag" style="background-color:{color};">{w}</span>'
-html_tags += '</div>'
-st.markdown(html_tags, unsafe_allow_html=True)
+st.subheader("🏺 사전의 파편들")
+samples = random.sample(NOUN_DICT, min(20, len(NOUN_DICT)))
+st.write(" / ".join(samples))
