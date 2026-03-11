@@ -76,12 +76,12 @@ def load_oulipo_dict():
 NOUN_DICT = load_oulipo_dict()
 
 # --- 4. 메인 화면 ---
-st.title("🐦 저보아: 무한 울리포 엔진")
+st.title("🐀 저보아 서클 시즌 2: 울리포 엔진(The Oulipo Engine)")
 
 st.markdown("""
 <div class="instruction-box">
-    <b>[저보아 서클 이용 안내]</b><br>
-    - 해부대에 문장을 입력하세요. <b>줄바꿈</b>이 보존됩니다.<br>
+    <b>[울리포 엔진 이용 안내]</b><br>
+    - 해부대에 문장을 입력하세요. <b>줄 바꿈</b>이 보존됩니다.<br>
     - <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싼 부분은 변하지 않는 '성역'이 됩니다.<br>
     - 아래의 파편들은 사전에서 무작위로 추출된 단어들입니다.
 </div>
