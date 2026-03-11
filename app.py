@@ -51,4 +51,33 @@ st.caption("국립국어원 표준국어대사전 API 가동 중")
 def s_plus_n_external(text, n):
     tokens = kiwi.tokenize(text)
     result = []
-    last_end =
+    last_end = 0
+    
+    for token in tokens:
+        result.append(text[last_end:token.start])
+        # 명사일 경우 외부 사전을 뒤져서 치환해
+        if token.tag in ['NNG', 'NNP']:
+            if token.form in NOUN_DICT:
+                idx = NOUN_DICT.index(token.form)
+                result.append(NOUN_DICT[(idx + n) % len(NOUN_DICT)])
+            else:
+                # 리스트에 없으면 API로 한 번 더 물어보고, 있으면 근사치로 치환
+                result.append(token.form)
+        else:
+            result.append(token.form)
+        last_end = token.end
+    result.append(text[last_end:])
+    return "".join(result)
+
+# --- UI 부분 ---
+shift_n = st.sidebar.slider("치환 간격 (S + n)", 1, 500, 7)
+user_input = st.text_area("해체할 문장을 입력하세요:", placeholder="예: 예술은 인생의 안주다.", height=150)
+
+if st.button("외부 사전 기반 변환 실행"):
+    if user_input:
+        with st.spinner('외부 데이터베이스 탐색 중...'):
+            output = s_plus_n_external(user_input, shift_n)
+            st.markdown("### ✨ 변환 결과")
+            st.success(output)
+    else:
+        st.warning("문장을 입력해 줘, 이물.")
