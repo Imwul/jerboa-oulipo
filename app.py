@@ -75,7 +75,7 @@ WASHED_COLORS = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2
 
 st.title("Jerboa Circle: Surrealist Workshop")
 
-tab1, tab2 = st.tabs(["🏺 Oulipo Engine (S+N)", "🔪 The Dissector (마그넷 & 나이프)"])
+tab1, tab2, tab3 = st.tabs(["🏺 Oulipo Engine (S+N)", "🔪 The Dissector (마그넷)", "🔥 The Automaton (자동 기술)"])
 
 # ---------------------------------------------------------
 # TAB 1: 기존 Oulipo Engine (S+N)
@@ -171,7 +171,7 @@ with tab2:
             words_json = json.dumps(words)
             colors_json = json.dumps(WASHED_COLORS)
 
-            custom_html = f"""
+            custom_html_2 = f"""
             <!DOCTYPE html>
             <html>
             <head>
@@ -181,45 +181,25 @@ with tab2:
                     src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
                 }}
                 body {{ font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }}
-                
                 #toolbar {{ background: #000; padding: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }}
-                .tool-btn {{ 
-                    background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; 
-                    font-size: 0.95rem; font-weight: bold; cursor: pointer; font-family: inherit; transition: all 0.2s;
-                }}
+                .tool-btn {{ background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }}
                 .tool-btn.active-knife {{ background: #ff4d4d; color: #fff; border-color: #ff4d4d; }}
                 .tool-btn.active-glue {{ background: #4d79ff; color: #fff; border-color: #4d79ff; }}
                 #shuffleBtn {{ background: #ffe3b3; color: #000; border-color: #ffe3b3; }}
                 #shuffleBtn:active {{ transform: scale(0.95); }}
-                
-                #canvas-area {{ 
-                    width: 100%; height: 650px; background: #fafafa; position: relative; 
-                    border: 3px solid #000; border-top: none; cursor: default; overflow: hidden;
-                }}
-                
-                .magnet {{
-                    position: absolute; border: 2px solid #000; padding: 0; display: flex;
-                    font-size: 1.4rem; font-weight: bold; cursor: grab; 
-                    white-space: nowrap; box-shadow: 4px 4px 0px #000; transition: transform 0.1s, box-shadow 0.2s;
-                    background: transparent;
-                }}
+                #canvas-area {{ width: 100%; height: 650px; background: #fafafa; position: relative; border: 3px solid #000; border-top: none; cursor: default; overflow: hidden; }}
+                .magnet {{ position: absolute; border: 2px solid #000; padding: 0; display: flex; font-size: 1.4rem; font-weight: bold; cursor: grab; white-space: nowrap; box-shadow: 4px 4px 0px #000; transition: transform 0.1s, box-shadow 0.2s; background: transparent; }}
                 .magnet:active {{ cursor: grabbing; transform: scale(1.05); z-index: 1000 !important; }}
-                
-                .char {{ 
-                    display: inline-block; padding: 6px 3px; transition: color 0.2s; 
-                }}
+                .char {{ display: inline-block; padding: 6px 3px; transition: color 0.2s; }}
                 .char:first-child {{ padding-left: 8px; }}
                 .char:last-child {{ padding-right: 8px; }}
-                
                 body.knife-mode #canvas-area, body.knife-mode .magnet {{ cursor: crosshair; }}
                 body.knife-mode .magnet:active {{ transform: none; cursor: crosshair; }}
                 body.knife-mode .char:hover {{ color: #ff4d4d; font-weight: 900; transform: translateY(-2px); }}
-                
                 body.glue-mode #canvas-area, body.glue-mode .magnet {{ cursor: cell; }}
                 body.glue-mode .magnet:active {{ transform: none; cursor: cell; }}
                 body.glue-mode .char {{ pointer-events: none; }}
                 .magnet.glue-selected {{ box-shadow: 0 0 15px 5px #4d79ff !important; border-color: #4d79ff; transform: scale(1.05); }}
-                
             </style>
             </head>
             <body>
@@ -229,34 +209,17 @@ with tab2:
                     <button id="shuffleBtn" class="tool-btn">✨ 영감 (셔플)</button>
                 </div>
                 <div id="canvas-area"></div>
-
                 <script>
                     const initialWords = {words_json};
                     const colorPalette = {colors_json};
                     const canvas = document.getElementById('canvas-area');
-                    
-                    let knifeMode = false;
-                    let glueMode = false;
-                    let glueTarget = null;
-                    let zIndex = 10;
-
+                    let knifeMode = false; let glueMode = false; let glueTarget = null; let zIndex = 10;
                     const knifeBtn = document.getElementById('knifeToggle');
                     const glueBtn = document.getElementById('glueToggle');
                     const shuffleBtn = document.getElementById('shuffleBtn');
 
-                    // 🛠 툴 토글
-                    knifeBtn.addEventListener('click', () => {{
-                        knifeMode = !knifeMode;
-                        if(knifeMode) {{ glueMode = false; clearGlueTarget(); updateButtons(); }}
-                        updateButtons();
-                    }});
-
-                    glueBtn.addEventListener('click', () => {{
-                        glueMode = !glueMode;
-                        if(glueMode) {{ knifeMode = false; updateButtons(); }}
-                        else {{ clearGlueTarget(); }}
-                        updateButtons();
-                    }});
+                    knifeBtn.addEventListener('click', () => {{ knifeMode = !knifeMode; if(knifeMode) {{ glueMode = false; clearGlueTarget(); updateButtons(); }} updateButtons(); }});
+                    glueBtn.addEventListener('click', () => {{ glueMode = !glueMode; if(glueMode) {{ knifeMode = false; updateButtons(); }} else {{ clearGlueTarget(); }} updateButtons(); }});
 
                     function updateButtons() {{
                         document.body.classList.toggle('knife-mode', knifeMode);
@@ -267,145 +230,70 @@ with tab2:
                         glueBtn.innerText = glueMode ? '🧴 풀 툴 (On)' : '🧴 풀 툴 (Off)';
                     }}
 
-                    function clearGlueTarget() {{
-                        if (glueTarget) glueTarget.classList.remove('glue-selected');
-                        glueTarget = null;
-                    }}
+                    function clearGlueTarget() {{ if (glueTarget) glueTarget.classList.remove('glue-selected'); glueTarget = null; }}
+                    function getCharData(magnetEl) {{ return Array.from(magnetEl.children).map(span => ({{ char: span.innerText, bg: span.style.backgroundColor }})); }}
 
-                    function getCharData(magnetEl) {{
-                        return Array.from(magnetEl.children).map(span => ({{
-                            char: span.innerText,
-                            bg: span.style.backgroundColor
-                        }}));
-                    }}
-
-                    // 🧲 마그넷 생성 (charDataArray = [{{char: '가', bg: 'red'}}, ...])
                     function createMagnet(charDataArray, startX, startY) {{
                         if (!charDataArray || charDataArray.length === 0) return;
-
-                        const div = document.createElement('div');
-                        div.className = 'magnet';
-                        div.style.left = startX + 'px';
-                        div.style.top = startY + 'px';
-                        div.style.zIndex = ++zIndex;
-
+                        const div = document.createElement('div'); div.className = 'magnet'; div.style.left = startX + 'px'; div.style.top = startY + 'px'; div.style.zIndex = ++zIndex;
                         charDataArray.forEach((item, index) => {{
-                            const span = document.createElement('span');
-                            span.className = 'char';
-                            span.innerText = item.char;
-                            span.style.backgroundColor = item.bg;
-                            span.dataset.index = index;
-                            
-                            // 🔪 자르기 이벤트
+                            const span = document.createElement('span'); span.className = 'char'; span.innerText = item.char; span.style.backgroundColor = item.bg; span.dataset.index = index;
                             span.addEventListener('mousedown', (e) => {{
-                                if (!knifeMode) return;
-                                e.stopPropagation(); 
-                                
-                                const clickedIdx = parseInt(e.target.dataset.index);
-                                if (clickedIdx === 0) return;
-
+                                if (!knifeMode) return; e.stopPropagation(); 
+                                const clickedIdx = parseInt(e.target.dataset.index); if (clickedIdx === 0) return;
                                 const currentData = getCharData(div);
-                                const part1 = currentData.slice(0, clickedIdx);
-                                const part2 = currentData.slice(clickedIdx);
-
-                                const pX = parseFloat(div.style.left);
-                                const pY = parseFloat(div.style.top);
-
+                                const part1 = currentData.slice(0, clickedIdx); const part2 = currentData.slice(clickedIdx);
+                                const pX = parseFloat(div.style.left); const pY = parseFloat(div.style.top);
                                 div.remove();
-
-                                createMagnet(part1, pX, pY);
-                                createMagnet(part2, pX + e.target.offsetLeft + 5, pY + 15);
+                                createMagnet(part1, pX, pY); createMagnet(part2, pX + e.target.offsetLeft + 5, pY + 15);
                             }});
                             div.appendChild(span);
                         }});
 
-                        // 🧴 풀 툴 & 드래그
                         div.addEventListener('mousedown', (e) => {{
                             if (knifeMode) return;
-
                             if (glueMode) {{
                                 e.stopPropagation();
-                                if (!glueTarget) {{
-                                    glueTarget = div;
-                                    div.classList.add('glue-selected');
-                                }} else if (glueTarget !== div) {{
-                                    const data1 = getCharData(glueTarget);
-                                    const data2 = getCharData(div);
-                                    
-                                    const t1X = parseFloat(glueTarget.style.left);
-                                    const t2X = parseFloat(div.style.left);
-                                    
+                                if (!glueTarget) {{ glueTarget = div; div.classList.add('glue-selected'); }} 
+                                else if (glueTarget !== div) {{
+                                    const data1 = getCharData(glueTarget); const data2 = getCharData(div);
+                                    const t1X = parseFloat(glueTarget.style.left); const t2X = parseFloat(div.style.left);
                                     const combinedData = t1X <= t2X ? data1.concat(data2) : data2.concat(data1);
-                                    const newX = Math.min(t1X, t2X);
-                                    const newY = parseFloat(glueTarget.style.top);
-                                    
-                                    glueTarget.remove();
-                                    div.remove();
-                                    glueTarget = null;
-                                    
+                                    const newX = Math.min(t1X, t2X); const newY = parseFloat(glueTarget.style.top);
+                                    glueTarget.remove(); div.remove(); glueTarget = null;
                                     createMagnet(combinedData, newX, newY);
-                                }} else {{
-                                    clearGlueTarget();
-                                }}
+                                }} else {{ clearGlueTarget(); }}
                                 return;
                             }}
-
-                            // 드래그
-                            e.preventDefault();
-                            div.style.zIndex = ++zIndex;
-                            let pos3 = e.clientX, pos4 = e.clientY;
-                            
+                            e.preventDefault(); div.style.zIndex = ++zIndex; let pos3 = e.clientX, pos4 = e.clientY;
                             document.onmouseup = () => {{ document.onmouseup = null; document.onmousemove = null; }};
                             document.onmousemove = (ev) => {{
-                                ev.preventDefault();
-                                let pos1 = pos3 - ev.clientX;
-                                let pos2 = pos4 - ev.clientY;
-                                pos3 = ev.clientX; pos4 = ev.clientY;
-                                div.style.top = (div.offsetTop - pos2) + "px";
-                                div.style.left = (div.offsetLeft - pos1) + "px";
+                                ev.preventDefault(); let pos1 = pos3 - ev.clientX; let pos2 = pos4 - ev.clientY; pos3 = ev.clientX; pos4 = ev.clientY;
+                                div.style.top = (div.offsetTop - pos2) + "px"; div.style.left = (div.offsetLeft - pos1) + "px";
                             }};
                         }});
-
                         canvas.appendChild(div);
                     }}
 
-                    // ✨ 영감 (셔플) 로직
                     shuffleBtn.addEventListener('click', () => {{
                         let allMagnets = Array.from(document.querySelectorAll('.magnet'));
                         let dataList = allMagnets.map(m => getCharData(m));
-
                         for (let i = dataList.length - 1; i > 0; i--) {{
-                            const j = Math.floor(Math.random() * (i + 1));
-                            [dataList[i], dataList[j]] = [dataList[j], dataList[i]];
+                            const j = Math.floor(Math.random() * (i + 1)); [dataList[i], dataList[j]] = [dataList[j], dataList[i]];
                         }}
-
-                        canvas.innerHTML = '';
-                        clearGlueTarget();
-
-                        let currentY = 50;
-                        let currentX = 50;
-                        let countInRow = 0;
-                        let targetInRow = Math.floor(Math.random() * 3) + 3;
-
+                        canvas.innerHTML = ''; clearGlueTarget();
+                        let currentY = 50; let currentX = 50; let countInRow = 0; let targetInRow = Math.floor(Math.random() * 3) + 3;
                         dataList.forEach((charData) => {{
-                            createMagnet(charData, currentX, currentY);
-                            currentX += (charData.length * 28) + 30;
-                            countInRow++;
-
+                            createMagnet(charData, currentX, currentY); currentX += (charData.length * 28) + 30; countInRow++;
                             if (countInRow >= targetInRow || currentX > canvas.offsetWidth - 150) {{
-                                currentY += 75;
-                                currentX = 40 + Math.random() * 60;
-                                countInRow = 0;
-                                targetInRow = Math.floor(Math.random() * 3) + 3;
+                                currentY += 75; currentX = 40 + Math.random() * 60; countInRow = 0; targetInRow = Math.floor(Math.random() * 3) + 3;
                             }}
                         }});
                     }});
 
                     initialWords.forEach((word, i) => {{
-                        const x = 30 + (i % 6) * 110 + Math.random() * 30;
-                        const y = 30 + Math.floor(i / 6) * 70 + Math.random() * 30;
+                        const x = 30 + (i % 6) * 110 + Math.random() * 30; const y = 30 + Math.floor(i / 6) * 70 + Math.random() * 30;
                         const initialColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-                        
                         const charDataArray = Array.from(word).map(c => ({{ char: c, bg: initialColor }}));
                         createMagnet(charDataArray, x, y);
                     }});
@@ -413,12 +301,148 @@ with tab2:
             </body>
             </html>
             """
+            components.html(custom_html_2, height=750)
+
+# ---------------------------------------------------------
+# TAB 3: The Automaton (무의식의 방 & 불타는 캔버스)
+# ---------------------------------------------------------
+with tab3:
+    st.markdown("""
+    <div class="instruction-box">
+        <b>[자동 기술 지침: 멈추면 타버린다]</b><br>
+        - <b>무의식의 흐름:</b> 텍스트를 입력하세요. 5초간 키보드가 멈추면 당신이 쓴 모든 글은 불타 없어집니다.<br>
+        - <b>이성의 차단:</b> 백스페이스(수정)를 누르려면 3~5번을 미친 듯이 연타해야 겨우 한 글자가 지워집니다.<br>
+        - 의식을 검열하지 말고 그저 쏟아내세요.
+    </div>
+    """, unsafe_allow_html=True)
+
+    automaton_html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+    <style>
+        @font-face {
+            font-family: 'Eulyoo1945-Regular';
+            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
+        }
+        body { font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 0; background: #fafafa; }
+        
+        #progress-container { width: 100%; height: 8px; background: #ddd; }
+        #progress-bar { width: 100%; height: 100%; background: #000; transition: width 0.1s linear, background 1s ease; }
+        .danger #progress-bar { background: #ff4d4d; }
+        
+        #editor-container { position: relative; width: 100%; height: 500px; padding: 20px; box-sizing: border-box; }
+        
+        textarea {
+            width: 100%; height: 100%; background: transparent; border: 3px solid #000; padding: 20px;
+            font-family: 'Eulyoo1945-Regular', serif; font-size: 1.5rem; line-height: 1.8; color: #000;
+            resize: none; outline: none; transition: all 0.5s ease;
+        }
+        
+        /* 불타는 애니메이션 */
+        @keyframes burnAway {
+            0% { color: #000; text-shadow: 0 0 0 #ff4d4d; filter: blur(0px); opacity: 1; }
+            40% { color: #ff4d4d; text-shadow: 0 -5px 15px #ff9900; filter: blur(2px); transform: translateY(-2px); }
+            100% { color: #fff; text-shadow: 0 -20px 30px #000; filter: blur(8px); opacity: 0; transform: translateY(-10px); }
+        }
+        .burning { animation: burnAway 1.5s forwards ease-in; pointer-events: none; }
+        
+        #bs-warning { position: absolute; top: 30px; right: 40px; color: #ff4d4d; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; }
+    </style>
+    </head>
+    <body>
+        <div id="progress-container"><div id="progress-bar"></div></div>
+        <div id="editor-container">
+            <textarea id="auto-text" placeholder="의식의 검열을 멈추고 쏟아내세요. 5초 뒤에 불탑니다..."></textarea>
+            <div id="bs-warning">백스페이스가 저항합니다! 연타하세요!</div>
+        </div>
+
+        <script>
+            const textarea = document.getElementById('auto-text');
+            const progressBar = document.getElementById('progress-bar');
+            const bsWarning = document.getElementById('bs-warning');
             
-            components.html(custom_html, height=750)
+            const TIME_LIMIT = 5000; // 5초
+            let timerInterval;
+            let timeRemaining = TIME_LIMIT;
+            let isBurning = false;
+            
+            // 백스페이스 저항 로직
+            let bsCount = 0;
+            let bsRequired = Math.floor(Math.random() * 3) + 3; // 3~5회 요구
+
+            function startTimer() {
+                clearInterval(timerInterval);
+                timeRemaining = TIME_LIMIT;
+                isBurning = false;
+                textarea.classList.remove('burning');
+                document.getElementById('progress-container').classList.remove('danger');
+                progressBar.style.width = '100%';
+
+                timerInterval = setInterval(() => {
+                    if(textarea.value.trim() === '') return; // 비어있으면 타이머 안 돌아감
+
+                    timeRemaining -= 100;
+                    const percentage = (timeRemaining / TIME_LIMIT) * 100;
+                    progressBar.style.width = percentage + '%';
+
+                    if (timeRemaining <= 2000) {
+                        document.getElementById('progress-container').classList.add('danger');
+                    }
+
+                    if (timeRemaining <= 0) {
+                        clearInterval(timerInterval);
+                        triggerBurn();
+                    }
+                }, 100);
+            }
+
+            function triggerBurn() {
+                if(isBurning) return;
+                isBurning = true;
+                textarea.classList.add('burning');
+                
+                // 불타는 애니메이션 끝난 후 텍스트 삭제
+                setTimeout(() => {
+                    textarea.value = '';
+                    textarea.classList.remove('burning');
+                    progressBar.style.width = '100%';
+                    document.getElementById('progress-container').classList.remove('danger');
+                    isBurning = false;
+                }, 1500);
+            }
+
+            textarea.addEventListener('input', () => {
+                if(!isBurning) startTimer();
+            });
+
+            textarea.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace') {
+                    bsWarning.style.opacity = '1';
+                    setTimeout(() => bsWarning.style.opacity = '0', 500);
+
+                    bsCount++;
+                    if (bsCount < bsRequired) {
+                        e.preventDefault(); // 횟수 못 채우면 삭제 취소
+                    } else {
+                        // 횟수 채웠으므로 정상적으로 한 글자 지워지게 둠
+                        bsCount = 0;
+                        bsRequired = Math.floor(Math.random() * 3) + 3; // 다음 번 요구 횟수 재설정
+                    }
+                } else {
+                    bsWarning.style.opacity = '0';
+                    if(!isBurning) startTimer();
+                }
+            });
+        </script>
+    </body>
+    </html>
+    """
+    components.html(automaton_html, height=600)
 
 st.divider()
 
-# --- 6. 🏺 따로 움직이는 파편들 ---
+# --- 하단 🏺 따로 움직이는 파편들 (공통) ---
 st.subheader("🏺 사전의 파편들")
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
 
