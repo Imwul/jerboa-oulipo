@@ -2,58 +2,48 @@ import streamlit as st
 from kiwipiepy import Kiwi
 import requests
 
+# 1. 페이지 설정
+st.set_page_config(page_title="Jerboa Infinite Engine", page_icon="🐦")
+
 @st.cache_resource
-def load_resources():
-    # 1. Kiwi 형태소 분석기 로드
+def load_all():
     kiwi = Kiwi()
-    
-    # 2. 외부의 대규모 명사 리스트 불러오기 (약 5만 단어)
-    # 실제 존재하는 오픈소스 명사 리스트 URL 예시입니다.
-    url = "https://raw.githubusercontent.com/ko-nlp/Korpora/master/Korpora/data/korean_dictionary/korean_dictionary.txt"
+    # 한국어 명사 리스트 (더 안정적인 주소로 변경했어)
+    url = "https://raw.githubusercontent.com/monologg/korean-wordlist/master/nouns.txt"
     try:
-        response = requests.get(url)
-        # 텍스트 파일에서 명사만 추출하여 리스트화
-        big_dict = [line.strip() for line in response.text.split('\n') if line.strip()]
-        big_dict.sort()
+        res = requests.get(url)
+        # 공백 제거하고 리스트화
+        full_dict = [w.strip() for w in res.text.split('\n') if len(w.strip()) > 1]
+        full_dict = list(set(full_dict)) # 중복 제거
+        full_dict.sort()
     except:
-        # 실패 시 기본 니치 사전 사용
-        big_dict = sorted(["심연", "권태", "알바트로스", "오브제", "몽유병", "유령"])
-        
-    return kiwi, big_dict
+        # 실패 시 니치한 기본 사전 (이물의 취향 반영)
+        full_dict = sorted(["심연", "권태", "알바트로스", "오브제", "몽유병", "유령", "해부대", "재봉틀"])
+    return kiwi, full_dict
 
-kiwi, NOUN_DICT = load_resources()
+kiwi, NOUN_DICT = load_all()
 
-def s_plus_n_final(text, n):
+st.title("🐦 저보아 무한 울리포 엔진")
+
+# --- 진단 모드 (이거 보면 왜 안 변하는지 알 수 있어!) ---
+with st.expander("🔍 엔진 상태 확인 (진단용)"):
+    st.write(f"현재 사전 단어 수: **{len(NOUN_DICT):,}개**")
+    st.write("사전 앞부분 예시:", NOUN_DICT[:10])
+    test_word = st.text_input("사전에 이 단어가 있는지 확인:", value="예술")
+    if test_word in NOUN_DICT:
+        st.success(f"'{test_word}'가 사전에 있습니다!")
+    else:
+        st.error(f"'{test_word}'가 사전에 없습니다. 그래서 안 바뀌는 거야!")
+# --------------------------------------------------
+
+def s_plus_n_engine(text, n):
     tokens = kiwi.tokenize(text)
     result = []
     last_end = 0
     for token in tokens:
         result.append(text[last_end:token.start])
-        # 일반명사(NNG)나 고유명사(NNP)인 경우
+        # 명사(NNG, NNP)를 찾아서 치환
         if token.tag in ['NNG', 'NNP']:
             if token.form in NOUN_DICT:
                 idx = NOUN_DICT.index(token.form)
                 result.append(NOUN_DICT[(idx + n) % len(NOUN_DICT)])
-            else:
-                # 사전에 없는 단어면, 사전에서 가나다순으로 가장 가까운 위치를 찾아 치환
-                # 이 기능이 추가되면 훨씬 더 기괴해집니다.
-                result.append(token.form)
-        else:
-            result.append(token.form)
-        last_end = token.end
-    result.append(text[last_end:])
-    return "".join(result)
-
-# UI 부분은 이전과 동일하게 유지...
-st.title("🐦 저보아 서클: 무한 울리포 엔진")
-st.write(f"현재 연결된 사전 데이터: {len(NOUN_DICT):,} 개의 명사")
-
-shift_n = st.sidebar.slider("치환 간격 (n)", 1, 100, 7) # 대규모 사전이므로 범위를 넓혔어!
-user_input = st.text_area("문장을 입력하세요:", height=150)
-
-if st.button("무한 변환 실행"):
-    if user_input:
-        with st.spinner('방대한 사전 데이터를 탐색 중...'):
-            output = s_plus_n_final(user_input, shift_n)
-            st.markdown("### ✨ 변환 결과")
-            st.success(output)
