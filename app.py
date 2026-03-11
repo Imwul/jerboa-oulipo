@@ -84,20 +84,23 @@ st.markdown("""
 <div class="instruction-box">
     <b>[울리포 엔진 가동 지침]</b><br>
     - <b>해부대:</b> 문장을 입력하세요. <b>줄 바꿈</b>과 <b>단어 사이의 여백</b>은 엄격히 보존됩니다.<br>
-    - <b>성역 보호:</b> 변조를 원치 않는 단어는 <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싸세요. 조사와 함께 꺽쇠로 감싸면 더 정확하게 변환됩니다.<br>
-    - <b>S+N 거리:</b> 사전 속에서 명사를 N단계 뒤의 단어로 치환하여 의미의 균열을 만듭니다.<br>
+    - <b>성역 보호:</b> 변하지 않길 원하는 단어는 <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싸세요. 꺽쇠 전후의 공백 또한 그대로 유지됩니다.<br>
+    - <b>변환 확률:</b> 문장 속 모든 명사를 바꿀지, 일부만 무작위로 치환할지 결정합니다.<br>
     - <b>활자의 파동:</b> 진동과 비틀림을 조절하여 문장에 시각적 불안감을 부여하세요.
 </div>
 """, unsafe_allow_html=True)
 
 user_input = st.text_area("문장을 해부대에 올리세요", placeholder="예: <나>는 오늘 <심연> 속에서 <사과>를 보았다.", height=200)
 
-col1, col2, col3 = st.columns(3)
+col1, col2 = st.columns(2)
 with col1: shift_val = st.slider("S+N 거리 (사전 변조)", 1, 1000, 7)
-with col2: bumpy_val = st.slider("진동 (활자 크기)", 0.0, 0.6, 0.15)
-with col3: tilt_val = st.slider("비틀림 (활자 각도)", 0, 30, 10)
+with col2: prob_val = st.slider("변환 확률 (%)", 0, 100, 100)
 
-def transform_with_protection(line, shift):
+col3, col4 = st.columns(2)
+with col3: bumpy_val = st.slider("진동 (활자 크기)", 0.0, 0.6, 0.15)
+with col4: tilt_val = st.slider("비틀림 (활자 각도)", 0, 30, 10)
+
+def transform_with_protection(line, shift, prob):
     # 꺽쇠로 감싸진 성역과 일반 텍스트 분리
     parts = re.split(r'(<.*?>)', line)
     d_len = len(NOUN_DICT)
@@ -123,13 +126,17 @@ def transform_with_protection(line, shift):
             sub_res = []
             for t in tokens:
                 if t.tag.startswith('N'):
-                    if t.form in NOUN_DICT:
-                        idx = (NOUN_DICT.index(t.form) + shift) % d_len
-                        new_w = NOUN_DICT[idx]
+                    # 💡 확률 체크: 단어마다 고유한 해시값으로 결정하여 설정이 같으면 결과도 일정하게 유지
+                    if (hash(t.form) % 100) < prob:
+                        if t.form in NOUN_DICT:
+                            idx = (NOUN_DICT.index(t.form) + shift) % d_len
+                            new_w = NOUN_DICT[idx]
+                        else:
+                            random.seed(hash(t.form))
+                            new_w = NOUN_DICT[random.randint(0, d_len-1)]
+                        sub_res.append((new_w, 'NNG'))
                     else:
-                        random.seed(hash(t.form))
-                        new_w = NOUN_DICT[random.randint(0, d_len-1)]
-                    sub_res.append((new_w, 'NNG'))
+                        sub_res.append((t.form, t.tag))
                 else:
                     sub_res.append((t.form, t.tag))
             
@@ -148,7 +155,7 @@ if st.button("✨ 문장 재단하기"):
             if not line.strip():
                 html_res += '\n'
                 continue
-            transformed_line = transform_with_protection(line, shift_val)
+            transformed_line = transform_with_protection(line, shift_val, prob_val)
             for char in transformed_line:
                 if char == ' ': 
                     html_res += '&nbsp;'
