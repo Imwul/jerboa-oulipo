@@ -112,11 +112,10 @@ def fetch_words(kw, API_KEY):
     return []
 
 @st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def diagnostic_load():
-    # 이물의 한국어기초사전 전용 API 키
     API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
     
-    # 기초 음절 폭격 (56개)
     keywords = [
         "가", "고", "구", "기", "나", "노", "누", "니", "다", "도", "두", "디",
         "라", "로", "루", "리", "마", "모", "무", "미", "바", "보", "부", "비",
@@ -126,24 +125,33 @@ def diagnostic_load():
     ]
     
     total_words = []
-    my_bar = st.progress(0, text="한국어기초사전의 심연을 탐색하는 중...")
+    my_bar = st.progress(0, text="한국어기초사전의 방화벽을 두드리는 중...")
     
     with ThreadPoolExecutor(max_workers=5) as executor:
         for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
             total_words.extend(words)
-            my_bar.progress((i + 1) / len(keywords), text=f"음절 '{keywords[i]}' 추출 완료... (현재 {len(total_words)}개 수집)")
+            my_bar.progress((i + 1) / len(keywords), text=f"음절 '{keywords[i]}' 추출 시도... (현재 {len(total_words)}개 수집)")
             time.sleep(0.05)
             
     my_bar.empty()
-    
     final_dict = sorted(list(set(total_words)))
     
-    # 통신 오류 시 비상 식량 투입 및 알림
+    # 💡 국립국어원 방화벽에 차단당했을 경우 (수집된 단어가 50개 미만일 때)
     if len(final_dict) < 50:
-         st.toast("⚠️ 서버가 응답하지 않거나 수집이 지연되어 비상 파편을 투입합니다.", icon="🔥")
-         base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무"]
-         final_dict = sorted(list(set(final_dict + base_dict)))
+         st.toast("⚠️ 공공 API IP 방화벽 차단 감지! 영구 보안 단어장(BIP-39)으로 우회합니다.", icon="🛡️")
          
+         # 암호화폐 지갑 복구용 2048개 한국어 표준 단어장 (절대 끊기지 않음)
+         fallback_url = "https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/korean.txt"
+         try:
+             res = requests.get(fallback_url, timeout=5)
+             fallback_words = res.text.split('\n')
+             clean_fallback = [w.strip() for w in fallback_words if 2 <= len(w.strip()) <= 4]
+             final_dict = sorted(list(set(clean_fallback)))
+         except:
+             # 최후의 보루
+             base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마 마을", "도시", "나무"]
+             final_dict = sorted(list(set(base_dict)))
+             
     return final_dict
 
 # 엔진 시동
