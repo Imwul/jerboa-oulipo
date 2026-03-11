@@ -75,40 +75,29 @@ def load_kiwi():
     return Kiwi()
 
 def fetch_words(kw, API_KEY):
-    # 💡 이물이 찾아낸 KCISA 우회로 API 주소 및 명세서 규칙 완벽 적용!
-    # 규칙: numOfRows, pageNo 외에 keyword 파라미터 필수 포함
     url = f"https://api.kcisa.kr/openapi/API_SOP_027/request?serviceKey={API_KEY}&numOfRows=100&pageNo=1&keyword={kw}"
-    
     headers = {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
+        "User-Agent": "Mozilla/5.0",
         "Accept": "application/xml"
     }
-    
     try:
         res = requests.get(url, timeout=5, verify=False, headers=headers)
         if res.status_code == 200:
             root = ET.fromstring(res.content)
-            
             clean_words = []
-            # KCISA의 XML 구조에서 word 태그를 곧바로 낚아챔
             for word_node in root.findall('.//word'):
                 if word_node is None or not word_node.text: continue
-                
                 w = word_node.text.replace('-', '').replace('^', '').strip()
-                
-                # 2~4글자, 띄어쓰기 없음, 완벽한 한글 필터링
                 if 2 <= len(w) <= 4 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w):
                     clean_words.append(w)
-                    
             return clean_words
-    except Exception as e:
+    except:
         return []
     return []
-@st.cache_data(show_spinner=False)
+
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
     API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
-    
     keywords = [
         "가", "고", "구", "기", "나", "노", "누", "니", "다", "도", "두", "디",
         "라", "로", "루", "리", "마", "모", "무", "미", "바", "보", "부", "비",
@@ -118,136 +107,26 @@ def diagnostic_load():
     ]
     
     total_words = []
-    
-    # UI(st.progress 등)를 캐시 함수에서 전부 제거하여 에러 원천 차단
     with ThreadPoolExecutor(max_workers=5) as executor:
         for words in executor.map(lambda kw: fetch_words(kw, API_KEY), keywords):
             total_words.extend(words)
             time.sleep(0.05)
             
     final_dict = sorted(list(set(total_words)))
-    
     status = "success"
     
-    # 💡 데이터만 처리하고, UI 경고는 바깥으로 상태값(status)만 넘김
+    # 💡 최후의 보루: 아름답고 기괴한 100개의 수동 단어장 (절대 1단어로 수렴하지 않음)
+    base_dict = [
+        "거울", "파편", "심연", "공백", "권태", "기억", "망각", "미학", "시체", "악의",
+        "오브제", "육체", "잔해", "향기", "형식", "황금", "시간", "공간", "존재", "허무",
+        "환상", "몽상", "사람", "마음", "하루", "사랑", "친구", "세상", "이유", "생각",
+        "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무",
+        "우주", "역사", "미래", "과거", "눈물", "웃음", "약속", "여행", "사진", "그림",
+        "새벽", "황혼", "노을", "구름", "별빛", "달빛", "햇살", "그림자", "골목", "계절",
+        "침묵", "언어", "문장", "단어", "여백", "비밀", "거짓", "진실", "운명", "우연",
+        "인연", "이별", "만남", "슬픔", "기쁨", "고독", "자유", "구속", "착각", "균열"
+    ]
+    
     if len(final_dict) < 50:
          status = "fallback"
-         fallback_url = "https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/korean.txt"
-         try:
-             res = requests.get(fallback_url, timeout=5)
-             fallback_words = res.text.split('\n')
-             clean_fallback = [w.strip() for w in fallback_words if 2 <= len(w.strip()) <= 4]
-             final_dict = sorted(list(set(clean_fallback)))
-         except:
-             base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무"]
-             final_dict = sorted(list(set(base_dict)))
-             
-    return final_dict, status
-
-# --- 엔진 시동 및 UI 분리 ---
-kiwi = load_kiwi()
-
-# UI 로딩 스피너는 캐시 함수 밖에서 안전하게 처리
-with st.spinner("한국어기초사전의 심연을 탐색하는 중..."):
-    NOUN_DICT, load_status = diagnostic_load()
-
-# 캐시 함수가 끝난 후, 반환받은 상태값에 따라 바깥에서 알림(Toast) 띄우기
-if load_status == "fallback":
-    st.toast("⚠️ KCISA 방화벽이 막혀서 영구 보안 단어장(BIP-39)으로 우회했어.", icon="🛡️")
-
-# --- UI 레이아웃 (이하 기존 코드 동일) ---
-st.title("🐦 저보아: 무한 울리포 엔진")
-st.caption(f"사전에서 추출한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
-# ... (나머지 동일)
-# --- 4. 사용자 인터페이스 (UI) ---
-st.title("🐦 저보아: 무한 울리포 엔진")
-st.caption(f"정제된 한국어기초사전에서 추출한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
-
-st.subheader("⚙️ 예술적 통제판")
-col1, col2, col3 = st.columns(3)
-with col1:
-    shift_val = st.slider("사전 변조 거리 (S+N)", min_value=1, max_value=50, value=7)
-with col2:
-    bumpy_level = st.slider("활자의 진동 (크기)", min_value=0.0, max_value=0.8, value=0.2, step=0.05)
-with col3:
-    tilt_level = st.slider("활자의 비틀림 (각도)", min_value=0, max_value=30, value=5, step=1)
-
-user_input = st.text_area("해부대에 올릴 문장을 입력해.", placeholder="나는 오늘 공원에서 사과를 먹었다.")
-
-# --- 5. 문장 해부 및 재조립 (로직) ---
-def transform_engine(text, dictionary, shift):
-    if not text.strip(): return "입력된 공백."
-    tokens = kiwi.tokenize(text)
-    result = []
-    dict_len = len(dictionary)
-    
-    for t in tokens:
-        if t.tag.startswith('N'):
-            if t.form in dictionary:
-                idx = (dictionary.index(t.form) + shift) % dict_len
-                new_word = dictionary[idx]
-            else:
-                random.seed(hash(t.form))
-                idx = (random.randint(0, dict_len - 1) + shift) % dict_len
-                new_word = dictionary[idx]
-            result.append((new_word, 'NNG'))
-        else:
-            result.append((t.form, t.tag))
-    return kiwi.join(result)
-
-def render_bumpy_text(text, b_level, t_level):
-    html = '<div style="line-height: 2.5; word-wrap: break-word;">'
-    for char in text:
-        if char == ' ':
-            html += '&nbsp;'
-            continue
-        fs = 1.3 + random.uniform(-b_level, b_level)
-        tilt = random.uniform(-t_level, t_level)
-        html += f'<span style="font-size: {fs}rem; transform: rotate({tilt}deg); display:inline-block; transition: all 0.2s; font-weight: bold;">{char}</span>'
-    html += '</div>'
-    return html
-
-# --- 6. 출력 및 아카이빙 ---
-if st.button("✨ 문장 재단 및 아카이빙"):
-    if user_input:
-        transformed = transform_engine(user_input, NOUN_DICT, shift_val)
-        st.session_state.archive.append((user_input, transformed))
-        
-        st.subheader("🖼️ 변환된 결과")
-        st.markdown(render_bumpy_text(transformed, bumpy_level, tilt_level), unsafe_allow_html=True)
-    else:
-        st.warning("문장을 먼저 입력해야 해.")
-
-st.divider()
-
-col_log1, col_log2 = st.columns([4, 1])
-with col_log1:
-    st.subheader("📜 과거의 흔적 (공동 시집)")
-with col_log2:
-    if st.button("🗑️ 로그 전체 삭제"):
-        st.session_state.archive = []
-        st.rerun()
-
-if st.session_state.archive:
-    for orig, trans in reversed(st.session_state.archive):
-        st.markdown(f"<span style='color:#777777; font-size:0.9rem;'>{orig}</span><br><b style='color:#111111; font-size:1.1rem;'>{trans}</b>", unsafe_allow_html=True)
-        st.caption("---")
-else:
-    st.info("아직 쌓인 흔적이 없어.")
-
-st.divider()
-
-# --- 7. 시각화: 떠다니는 파편들 ---
-st.subheader(f"🏺 {len(NOUN_DICT):,}개의 파편들 중 일부")
-
-visual_samples = random.sample(NOUN_DICT, min(70, len(NOUN_DICT)))
-washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
-
-html_tags = ""
-for w in visual_samples:
-    color = random.choice(washed_colors)
-    font_size = 0.8 + (len(w) * 0.15)
-    anim_delay = random.uniform(0, 3)
-    html_tags += f'<span class="fragment-tag" style="background-color:{color}; font-size:{font_size}rem; animation: float 4s ease-in-out infinite; animation-delay: {anim_delay}s;">{w}</span>'
-
-st.markdown(f'<div style="text-align:center;">{html_tags}</div>', unsafe_allow_html=True)
+         fallback_url = "https://
