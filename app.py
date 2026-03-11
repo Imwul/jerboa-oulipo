@@ -71,7 +71,6 @@ def load_oulipo_dict():
     return ["거울", "파편", "심연", "공백", "기억", "망각", "미학"]
 
 NOUN_DICT = load_oulipo_dict()
-# 이물이 좋아하는 파스텔 톤 팔레트
 WASHED_COLORS = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
 
 st.title("Jerboa Circle: Surrealist Workshop")
@@ -157,9 +156,10 @@ with tab2:
     st.markdown("""
     <div class="instruction-box">
         <b>[마그넷 & 나이프 해부 지침]</b><br>
-        - <b>🧲 마그넷:</b> 자유롭게 드래그하여 배치합니다. 뿌리가 같은 파편은 색상을 공유합니다.<br>
-        - <b>🔪 칼 툴:</b> 켜진 상태로 마그넷의 <b>글자를 클릭</b>하면, 그 위치에서 텍스트가 잘려나갑니다.<br>
-        - <b>🧴 풀 툴:</b> 켜진 상태로 두 마그넷을 순서대로 클릭하면 하나의 파편으로 다시 붙습니다.<br>
+        - <b>🧲 마그넷:</b> 자유롭게 드래그하여 배치합니다. 뿌리가 같은 파편은 고유의 색상을 공유합니다.<br>
+        - <b>🔪 칼 툴:</b> 켜진 상태로 마그넷의 특정 글자를 클릭하면, 그 위치에서 텍스트가 잘려나갑니다.<br>
+        - <b>🧴 풀 툴:</b> 켜진 상태로 두 마그넷을 클릭하면 붙습니다. 서로 다른 색상도 모자이크처럼 유지됩니다.<br>
+        - <b>✨ 영감 (셔플):</b> 파편들을 임의의 행(3~5개)으로 재배치하여 우연의 시를 만듭니다.<br>
     </div>
     """, unsafe_allow_html=True)
 
@@ -182,39 +182,44 @@ with tab2:
                 }}
                 body {{ font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }}
                 
-                #toolbar {{ background: #000; padding: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; }}
+                #toolbar {{ background: #000; padding: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }}
                 .tool-btn {{ 
-                    background: #fff; color: #000; border: 2px solid #fff; padding: 8px 20px; 
-                    font-size: 1rem; font-weight: bold; cursor: pointer; font-family: inherit; transition: all 0.2s;
+                    background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; 
+                    font-size: 0.95rem; font-weight: bold; cursor: pointer; font-family: inherit; transition: all 0.2s;
                 }}
                 .tool-btn.active-knife {{ background: #ff4d4d; color: #fff; border-color: #ff4d4d; }}
                 .tool-btn.active-glue {{ background: #4d79ff; color: #fff; border-color: #4d79ff; }}
+                #shuffleBtn {{ background: #ffe3b3; color: #000; border-color: #ffe3b3; }}
+                #shuffleBtn:active {{ transform: scale(0.95); }}
                 
                 #canvas-area {{ 
                     width: 100%; height: 650px; background: #fafafa; position: relative; 
-                    border: 3px solid #000; border-top: none; cursor: default;
+                    border: 3px solid #000; border-top: none; cursor: default; overflow: hidden;
                 }}
                 
-                /* 마그넷 기본 스타일 */
+                /* 마그넷: 이제 내부 글자들의 색을 보여주기 위해 투명한 플렉스 박스가 됨 */
                 .magnet {{
-                    position: absolute; border: 2px solid #000; padding: 6px 10px;
+                    position: absolute; border: 2px solid #000; padding: 0; display: flex;
                     font-size: 1.4rem; font-weight: bold; cursor: grab; 
                     white-space: nowrap; box-shadow: 4px 4px 0px #000; transition: transform 0.1s, box-shadow 0.2s;
+                    background: transparent;
                 }}
                 .magnet:active {{ cursor: grabbing; transform: scale(1.05); z-index: 1000 !important; }}
                 
-                /* 칼 모드 */
-                body.knife-mode #canvas-area {{ cursor: crosshair; }}
-                body.knife-mode .magnet {{ cursor: crosshair; }}
+                /* 개별 글자 스타일 */
+                .char {{ 
+                    display: inline-block; padding: 6px 3px; transition: color 0.2s; 
+                }}
+                .char:first-child {{ padding-left: 8px; }}
+                .char:last-child {{ padding-right: 8px; }}
+                
+                body.knife-mode #canvas-area, body.knife-mode .magnet {{ cursor: crosshair; }}
                 body.knife-mode .magnet:active {{ transform: none; cursor: crosshair; }}
-                .char {{ display: inline-block; transition: color 0.2s; }}
                 body.knife-mode .char:hover {{ color: #ff4d4d; font-weight: 900; transform: translateY(-2px); }}
                 
-                /* 풀 모드 */
-                body.glue-mode #canvas-area {{ cursor: cell; }}
-                body.glue-mode .magnet {{ cursor: cell; }}
+                body.glue-mode #canvas-area, body.glue-mode .magnet {{ cursor: cell; }}
                 body.glue-mode .magnet:active {{ transform: none; cursor: cell; }}
-                body.glue-mode .char {{ pointer-events: none; }} /* 풀 모드에선 개별 글자 클릭 무시 */
+                body.glue-mode .char {{ pointer-events: none; }}
                 .magnet.glue-selected {{ box-shadow: 0 0 15px 5px #4d79ff !important; border-color: #4d79ff; transform: scale(1.05); }}
                 
             </style>
@@ -223,6 +228,7 @@ with tab2:
                 <div id="toolbar">
                     <button id="knifeToggle" class="tool-btn">🔪 칼 툴 (Off)</button>
                     <button id="glueToggle" class="tool-btn">🧴 풀 툴 (Off)</button>
+                    <button id="shuffleBtn" class="tool-btn">✨ 영감 (셔플)</button>
                 </div>
                 <div id="canvas-area"></div>
 
@@ -235,12 +241,13 @@ with tab2:
                     let glueMode = false;
                     let glueTarget = null;
                     let zIndex = 10;
-                    let historyStack = []; // Ctrl+Z를 위한 상태 저장소
+                    let historyStack = [];
 
                     const knifeBtn = document.getElementById('knifeToggle');
                     const glueBtn = document.getElementById('glueToggle');
+                    const shuffleBtn = document.getElementById('shuffleBtn');
 
-                    // 🛠 툴 토글 로직
+                    // 🛠 툴 토글
                     knifeBtn.addEventListener('click', () => {{
                         knifeMode = !knifeMode;
                         if(knifeMode) {{ glueMode = false; clearGlueTarget(); updateButtons(); }}
@@ -268,66 +275,70 @@ with tab2:
                         glueTarget = null;
                     }}
 
-                    // 💾 상태 저장 (Undo용)
+                    // DOM에서 마그넷 데이터(글자+색상 배열) 추출
+                    function getCharData(magnetEl) {{
+                        return Array.from(magnetEl.children).map(span => ({{
+                            char: span.innerText,
+                            bg: span.style.backgroundColor
+                        }}));
+                    }}
+
+                    // 💾 상태 저장
                     function saveState() {{
                         const state = Array.from(document.querySelectorAll('.magnet')).map(m => ({{
-                            text: Array.from(m.children).map(c => c.innerText).join(''),
+                            charData: getCharData(m),
                             left: m.style.left,
-                            top: m.style.top,
-                            bg: m.style.backgroundColor
+                            top: m.style.top
                         }}));
                         historyStack.push(state);
                     }}
 
-                    
-
-                    // 🧲 마그넷 생성 함수 (save 매개변수로 Undo 기록 여부 결정)
-                    function createMagnet(text, startX, startY, bgColor, save = true) {{
-                        if (!text) return;
+               
+                    // 🧲 마그넷 생성 (charDataArray = [{char: '가', bg: 'red'}, ...])
+                    function createMagnet(charDataArray, startX, startY, save = true) {{
+                        if (!charDataArray || charDataArray.length === 0) return;
                         if (save) saveState();
 
                         const div = document.createElement('div');
                         div.className = 'magnet';
                         div.style.left = startX + 'px';
                         div.style.top = startY + 'px';
-                        div.style.backgroundColor = bgColor;
                         div.style.zIndex = ++zIndex;
 
-                        // 칼질을 위한 span 감싸기
-                        Array.from(text).forEach((char, index) => {{
+                        charDataArray.forEach((item, index) => {{
                             const span = document.createElement('span');
                             span.className = 'char';
-                            span.innerText = char;
+                            span.innerText = item.char;
+                            span.style.backgroundColor = item.bg; // 개별 글자에 색상 부여
                             span.dataset.index = index;
                             
-                            // 🔪 쪼개기 이벤트 (칼 모드일 때만 span에서 처리)
+                            // 🔪 자르기 이벤트
                             span.addEventListener('mousedown', (e) => {{
                                 if (!knifeMode) return;
                                 e.stopPropagation(); 
                                 
                                 const clickedIdx = parseInt(e.target.dataset.index);
-                                if (clickedIdx === 0) return; // 첫 글자 자르기 방지
+                                if (clickedIdx === 0) return; // 첫 글자 방지
 
-                                const chars = Array.from(div.children);
-                                const word1 = chars.slice(0, clickedIdx).map(s => s.innerText).join('');
-                                const word2 = chars.slice(clickedIdx).map(s => s.innerText).join('');
+                                const currentData = getCharData(div);
+                                const part1 = currentData.slice(0, clickedIdx);
+                                const part2 = currentData.slice(clickedIdx);
 
                                 const pX = parseFloat(div.style.left);
                                 const pY = parseFloat(div.style.top);
 
-                                saveState(); // 자르기 전 상태 저장
+                                saveState();
                                 div.remove();
 
-                                // 자식 파편들은 부모의 색상을 그대로 상속받음
-                                createMagnet(word1, pX, pY, bgColor, false);
-                                createMagnet(word2, pX + e.target.offsetLeft + 5, pY + 15, bgColor, false);
+                                createMagnet(part1, pX, pY, false);
+                                createMagnet(part2, pX + e.target.offsetLeft + 5, pY + 15, false);
                             }});
                             div.appendChild(span);
                         }});
 
-                        // 🧴 풀 툴 이벤트 & 드래그 이벤트 (div 레벨에서 처리)
+                        // 🧴 풀 툴 & 드래그
                         div.addEventListener('mousedown', (e) => {{
-                            if (knifeMode) return; // 칼 모드면 span 이벤트로 넘어감
+                            if (knifeMode) return;
 
                             if (glueMode) {{
                                 e.stopPropagation();
@@ -335,17 +346,15 @@ with tab2:
                                     glueTarget = div;
                                     div.classList.add('glue-selected');
                                 }} else if (glueTarget !== div) {{
-                                    saveState(); // 붙이기 전 상태 저장
-                                    const text1 = Array.from(glueTarget.children).map(c=>c.innerText).join('');
-                                    const text2 = Array.from(div.children).map(c=>c.innerText).join('');
+                                    saveState();
+                                    const data1 = getCharData(glueTarget);
+                                    const data2 = getCharData(div);
                                     
-                                    // 캔버스 상에서 더 왼쪽에 있는 단어가 앞부분으로 옴 (물리적 직관성)
                                     const t1X = parseFloat(glueTarget.style.left);
                                     const t2X = parseFloat(div.style.left);
-                                    const combinedText = t1X <= t2X ? text1 + text2 : text2 + text1;
                                     
-                                    // 색상은 첫 번째 타겟의 색상을 상속
-                                    const combinedBg = glueTarget.style.backgroundColor;
+                                    // 왼쪽에 있는 것을 앞으로
+                                    const combinedData = t1X <= t2X ? data1.concat(data2) : data2.concat(data1);
                                     const newX = Math.min(t1X, t2X);
                                     const newY = parseFloat(glueTarget.style.top);
                                     
@@ -353,17 +362,16 @@ with tab2:
                                     div.remove();
                                     glueTarget = null;
                                     
-                                    createMagnet(combinedText, newX, newY, combinedBg, false);
+                                    createMagnet(combinedData, newX, newY, false);
                                 }} else {{
-                                    // 자기 자신을 다시 누르면 취소
                                     clearGlueTarget();
                                 }}
                                 return;
                             }}
 
-                            // 🖐 일반 드래그 로직
+                            // 드래그
                             e.preventDefault();
-                            saveState(); // 드래그 시작 전 위치 저장
+                            saveState();
                             div.style.zIndex = ++zIndex;
                             let pos3 = e.clientX, pos4 = e.clientY;
                             
@@ -381,12 +389,50 @@ with tab2:
                         canvas.appendChild(div);
                     }}
 
-                    // 초기 텍스트 흩뿌리기 (이때 랜덤 파스텔톤 부여)
+                    // ✨ 영감 (셔플) 로직
+                    shuffleBtn.addEventListener('click', () => {{
+                        saveState();
+                        let allMagnets = Array.from(document.querySelectorAll('.magnet'));
+                        let dataList = allMagnets.map(m => getCharData(m));
+
+                        // 배열 무작위 섞기
+                        for (let i = dataList.length - 1; i > 0; i--) {{
+                            const j = Math.floor(Math.random() * (i + 1));
+                            [dataList[i], dataList[j]] = [dataList[j], dataList[i]];
+                        }}
+
+                        canvas.innerHTML = ''; // 캔버스 초기화
+                        clearGlueTarget();
+
+                        let currentY = 50;
+                        let currentX = 50;
+                        let countInRow = 0;
+                        let targetInRow = Math.floor(Math.random() * 3) + 3; // 3~5개
+
+                        dataList.forEach((charData) => {{
+                            createMagnet(charData, currentX, currentY, false);
+                            currentX += (charData.length * 28) + 30; // 글자 수 기반 대략적인 간격
+                            countInRow++;
+
+                            // 캔버스 오른쪽을 벗어나거나 설정된 행의 개수를 채우면 줄바꿈
+                            if (countInRow >= targetInRow || currentX > canvas.offsetWidth - 150) {{
+                                currentY += 75;
+                                currentX = 40 + Math.random() * 60; // 다음 줄 시작 위치도 약간 무작위로
+                                countInRow = 0;
+                                targetInRow = Math.floor(Math.random() * 3) + 3;
+                            }}
+                        }});
+                    }});
+
+                    // 초기 생성 시 단어를 charDataArray 형태로 변환 후 배치
                     initialWords.forEach((word, i) => {{
                         const x = 30 + (i % 6) * 110 + Math.random() * 30;
                         const y = 30 + Math.floor(i / 6) * 70 + Math.random() * 30;
                         const initialColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-                        createMagnet(word, x, y, initialColor, false);
+                        
+                        // 단어를 글자 단위로 쪼개고 동일한 배경색 부여
+                        const charDataArray = Array.from(word).map(c => ({{ char: c, bg: initialColor }}));
+                        createMagnet(charDataArray, x, y, false);
                     }});
                 </script>
             </body>
@@ -397,7 +443,7 @@ with tab2:
 
 st.divider()
 
-# --- 6. 🏺 따로 움직이는 파편들 (오리지널 디자인 복구) ---
+# --- 6. 🏺 따로 움직이는 파편들 ---
 st.subheader("🏺 사전의 파편들")
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
 
