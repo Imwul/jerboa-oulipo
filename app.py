@@ -281,17 +281,7 @@ with tab2:
                         historyStack.push(state);
                     }}
 
-                    // 🔙 되돌리기 (Ctrl+Z)
-                    document.addEventListener('keydown', (e) => {{
-                        if ((e.ctrlKey || e.metaKey) && e.key === 'z') {{
-                            if (historyStack.length > 0) {{
-                                const prevState = historyStack.pop();
-                                canvas.innerHTML = '';
-                                clearGlueTarget();
-                                prevState.forEach(m => createMagnet(m.text, parseFloat(m.left), parseFloat(m.top), m.bg, false));
-                            }}
-                        }}
-                    }});
+                    
 
                     // 🧲 마그넷 생성 함수 (save 매개변수로 Undo 기록 여부 결정)
                     function createMagnet(text, startX, startY, bgColor, save = true) {{
