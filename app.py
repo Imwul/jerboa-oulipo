@@ -76,35 +76,22 @@ def load_kiwi():
     return Kiwi()
 
 def fetch_words(kw, API_KEY):
-    # pos=1(명사), sort=popular(대중적 단어)
-    url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include&pos=1&sort=popular"
+    # 💡 완벽한 규범의 성전: 표준국어대사전(stdict) API로 주소 변경
+    url = f"https://stdict.korean.go.kr/api/search.do?key={API_KEY}&q={kw}&req_type=xml&num=100&advanced=y&method=include&pos=1"
     try:
         res = requests.get(url, timeout=5, verify=False)
         if res.status_code == 200:
             root = ET.fromstring(res.content)
             clean_words = []
             
+            # 표준국어대사전의 XML 구조에 맞춘 해부
             for item in root.findall('.//item'):
                 word_node = item.find('.//word')
                 if word_node is None or not word_node.text: continue
                 
-                # 💡 1차 방어선: 외래어, 혼종어 차단
-                origin_node = item.find('.//origin')
-                if origin_node is not None and origin_node.text in ['외래어', '혼종어']:
-                    continue
-                
-                # 💡 2차 방어선: 방언, 북한어, 옛말 소거
-                is_bad = False
-                for cat_node in item.findall('.//cat'):
-                    if cat_node.text and any(bad in cat_node.text for bad in ['방언', '북한어', '옛말']):
-                        is_bad = True
-                        break
-                if is_bad:
-                    continue
-                
                 w = word_node.text.replace('-', '').replace('^', '')
                 
-                # 💡 3차 방어선: 2~3글자, 띄어쓰기 없음, 완벽한 한글
+                # 이미 표준어만 있으므로 복잡한 태그 검사 없이 형태만 통제 (2~3글자, 순수 한글)
                 if 2 <= len(w) <= 3 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w):
                     clean_words.append(w)
                     
@@ -115,9 +102,10 @@ def fetch_words(kw, API_KEY):
 
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
-    API_KEY = "E14AAE57D9E8F2214E247F3D5953E31B"
+    # 🚨 이물! 여기에 새로 발급받은 '표준국어대사전 API 키'를 넣어야 해!
+    API_KEY = "여기에_새로운_키를_넣어줘" 
     
-    # 💡 의미 궤도를 벗어난 순수 음절 폭격 (56개)
+    # 56개의 기초 음절 폭격 (그대로 유지)
     keywords = [
         "가", "고", "구", "기", "나", "노", "누", "니", "다", "도", "두", "디",
         "라", "로", "루", "리", "마", "모", "무", "미", "바", "보", "부", "비",
@@ -127,9 +115,8 @@ def diagnostic_load():
     ]
     
     total_words = []
-    my_bar = st.progress(0, text="국립국어원 심연에서 순수 명사들을 발굴하는 중...")
+    my_bar = st.progress(0, text="표준국어대사전의 심연에서 가장 순수한 명사를 채굴하는 중...")
     
-    # 서버 차단 방지를 위한 부드러운 병렬 처리
     with ThreadPoolExecutor(max_workers=5) as executor:
         for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
             total_words.extend(words)
@@ -138,7 +125,6 @@ def diagnostic_load():
             
     my_bar.empty()
     
-    # 💡 가나다순 완벽 정렬 (S+N의 절대 규칙)
     final_dict = sorted(list(set(total_words)))
     
     if len(final_dict) < 50:
