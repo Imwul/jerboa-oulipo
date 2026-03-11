@@ -14,10 +14,11 @@ st.markdown("""
     :root { color-scheme: light !important; }
     [data-testid="stAppViewContainer"], .stApp { background-color: #FFFFFF !important; }
 
-    @font-face {
-        font-family: 'Eulyoo1945-Regular';
-        src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
-    }
+    /* 폰트 4종을 앱이 켜질 때 한 번에 모두 로드 */
+    @font-face { font-family: 'Eulyoo1945-Regular'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff'); }
+    @font-face { font-family: 'GmarketSans'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); }
+    @font-face { font-family: 'KyoboHandwriting'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); }
+    @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
 
     h1 {
         font-family: 'Trattatello', 'Apple Chancery', 'Chalkduster', cursive !important;
@@ -25,7 +26,11 @@ st.markdown("""
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
     }
 
-    * { font-family: 'Eulyoo1945-Regular', serif !important; color: #000000 !important; }
+    /* '*' 대신 특정 태그들을 지정하여 인라인 스타일 폰트가 먹히도록 수정 */
+    html, body, [class*="st-"], textarea, input, button { 
+        font-family: 'Eulyoo1945-Regular', serif !important; 
+        color: #000000 !important; 
+    }
 
     textarea, input[type="text"] {
         background-color: #111111 !important; color: #FFFFFF !important;
@@ -50,7 +55,6 @@ st.markdown("""
         font-weight: bold; cursor: default;
     }
 
-    /* 일반 버튼 및 Form 제출 버튼 텍스트 색상 통합 수정 */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button { 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
@@ -582,14 +586,6 @@ with tab5:
 # ==========================================
 with tab6:
     st.markdown("""
-    <style>
-        @font-face { font-family: 'GmarketSans'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); }
-        @font-face { font-family: 'KyoboHandwriting'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); }
-        @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
-    </style>
-    """, unsafe_allow_html=True)
-
-    st.markdown("""
     <div class="instruction-box">
         <b>[바벨의 균열 지침: 타이포그래피 콜라주]</b><br>
         - <b>구문 파괴:</b> 완벽한 문장을 넣어 기괴한 번역 오류를 발생시키세요.<br>
@@ -605,8 +601,8 @@ with tab6:
     WEIRD_ENDINGS = ["었도다", "리라", "느냐", "ㄹ으며", "ㄷ으며", "나이다", "겠지", "련만"]
     GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " ???? ", " ░▒▓ ", " // ", " ༒ ", " 🜂 ", " 내가 그렇게 싫어? "]
     
-    # 4가지 확실히 다른 스타일의 한글 폰트 믹스
-    MIX_FONTS = ["'Eulyoo1945-Regular', serif", "'GmarketSans', sans-serif", "'KyoboHandwriting', cursive", "'DungGeunMo', monospace"]
+   # CSS에 등록된 정확한 폰트 이름들
+    MIX_FONTS = ["Eulyoo1945-Regular", "GmarketSans", "KyoboHandwriting", "DungGeunMo"]
 
     if 'babel_raw_output' not in st.session_state:
         st.session_state.babel_raw_output = ""
@@ -652,22 +648,23 @@ with tab6:
 
         styled_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000 !important; line-height: 2.5; word-wrap: break-word; white-space: pre-wrap;'>"
         
-        # !important를 추가해서 전역 CSS를 강제로 뚫어버림
+        # 글자별로 폰트를 강제로 먹임
         for char in st.session_state.babel_raw_output:
             if char == ' ': 
                 styled_html += '&nbsp;'
             else:
                 fs = 1.4 + random.uniform(-babel_bumpy, babel_bumpy)
                 rot = random.uniform(-babel_tilt, babel_tilt)
+                # 35% 확률로 명조체 외의 기괴한 폰트로 바뀜
                 font_choice = random.choice(MIX_FONTS) if random.random() > 0.65 else MIX_FONTS[0]
                 
-                styled_html += f'<span style="font-family:{font_choice} !important; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
+                styled_html += f'<span style="font-family: \'{font_choice}\' !important; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
         
         styled_html += "</div>"
         
         st.subheader("👁️ 오독의 캔버스")
         st.markdown(styled_html, unsafe_allow_html=True)
-
+        
 # --- 하단 🏺 따로 움직이는 파편들 (공통) ---
 st.subheader("🏺 사전의 파편들")
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
