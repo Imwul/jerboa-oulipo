@@ -561,6 +561,15 @@ with tab5:
 # TAB 6: The Babel Glitch (바벨의 균열 - 오독의 시학)
 # ==========================================
 with tab6:
+    # 한글 지원 폰트 3종 추가 로드 (고딕, 손글씨, 픽셀)
+    st.markdown("""
+    <style>
+        @font-face { font-family: 'GmarketSans'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); }
+        @font-face { font-family: 'KyoboHandwriting'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); }
+        @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
+    </style>
+    """, unsafe_allow_html=True)
+
     st.markdown("""
     <div class="instruction-box">
         <b>[바벨의 균열 지침: 타이포그래피 콜라주]</b><br>
@@ -577,10 +586,10 @@ with tab6:
     WEIRD_ENDINGS = ["었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지", "련만"]
     GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // "]
     
-    # 4가지 기괴한 폰트 믹스
-    MIX_FONTS = ["'Eulyoo1945-Regular', serif", "'Courier New', monospace", "Impact, sans-serif", "'Comic Sans MS', cursive, sans-serif"]
+    # 4가지 확실히 다른 스타일의 한글 폰트 믹스 (명조, 고딕, 손글씨, 픽셀)
+    MIX_FONTS = ["'Eulyoo1945-Regular', serif", "'GmarketSans', sans-serif", "'KyoboHandwriting', cursive", "'DungGeunMo', monospace"]
 
-    # 세션에 원본(Glitch 완료된) 텍스트를 저장하여 슬라이더 조작 시 텍스트 자체가 바뀌지 않도록 함
+    # 세션에 원본(Glitch 완료된) 텍스트를 저장
     if 'babel_raw_output' not in st.session_state:
         st.session_state.babel_raw_output = ""
 
@@ -613,10 +622,9 @@ with tab6:
                 final_text += w + " "
                 if random.random() > 0.85: final_text += random.choice(GLITCH_MARKS)
             
-            # 생성된 텍스트를 세션에 고정
             st.session_state.babel_raw_output = final_text
 
-    # 결과물이 있을 때만 슬라이더와 결과창 렌더링 (실시간 업데이트)
+    # 결과물이 있을 때만 슬라이더와 렌더링
     if st.session_state.babel_raw_output:
         st.divider()
         st.subheader("👁️ 시각적 변형 제어")
@@ -626,15 +634,15 @@ with tab6:
 
         styled_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000 !important; line-height: 2.5; word-wrap: break-word; white-space: pre-wrap;'>"
         
-        # 글자별로 다른 폰트와 크기, 기울기를 적용
+        # 글자별로 다른 한글 폰트와 크기, 기울기 적용
         for char in st.session_state.babel_raw_output:
             if char == ' ': 
                 styled_html += '&nbsp;'
             else:
                 fs = 1.4 + random.uniform(-babel_bumpy, babel_bumpy)
                 rot = random.uniform(-babel_tilt, babel_tilt)
-                # 30% 확률로 기본 폰트(을유)를 벗어나 이질적인 폰트로 변형
-                font_choice = random.choice(MIX_FONTS) if random.random() > 0.7 else MIX_FONTS[0]
+                # 35% 확률로 기본 명조체를 벗어나 이질적인 폰트(고딕, 손글씨, 픽셀)로 변형
+                font_choice = random.choice(MIX_FONTS) if random.random() > 0.65 else MIX_FONTS[0]
                 
                 styled_html += f'<span style="font-family:{font_choice}; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
         
