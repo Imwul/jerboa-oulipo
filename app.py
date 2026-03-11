@@ -113,7 +113,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-user_input = st.text_area("해부대", placeholder="문장을 해부대에 올리세요. <나>는 <심연>을 보았다.", height=200)
+user_input = st.text_area("해부대", placeholder="문장을 해부대에 올리세요. 나는 <심연을> 보았다.", height=200)
 
 # 제어판
 col1, col2 = st.columns(2)
