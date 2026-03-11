@@ -32,11 +32,12 @@ st.markdown("""
         color: #FFFFFF !important;
         border: 2px solid #000000 !important;
         caret-color: #FFFFFF !important;
+        font-size: 1.1rem !important;
     }
     
     .instruction-box {
-        background-color: #F9F9F9; padding: 15px; border-left: 4px solid #000000;
-        margin-bottom: 20px; line-height: 1.6;
+        background-color: #F9F9F9; padding: 18px; border-left: 5px solid #000000;
+        margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem;
     }
 
     /* 🌊 유령의 군무 애니메이션 */
@@ -56,6 +57,7 @@ st.markdown("""
     div.stButton > button { 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
+        height: 3.5rem; font-size: 1.2rem !important;
     }
     div.stButton > button p { color: #FFFFFF !important; }
 </style>
@@ -76,36 +78,48 @@ def load_oulipo_dict():
 NOUN_DICT = load_oulipo_dict()
 
 # --- 4. 메인 화면 ---
-st.title("🐀 저보아 서클 시즌 2: 울리포 엔진(The Oulipo Engine)")
+st.title("🐀 저보아 서클 시즌 2: 울리포 엔진")
 
 st.markdown("""
 <div class="instruction-box">
-    <b>[울리포 엔진 이용 안내]</b><br>
-    - 해부대에 문장을 입력하세요. <b>줄 바꿈</b>이 보존됩니다.<br>
-    - <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싼 부분은 변하지 않는 '성역'이 됩니다.<br>
-    - 아래의 파편들은 사전에서 무작위로 추출된 단어들입니다.
+    <b>[울리포 엔진 가동 지침]</b><br>
+    - <b>해부대:</b> 문장을 입력하세요. <b>줄 바꿈</b>과 <b>단어 사이의 여백</b>은 엄격히 보존됩니다.<br>
+    - <b>성역 보호:</b> 변조를 원치 않는 단어는 <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싸세요. 꺽쇠 앞뒤의 공백 또한 그대로 유지됩니다.<br>
+    - <b>S+N 거리:</b> 사전 속에서 명사를 N단계 뒤의 단어로 치환하여 의미의 균열을 만듭니다.<br>
+    - <b>활자의 파동:</b> 진동과 비틀림을 조절하여 문장에 시각적 불안감을 부여하세요.
 </div>
 """, unsafe_allow_html=True)
 
-user_input = st.text_area("해부대에 문장을 올리세요", placeholder="예: <나>는 오늘 <심연>을 보았다.", height=180)
+user_input = st.text_area("문장을 해부대에 올리세요", placeholder="예: <나>는 오늘 <심연> 속에서 <사과>를 보았다.", height=200)
 
 col1, col2, col3 = st.columns(3)
-with col1: shift_val = st.slider("S+N 거리", 1, 1000, 7)
-with col2: bumpy_val = st.slider("진동", 0.0, 0.6, 0.15)
-with col3: tilt_val = st.slider("비틀림", 0, 30, 10)
+with col1: shift_val = st.slider("S+N 거리 (사전 변조)", 1, 1000, 7)
+with col2: bumpy_val = st.slider("진동 (활자 크기)", 0.0, 0.6, 0.15)
+with col3: tilt_val = st.slider("비틀림 (활자 각도)", 0, 30, 10)
 
 def transform_with_protection(line, shift):
+    # 꺽쇠로 감싸진 성역과 일반 텍스트 분리
     parts = re.split(r'(<.*?>)', line)
     d_len = len(NOUN_DICT)
     line_result = []
+    
     for part in parts:
         if part.startswith('<') and part.endswith('>'):
+            # 성역: 꺽쇠만 제거하고 단어는 보존
             line_result.append(part[1:-1])
+        elif part == '':
+            continue
         else:
-            if not part.strip():
+            # 일반 텍스트: 앞뒤 공백을 명시적으로 포착하여 보존
+            leading_ws = re.match(r'^\s*', part).group()
+            trailing_ws = re.search(r'\s*$', part).group()
+            content = part.strip()
+            
+            if not content:
                 line_result.append(part)
                 continue
-            tokens = kiwi.tokenize(part)
+            
+            tokens = kiwi.tokenize(content)
             sub_res = []
             for t in tokens:
                 if t.tag.startswith('N'):
@@ -116,43 +130,49 @@ def transform_with_protection(line, shift):
                         random.seed(hash(t.form))
                         new_w = NOUN_DICT[random.randint(0, d_len-1)]
                     sub_res.append((new_w, 'NNG'))
-                else: sub_res.append((t.form, t.tag))
-            line_result.append(kiwi.join(sub_res))
+                else:
+                    sub_res.append((t.form, t.tag))
+            
+            # 원래의 공백과 함께 결합
+            line_result.append(leading_ws + kiwi.join(sub_res) + trailing_ws)
+            
     return "".join(line_result)
 
 if st.button("✨ 문장 재단하기"):
     if user_input:
         lines = user_input.split('\n')
         st.subheader("🖼️ 변환 결과")
-        html_res = '<div style="line-height: 2.2; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
+        html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
+        
         for line in lines:
             if not line.strip():
                 html_res += '\n'
                 continue
             transformed_line = transform_with_protection(line, shift_val)
             for char in transformed_line:
-                if char == ' ': html_res += '&nbsp;'
+                if char == ' ': 
+                    html_res += '&nbsp;'
                 else:
                     fs = 1.4 + random.uniform(-bumpy_val, bumpy_val)
                     rot = random.uniform(-tilt_val, tilt_val)
                     html_res += f'<span style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold; color:#000000 !important;">{char}</span>'
             html_res += '\n'
+        
         html_res += '</div>'
         st.markdown(html_res, unsafe_allow_html=True)
 
 st.divider()
 
-# --- 5. 🏺 따로 움직이는 파편들 (복구) ---
+# --- 5. 🏺 따로 움직이는 파편들 ---
 st.subheader("🏺 사전의 파편들")
 washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
 
 html_tags = '<div style="text-align:center; padding-bottom: 50px;">'
 for w in samples:
-    # 💡 [핵심] 개별적인 딜레이와 색상 부여로 따로 움직이게 함
     color = random.choice(washed_colors)
-    delay = random.uniform(0, 4) # 0~4초 사이의 무작위 시작 시간
-    duration = random.uniform(4, 7) # 움직이는 속도도 미세하게 다르게
+    delay = random.uniform(0, 4)
+    duration = random.uniform(4, 7)
     html_tags += f'<span class="fragment-tag" style="background-color:{color}; animation-delay: {delay}s; animation-duration: {duration}s;">{w}</span>'
 html_tags += '</div>'
 
