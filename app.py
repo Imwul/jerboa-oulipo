@@ -92,51 +92,37 @@ def fetch_words(kw, API_KEY):
 def diagnostic_load():
     API_KEY = "E14AAE57D9E8F2214E247F3D5953E31B"
     
-    # 💡 이물의 지시 반영: 너무 니치한 것을 빼고, 일상적이고 감성적인 '대중 픽' 키워드로 전면 교체
+    # 💡 의미 중심 키워드 폐기! 기초 음절 56개로 데이터베이스를 광범위하게 폭격
     keywords = [
-        "사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", 
-        "바람", "하늘", "바다", "얼굴", "소리", "가족", "이야기", "노래", "마을", "도시", 
-        "나무", "우주", "역사", "미래", "과거", "눈물", "웃음", "약속", "여행", "사진"
+        "가", "고", "구", "기", "나", "노", "누", "니", "다", "도", "두", "디",
+        "라", "로", "루", "리", "마", "모", "무", "미", "바", "보", "부", "비",
+        "사", "소", "수", "시", "아", "오", "우", "이", "자", "조", "주", "지",
+        "차", "초", "추", "치", "카", "코", "쿠", "키", "타", "토", "투", "티",
+        "파", "포", "푸", "피", "하", "호", "후", "히"
     ]
     
     total_words = []
-    my_bar = st.progress(0, text="대중적이고 익숙한 일상 단어들을 수집하는 중...")
+    my_bar = st.progress(0, text="의미의 굴레를 파괴하고 파편들을 무작위로 긁어모으는 중...")
     
     with ThreadPoolExecutor(max_workers=5) as executor:
         for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
             total_words.extend(words)
-            my_bar.progress((i + 1) / len(keywords), text=f"일상 파편 발굴 중... (현재 {len(total_words)}개 수집)")
+            # 진행 상태 업데이트 (56개라 아주 시원시원하게 올라갈 거야)
+            my_bar.progress((i + 1) / len(keywords), text=f"음절 '{keywords[i]}' 발굴 완료... (현재 {len(total_words)}개 누적)")
             time.sleep(0.05)
             
     my_bar.empty()
     
+    # 💡 수천 개의 단어를 가나다순으로 철저히 정렬하여 오리지널 S+N 로직 완벽 적용
     final_dict = sorted(list(set(total_words)))
     
+    # 만일의 사태(통신 오류)를 대비한 최후의 보루
     if len(final_dict) < 50:
-         # 비상용 단어들도 아주 일상적인 것으로 교체
          base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무"]
          final_dict = sorted(list(set(final_dict + base_dict)))
          
     return final_dict
     
-    # 5개씩 부드럽게 병렬 처리 (서버 차단 방지 및 속도 확보)
-    with ThreadPoolExecutor(max_workers=5) as executor:
-        for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
-            total_words.extend(words)
-            my_bar.progress((i + 1) / len(keywords), text=f"국립국어원에서 파편 발굴 중... (현재 {len(total_words)}개 수집)")
-            time.sleep(0.05)
-            
-    my_bar.empty()
-    
-    # 오리지널 S+N을 위한 철저한 가나다순 정렬 및 중복 제거
-    final_dict = sorted(list(set(total_words)))
-    
-    if len(final_dict) < 50:
-         base_dict = ["가방", "거울", "고독", "공백", "권태", "기억", "망각", "미학", "시체", "심연", "악의", "오브제", "육체", "잔해", "파편", "향기", "형식", "황금"]
-         final_dict = sorted(list(set(final_dict + base_dict)))
-         
-    return final_dict
-
 kiwi = load_kiwi()
 NOUN_DICT = diagnostic_load()
 
