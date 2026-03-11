@@ -46,11 +46,12 @@ st.markdown("""
         line-height: 1.6;
     }
 
-    /* 🌊 애니메이션 */
+    /* 🌊 유령의 군무 애니메이션 */
     @keyframes float {
         0% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-10px) rotate(1deg); }
+        50% { transform: translateY(-12px) rotate(1.5deg); }
         100% { transform: translateY(0px) rotate(0deg); }
+    }
     }
     .fragment-tag {
         display: inline-block; padding: 6px 12px; margin: 8px; border-radius: 2px;
