@@ -1,49 +1,69 @@
 import streamlit as st
+from kiwipiepy import Kiwi
 import requests
 import xml.etree.ElementTree as ET
 
-# 1. 페이지 설정은 무조건 최상단!
+# 1. 페이지 설정 (반드시 최상단)
 st.set_page_config(page_title="Jerboa Network Diagnostic", page_icon="🐦")
 
-st.cache_resource
+# 2. Kiwi 엔진 로드 함수 (캐싱 처리)
+@st.cache_resource
+def load_kiwi_engine():
+    try:
+        return Kiwi()
+    except Exception as e:
+        st.error(f"Kiwi 로드 실패: {e}")
+        return None
+
+# 3. 메인 진단 및 단어 로드 함수
 def diagnostic_load():
-    kiwi = get_kiwi()
-    # 이물의 취향을 저격하는 정예 단어들
+    kiwi = load_kiwi_engine() # 위에서 정의한 함수 호출
+    
+    # 이물의 안목을 위한 기본 단어 (보들레르와 초현실주의의 파편들)
     base_dict = ["심연", "권태", "알바트로스", "오브제", "해부대", "재봉틀", "초현실", "파편", "공백", "소멸"]
     
     API_KEY = "E14AAE57D9E8F2214E247F3D5953E31B"
-    
-    # 전략 변경: 검색 키워드를 여러 개로 확장해서 더 많이 긁어모으기
-    keywords = ["예술", "미술", "철학", "시", "파편"]
+    # 울리포적 확장을 위해 다양한 키워드로 낚시질을 해보자
+    keywords = ["예술", "철학", "심연", "파편", "현대"]
     total_ext_words = []
 
     try:
         for kw in keywords:
-            # target=1(우리말샘), num=100(최대 100개씩)
-            url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100"
-            res = requests.get(url, timeout=5, verify=False)
+            # num=100으로 설정해서 최대한 많이 긁어오기
+            url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include"
+            res = requests.get(url, timeout=10, verify=False)
             
             if res.status_code == 200:
                 root = ET.fromstring(res.content)
-                # 'word' 태그 안의 텍스트를 추출 (붙임표 '-' 제거)
-                items = root.findall('.//item/word')
-                total_ext_words.extend([node.text.replace('-', '') for node in items if node.text])
-
-        # 중복 제거 및 필터링
+                # XML에서 단어 텍스트만 추출
+                words = [node.text.replace('-', '') for node in root.findall('.//item/word') if node.text]
+                total_ext_words.extend(words)
+        
+        # 중복 제거 및 정렬
         final_dict = sorted(list(set(base_dict + total_ext_words)))
-        return kiwi, final_dict, f"✅ API 연동 성공! (가져온 단어: {len(total_ext_words)}개)"
+        status = f"✅ 성공! (API에서 {len(total_ext_words)}개 수혈 완료)"
+        return kiwi, final_dict, status
 
     except Exception as e:
-        return kiwi, base_dict, f"🌐 네트워크 연결 불가: {str(e)}"
+        return kiwi, base_dict, f"⚠️ 통신 장애: {str(e)} (로컬 모드)"
 
-# 실행 및 화면 표시
+# --- 실행부 ---
 kiwi, NOUN_DICT, network_status = diagnostic_load()
 
 st.title("🐦 저보아: 무한 울리포 엔진")
 
-if "✅" not in network_status:
-    st.warning(f"진단 결과: {network_status}")
-    st.info("기본 단어장으로 전환합니다.")
+# 사이드바 상태 표시
+if "✅" in network_status:
+    st.sidebar.success(network_status)
+else:
+    st.sidebar.warning(network_status)
 
-st.write(f"현재 장전된 단어: **{len(NOUN_DICT)}개**")
-st.code(NOUN_DICT[:10]) # 단어들 일부 노출해서 작동 확인
+st.write(f"현재 장전된 단어: **{len(NOUN_DICT):,}개**")
+
+# 만약 단어가 너무 적으면 경고창 띄우기
+if len(NOUN_DICT) < 50:
+    st.info("단어 공급이 원활하지 않습니다. '저보아 서클'의 창의성이 위험합니다!")
+
+# 확인용 리스트 (일부만)
+with st.expander("장전된 단어 샘플 보기"):
+    st.write(", ".join(NOUN_DICT[:50]) + " ...")
