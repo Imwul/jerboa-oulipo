@@ -3,6 +3,7 @@ from kiwipiepy import Kiwi
 import requests
 import xml.etree.ElementTree as ET
 import random
+from concurrent.futures import ThreadPoolExecutor # 병렬 처리를 위한 부품
 
 # 1. 페이지 설정
 st.set_page_config(page_title="Jerboa Network Diagnostic", page_icon="🐦")
@@ -10,12 +11,21 @@ st.set_page_config(page_title="Jerboa Network Diagnostic", page_icon="🐦")
 # 2. 엔진 시동 (Kiwi 및 데이터 로드)
 @st.cache_resource
 def load_kiwi_engine():
-    try:
-        return Kiwi()
-    except Exception as e:
-        st.error(f"Kiwi 로드 실패: {e}")
-        return None
+    return Kiwi()
 
+# 단일 API 호출을 담당하는 함수
+def fetch_words(kw, API_KEY):
+    url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include"
+    try:
+        res = requests.get(url, timeout=5, verify=False)
+        if res.status_code == 200:
+            root = ET.fromstring(res.content)
+            return [node.text.replace('-', '').replace('^', ' ') for node in root.findall('.//item/word') if node.text]
+    except:
+        return []
+    return []
+
+@st.cache_resource
 def diagnostic_load():
     kiwi = load_kiwi_engine()
     base_dict = ["심연", "권태", "알바트로스", "오브제", "해부대", "재봉틀", "초현실", "파편", "공백", "소멸"]
@@ -23,18 +33,16 @@ def diagnostic_load():
     keywords = ["오브제", "파편", "흔적", "심연", "거울", "그림자", "자동", "복제", "기계", "신체", "시선", "공백"]
     
     total_ext_words = []
-    try:
-        for kw in keywords:
-            url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include"
-            res = requests.get(url, timeout=10, verify=False)
-            if res.status_code == 200:
-                root = ET.fromstring(res.content)
-                words = [node.text.replace('-', '') for node in root.findall('.//item/word') if node.text]
-                total_ext_words.extend(words)
-        final_dict = sorted(list(set(base_dict + total_ext_words)))
-        return kiwi, final_dict, f"✅ 성공! ({len(final_dict)}개 장전)"
-    except Exception as e:
-        return kiwi, base_dict, f"⚠️ 통신 장애: {str(e)}"
+    
+    # 🚀 병렬 엔진 가동: 12개의 키워드를 동시에 요청함
+    with ThreadPoolExecutor(max_workers=8) as executor:
+        results = list(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords))
+    
+    for words in results:
+        total_ext_words.extend(words)
+        
+    final_dict = sorted(list(set(base_dict + total_ext_words)))
+    return kiwi, final_dict, f"✅ 초고속 로드 완료! ({len(final_dict)}개)"
 
 # 데이터 불러오기
 kiwi, NOUN_DICT, network_status = diagnostic_load()
