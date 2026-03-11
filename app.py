@@ -76,22 +76,22 @@ def load_kiwi():
     return Kiwi()
 
 def fetch_words(kw, API_KEY):
-    # 💡 완벽한 규범의 성전: 표준국어대사전(stdict) API로 주소 변경
-    url = f"https://stdict.korean.go.kr/api/search.do?key={API_KEY}&q={kw}&req_type=xml&num=100&advanced=y&method=include&pos=1"
+    # 💡 완벽한 규범의 성전: 한국어기초사전(krdict) API로 주소 변경 완료!
+    url = f"https://krdict.korean.go.kr/api/search?key={API_KEY}&q={kw}&part=word&num=100&advanced=y&method=include&pos=1"
     try:
         res = requests.get(url, timeout=5, verify=False)
         if res.status_code == 200:
             root = ET.fromstring(res.content)
             clean_words = []
             
-            # 표준국어대사전의 XML 구조에 맞춘 해부
+            # 한국어기초사전은 이미 정제되어 있으므로, 글자수와 한글 여부만 깐깐하게 체크!
             for item in root.findall('.//item'):
                 word_node = item.find('.//word')
                 if word_node is None or not word_node.text: continue
                 
                 w = word_node.text.replace('-', '').replace('^', '')
                 
-                # 이미 표준어만 있으므로 복잡한 태그 검사 없이 형태만 통제 (2~3글자, 순수 한글)
+                # 💡 2~3글자, 띄어쓰기 없음, 완벽한 한글
                 if 2 <= len(w) <= 3 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w):
                     clean_words.append(w)
                     
@@ -102,10 +102,10 @@ def fetch_words(kw, API_KEY):
 
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
-    # 🚨 이물! 여기에 새로 발급받은 '표준국어대사전 API 키'를 넣어야 해!
-    API_KEY = "여기에_새로운_키를_넣어줘" 
+    # 💡 이물이 발급받은 새로운 한국어기초사전 API 키 장착!
+    API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
     
-    # 56개의 기초 음절 폭격 (그대로 유지)
+    # 의미 궤도를 벗어난 순수 음절 폭격 (56개)
     keywords = [
         "가", "고", "구", "기", "나", "노", "누", "니", "다", "도", "두", "디",
         "라", "로", "루", "리", "마", "모", "무", "미", "바", "보", "부", "비",
@@ -115,7 +115,7 @@ def diagnostic_load():
     ]
     
     total_words = []
-    my_bar = st.progress(0, text="표준국어대사전의 심연에서 가장 순수한 명사를 채굴하는 중...")
+    my_bar = st.progress(0, text="한국어기초사전의 심연에서 가장 순수하고 일상적인 명사를 채굴하는 중...")
     
     with ThreadPoolExecutor(max_workers=5) as executor:
         for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
@@ -125,6 +125,7 @@ def diagnostic_load():
             
     my_bar.empty()
     
+    # 가나다순 완벽 정렬 (오리지널 S+N의 절대 규칙)
     final_dict = sorted(list(set(total_words)))
     
     if len(final_dict) < 50:
@@ -138,7 +139,7 @@ NOUN_DICT = diagnostic_load()
 
 # --- UI 레이아웃 ---
 st.title("🐦 저보아: 무한 울리포 엔진")
-st.caption(f"국립국어원에서 추출한 {len(NOUN_DICT):,}개의 순수 명사(표준 고유어/한자어)가 가나다순으로 장전되었습니다.")
+st.caption(f"한국어기초사전에서 추출한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
 
 st.subheader("⚙️ 예술적 통제판")
 col1, col2, col3 = st.columns(3)
