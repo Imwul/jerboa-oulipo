@@ -15,10 +15,13 @@ st.markdown("""
     [data-testid="stAppViewContainer"], .stApp { background-color: #FFFFFF !important; }
 
     /* 폰트 4종을 앱이 켜질 때 한 번에 모두 로드 */
-    @font-face { font-family: 'Eulyoo1945-Regular'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff'); }
+    @font-face { font-family: 'Eulyoo1945'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff'); }
     @font-face { font-family: 'GmarketSans'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); }
     @font-face { font-family: 'KyoboHandwriting'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); }
     @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
+
+    /* 전체 기본 폰트는 명조체로 하되, 강제 덮어쓰기(!important)는 제거하여 충돌 방지 */
+    html, body, [class*="st-"] { font-family: 'Eulyoo1945', serif; color: #000000; }
 
     h1 {
         font-family: 'Trattatello', 'Apple Chancery', 'Chalkduster', cursive !important;
@@ -26,21 +29,19 @@ st.markdown("""
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
     }
 
-    /* '*' 대신 특정 태그들을 지정하여 인라인 스타일 폰트가 먹히도록 수정 */
-    html, body, [class*="st-"], textarea, input, button { 
-        font-family: 'Eulyoo1945-Regular', serif !important; 
-        color: #000000 !important; 
-    }
-
-    textarea, input[type="text"] {
-        background-color: #111111 !important; color: #FFFFFF !important;
-        border: 2px solid #000000 !important; caret-color: #FFFFFF !important;
+    /* 해부대(입력창) 텍스트를 강제로 하얀색으로 픽스 */
+    .stTextArea textarea, .stTextInput input {
+        background-color: #111111 !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        border: 2px solid #000000 !important;
+        caret-color: #FFFFFF !important;
         font-size: 1.1rem !important;
     }
     
     .instruction-box {
         background-color: #F9F9F9; padding: 18px; border-left: 5px solid #000000;
-        margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem;
+        margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem; color: #000000;
     }
 
     @keyframes float {
@@ -52,9 +53,10 @@ st.markdown("""
     .fragment-tag {
         display: inline-block; padding: 8px 16px; margin: 10px; border-radius: 2px;
         border: 1px solid #000000; animation: float 5s ease-in-out infinite;
-        font-weight: bold; cursor: default;
+        font-weight: bold; cursor: default; color: #000000;
     }
 
+    /* 버튼 스타일 */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button { 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
@@ -92,7 +94,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 ])
 
 # ==========================================
-# TAB 1: 기존 Oulipo Engine (S+N)
+# TAB 1: Oulipo Engine (S+N)
 # ==========================================
 with tab1:
     st.markdown("<div class='instruction-box'><b>[S+N 치환]</b> 명사를 사전의 N번째 뒤 단어로 교체합니다. &lt;단어&gt;로 성역을 보호하세요.</div>", unsafe_allow_html=True)
@@ -133,7 +135,7 @@ with tab1:
         if user_input:
             lines = user_input.split('\n')
             st.subheader("🖼️ Resulting Fragment")
-            html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
+            html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; color: #000000; white-space: pre-wrap;">'
             for line in lines:
                 if not line.strip():
                     html_res += '\n'
@@ -150,7 +152,7 @@ with tab1:
             st.markdown(html_res, unsafe_allow_html=True)
 
 # ==========================================
-# TAB 2: The Dissector (커스텀 캔버스 로직)
+# TAB 2: The Dissector (마그넷)
 # ==========================================
 with tab2:
     st.markdown("""
@@ -176,11 +178,7 @@ with tab2:
             <html>
             <head>
             <style>
-                @font-face {{
-                    font-family: 'Eulyoo1945-Regular';
-                    src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
-                }}
-                body {{ font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }}
+                body {{ font-family: 'Eulyoo1945', serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }}
                 #toolbar {{ background: #000; padding: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }}
                 .tool-btn {{ background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }}
                 .tool-btn.active-knife {{ background: #ff4d4d; color: #fff; border-color: #ff4d4d; }}
@@ -188,7 +186,7 @@ with tab2:
                 #shuffleBtn {{ background: #ffe3b3; color: #000; border-color: #ffe3b3; }}
                 #shuffleBtn:active {{ transform: scale(0.95); }}
                 #canvas-area {{ width: 100%; height: 650px; background: #fafafa; position: relative; border: 3px solid #000; border-top: none; cursor: default; overflow: hidden; }}
-                .magnet {{ position: absolute; border: 2px solid #000; padding: 0; display: flex; font-size: 1.4rem; font-weight: bold; cursor: grab; white-space: nowrap; box-shadow: 4px 4px 0px #000; transition: transform 0.1s, box-shadow 0.2s; background: transparent; }}
+                .magnet {{ position: absolute; border: 2px solid #000; padding: 0; display: flex; font-size: 1.4rem; font-weight: bold; cursor: grab; white-space: nowrap; box-shadow: 4px 4px 0px #000; transition: transform 0.1s, box-shadow 0.2s; background: transparent; color: #000; }}
                 .magnet:active {{ cursor: grabbing; transform: scale(1.05); z-index: 1000 !important; }}
                 .char {{ display: inline-block; padding: 6px 3px; transition: color 0.2s; }}
                 .char:first-child {{ padding-left: 8px; }}
@@ -304,7 +302,7 @@ with tab2:
             components.html(custom_html_2, height=750)
 
 # ==========================================
-# TAB 3: The Automaton (무의식의 방 & 불타는 캔버스)
+# TAB 3: The Automaton (무의식의 방 & 불타는 캔버스 - 롤백 완료)
 # ==========================================
 with tab3:
     st.markdown("""
@@ -321,41 +319,20 @@ with tab3:
     <html>
     <head>
     <style>
-        @font-face {
-            font-family: 'Eulyoo1945-Regular';
-            src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
-        }
-        body { font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 0; background: #fafafa; user-select: none; }
-        
+        body { font-family: 'Eulyoo1945', serif; margin: 0; padding: 0; background: #fafafa; user-select: none; }
         #progress-container { width: 100%; height: 8px; background: #ddd; }
         #progress-bar { width: 100%; height: 100%; background: #000; transition: width 0.1s linear, background 1s ease; }
         .danger #progress-bar { background: #ff4d4d; }
-        
-        #editor-wrapper { 
-            position: relative; width: 100%; height: 500px; 
-            border: 3px solid #000; box-shadow: 4px 4px 0px #000; 
-            background: transparent; box-sizing: border-box; overflow: hidden;
-        }
-        
-        textarea, #overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            padding: 20px; box-sizing: border-box; margin: 0;
-            font-family: 'Eulyoo1945-Regular', serif; font-size: 1.5rem; line-height: 1.8; 
-            border: none; outline: none; background: transparent;
-            white-space: pre-wrap; word-wrap: break-word; overflow-y: auto;
-        }
-        
+        #editor-wrapper { position: relative; width: 100%; height: 500px; border: 3px solid #000; box-shadow: 4px 4px 0px #000; background: transparent; box-sizing: border-box; overflow: hidden; }
+        textarea, #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; margin: 0; font-family: 'Eulyoo1945', serif; font-size: 1.5rem; line-height: 1.8; border: none; outline: none; background: transparent; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; }
         textarea { color: #000; resize: none; z-index: 2; cursor: text; }
         #overlay { color: transparent; z-index: 1; pointer-events: none; }
-        
         .burning-text { display: inline-block; animation: burnTextOnly 1.5s forwards ease-in; }
-        
         @keyframes burnTextOnly {
             0% { color: #ff4d4d; text-shadow: 0 0 0px #ff0000; filter: blur(0px); opacity: 1; transform: translateY(0px); }
             40% { color: #ff3333; text-shadow: 0 -3px 8px #ff9900; filter: blur(2px); transform: translateY(-2px); }
             100% { color: transparent; text-shadow: 0 -15px 25px #ff0000; filter: blur(6px); opacity: 0; transform: translateY(-8px); }
         }
-        
         #bs-warning { position: absolute; top: 20px; right: 20px; color: #ff4d4d; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
     </style>
     </head>
@@ -366,44 +343,26 @@ with tab3:
             <textarea id="auto-text" placeholder="의식의 검열을 멈추고 쏟아내세요. 5초 뒤 최근 쓴 단어들이 불탑니다..."></textarea>
             <div id="bs-warning">이성이 저항합니다! 연타하세요!</div>
         </div>
-
         <script>
             const textarea = document.getElementById('auto-text');
             const overlay = document.getElementById('overlay');
             const progressBar = document.getElementById('progress-bar');
             const bsWarning = document.getElementById('bs-warning');
             
-            const TIME_LIMIT = 5000; // 5초
-            let timerInterval;
-            let timeRemaining = TIME_LIMIT;
-            let isBurning = false;
-            
-            let bsCount = 0;
-            let bsRequired = Math.floor(Math.random() * 3) + 3;
+            const TIME_LIMIT = 5000; let timerInterval; let timeRemaining = TIME_LIMIT; let isBurning = false;
+            let bsCount = 0; let bsRequired = Math.floor(Math.random() * 3) + 3;
 
             function startTimer() {
-                clearInterval(timerInterval);
-                timeRemaining = TIME_LIMIT;
-                isBurning = false;
-                
+                clearInterval(timerInterval); timeRemaining = TIME_LIMIT; isBurning = false;
                 document.getElementById('progress-container').classList.remove('danger');
                 progressBar.style.width = '100%';
 
                 timerInterval = setInterval(() => {
                     if(textarea.value.trim() === '') return; 
-
                     timeRemaining -= 100;
-                    const percentage = (timeRemaining / TIME_LIMIT) * 100;
-                    progressBar.style.width = percentage + '%';
-
-                    if (timeRemaining <= 2000) {
-                        document.getElementById('progress-container').classList.add('danger');
-                    }
-
-                    if (timeRemaining <= 0) {
-                        clearInterval(timerInterval);
-                        triggerPartialBurn();
-                    }
+                    progressBar.style.width = ((timeRemaining / TIME_LIMIT) * 100) + '%';
+                    if (timeRemaining <= 2000) document.getElementById('progress-container').classList.add('danger');
+                    if (timeRemaining <= 0) { clearInterval(timerInterval); triggerPartialBurn(); }
                 }, 100);
             }
 
@@ -413,7 +372,6 @@ with tab3:
                 
                 const val = textarea.value;
                 const numToDelete = Math.floor(Math.random() * 3) + 3; 
-                
                 let wordCount = 0; let splitIndex = 0; let inWord = false;
                 
                 for(let i = val.length - 1; i >= 0; i--) {
@@ -427,30 +385,17 @@ with tab3:
                 
                 overlay.innerHTML = `<span style="color: #000;">${escapeHTML(safePart)}</span><span class="burning-text">${escapeHTML(burningPart)}</span>`;
                 overlay.scrollTop = textarea.scrollTop; 
-                
-                textarea.style.color = 'transparent'; 
-                textarea.disabled = true; 
+                textarea.style.color = 'transparent'; textarea.disabled = true; 
                 
                 setTimeout(() => {
-                    textarea.value = safePart;
-                    textarea.style.color = '#000';
-                    textarea.disabled = false;
-                    overlay.innerHTML = '';
-                    
-                    progressBar.style.width = '100%';
-                    document.getElementById('progress-container').classList.remove('danger');
-                    isBurning = false;
-                    textarea.focus();
-                    
+                    textarea.value = safePart; textarea.style.color = '#000'; textarea.disabled = false; overlay.innerHTML = '';
+                    progressBar.style.width = '100%'; document.getElementById('progress-container').classList.remove('danger');
+                    isBurning = false; textarea.focus();
                     if(textarea.value.trim() !== '') startTimer();
                 }, 1500);
             }
 
-            textarea.addEventListener('input', () => {
-                if (textarea.composing) { clearInterval(timerInterval); return; }
-                if(!isBurning) startTimer();
-            });
-
+            textarea.addEventListener('input', () => { if (textarea.composing) { clearInterval(timerInterval); return; } if(!isBurning) startTimer(); });
             textarea.addEventListener('compositionstart', () => { textarea.composing = true; clearInterval(timerInterval); });
             textarea.addEventListener('compositionend', () => { textarea.composing = false; if(!isBurning) startTimer(); });
             textarea.addEventListener('scroll', () => { overlay.scrollTop = textarea.scrollTop; });
@@ -459,13 +404,11 @@ with tab3:
                 if (isBurning) { e.preventDefault(); return; }
                 if (e.key === 'Backspace') {
                     if (textarea.composing) return;
-                    bsWarning.style.opacity = '1';
-                    setTimeout(() => bsWarning.style.opacity = '0', 500);
+                    bsWarning.style.opacity = '1'; setTimeout(() => bsWarning.style.opacity = '0', 500);
                     bsCount++;
                     if (bsCount < bsRequired) { e.preventDefault(); } else { bsCount = 0; bsRequired = Math.floor(Math.random() * 3) + 3; }
                 } else {
-                    bsWarning.style.opacity = '0';
-                    if(!isBurning) startTimer();
+                    bsWarning.style.opacity = '0'; if(!isBurning) startTimer();
                 }
             });
         </script>
@@ -498,11 +441,10 @@ with tab4:
         <html>
         <head>
         <style>
-            @font-face {{ font-family: 'Eulyoo1945-Regular'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff'); }}
-            body {{ font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 20px; background: #fafafa; user-select: none; }}
+            body {{ font-family: 'Eulyoo1945', serif; margin: 0; padding: 20px; background: #fafafa; user-select: none; }}
             #canvas {{ width: 100%; min-height: 400px; border: 3px solid #000; padding: 30px; line-height: 2.5; font-size: 1.6rem; background: #fff; box-shadow: 4px 4px 0px #000; box-sizing: border-box; }}
-            .word {{ display: inline-block; padding: 2px 6px; margin: 0 4px; cursor: pointer; transition: background-color 0.2s, color 0.2s; border-radius: 2px; }}
-            .blackout {{ background-color: #000; color: #000; text-shadow: none; user-select: none; }}
+            .word {{ display: inline-block; padding: 2px 6px; margin: 0 4px; cursor: pointer; transition: background-color 0.2s, color 0.2s; border-radius: 2px; color: #000; }}
+            .blackout {{ background-color: #000; color: #000 !important; text-shadow: none; user-select: none; }}
             .word:hover:not(.blackout) {{ background-color: #eee; }}
         </style>
         </head>
@@ -543,17 +485,14 @@ with tab5:
     if 'corpse_lines' not in st.session_state:
         st.session_state.corpse_lines = []
 
-    # 현재 상태 보여주기 (마지막 3어절 노출 로직 수정)
     if st.session_state.corpse_lines:
         last_line = st.session_state.corpse_lines[-1]
         words_in_line = last_line.split()
-        # 3어절보다 길면 뒤의 3개만, 짧으면 전체 라인을 보여줌
         last_words = " ".join(words_in_line[-3:]) if len(words_in_line) >= 3 else last_line
         st.markdown(f"<h3 style='text-align: center; color: #ff4d4d !important; margin: 30px 0;'>... {last_words}</h3>", unsafe_allow_html=True)
     else:
         st.markdown("<h3 style='text-align: center; margin: 30px 0;'>첫 문장을 입력해 의식을 시작하세요.</h3>", unsafe_allow_html=True)
 
-    # 입력 폼
     with st.form(key='corpse_form', clear_on_submit=True):
         new_line = st.text_input("다음 문장 이어쓰기:", placeholder="무의식이 이끄는 대로 적으세요...")
         submit_btn = st.form_submit_button("✒️ 종이 접어 넘기기")
@@ -562,13 +501,12 @@ with tab5:
             st.session_state.corpse_lines.append(new_line.strip())
             st.rerun()
 
-    # 결과 확인 및 초기화
     c1, c2 = st.columns(2)
     if c1.button("📜 종이 모두 펼치기 (결과 확인)"):
         if st.session_state.corpse_lines:
             st.divider()
             st.subheader("🖼️ Cadavre Exquis (완성된 시체)")
-            poem_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; line-height: 2.2; font-size: 1.3rem;'>"
+            poem_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.2; font-size: 1.3rem;'>"
             for line in st.session_state.corpse_lines:
                 poem_html += f"{line}<br>"
             poem_html += "</div>"
@@ -580,9 +518,8 @@ with tab5:
         st.session_state.corpse_lines = []
         st.rerun()
 
-
 # ==========================================
-# TAB 6: The Babel Glitch (바벨의 균열 - 오독의 시학)
+# TAB 6: The Babel Glitch (폰트 믹스 & 실시간 슬라이더 수정 완료)
 # ==========================================
 with tab6:
     st.markdown("""
@@ -598,11 +535,11 @@ with tab6:
     SURREAL_NOUNS = ["침묵", "기하학", "고깃덩어리", "균열", "환상지", "잔해", "태엽", "미궁", "백색소음", "이물질", "심연", "파편", "얼룩", "구토"]
     WEIRD_ADVERBS = ["기계적으로", "불쾌하게", "영원히", "느닷없이", "집요하게", "증발하듯", "조각조각", "발작적으로"]
     WEIRD_PARTICLES = ["에게로써", "마저도", "조차", "의 곁에서", "를 향한", "치고는", "너머로"]
-    WEIRD_ENDINGS = ["었도다", "리라", "느냐", "ㄹ으며", "ㄷ으며", "나이다", "겠지", "련만"]
-    GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " ???? ", " ░▒▓ ", " // ", " ༒ ", " 🜂 ", " 내가 그렇게 싫어? "]
+    WEIRD_ENDINGS = ["었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지", "련만"]
+    GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // "]
     
-   # CSS에 등록된 정확한 폰트 이름들
-    MIX_FONTS = ["Eulyoo1945-Regular", "GmarketSans", "KyoboHandwriting", "DungGeunMo"]
+    # CSS에 등록한 폰트 이름 정확하게 지정 (따옴표 제거)
+    MIX_FONTS = ["Eulyoo1945", "GmarketSans", "KyoboHandwriting", "DungGeunMo"]
 
     if 'babel_raw_output' not in st.session_state:
         st.session_state.babel_raw_output = ""
@@ -638,7 +575,6 @@ with tab6:
             
             st.session_state.babel_raw_output = final_text
 
-    # 결과물이 있을 때만 렌더링
     if st.session_state.babel_raw_output:
         st.divider()
         st.subheader("👁️ 시각적 변형 제어")
@@ -648,23 +584,24 @@ with tab6:
 
         styled_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000 !important; line-height: 2.5; word-wrap: break-word; white-space: pre-wrap;'>"
         
-        # 글자별로 폰트를 강제로 먹임
         for char in st.session_state.babel_raw_output:
             if char == ' ': 
                 styled_html += '&nbsp;'
             else:
                 fs = 1.4 + random.uniform(-babel_bumpy, babel_bumpy)
                 rot = random.uniform(-babel_tilt, babel_tilt)
-                # 35% 확률로 명조체 외의 기괴한 폰트로 바뀜
                 font_choice = random.choice(MIX_FONTS) if random.random() > 0.65 else MIX_FONTS[0]
                 
-                styled_html += f'<span style="font-family: \'{font_choice}\' !important; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
+                # 강제로 인라인 스타일 부여
+                styled_html += f'<span style="font-family: {font_choice} !important; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
         
         styled_html += "</div>"
         
         st.subheader("👁️ 오독의 캔버스")
         st.markdown(styled_html, unsafe_allow_html=True)
-        
+
+st.divider()
+
 # --- 하단 🏺 따로 움직이는 파편들 (공통) ---
 st.subheader("🏺 사전의 파편들")
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
