@@ -19,19 +19,27 @@ st.markdown("""
         src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
     }
 
-    /* ❗ 제목(h1)만 Trattatello 적용 */
+    /* ❗ 제목(h1) 전용: Trattatello (쉼표 오류 수정 및 폴백 추가) */
     h1 {
-        font-family: 'Trattatello', !important;
-        font-size: 3.5rem !important;
+        font-family: 'Trattatello', 'Apple Chancery', 'Chalkduster', cursive !important;
+        font-size: 3.8rem !important;
         color: #000000 !important;
         text-align: center;
-        margin-bottom: 0.5rem !important;
+        margin-bottom: 1.5rem !important;
+        padding-top: 1rem !important;
     }
 
-    /* ❗ 그 외 모든 본문 폰트 설정 */
+    /* ❗ 그 외 모든 본문 및 요소: 을유1945 고정 */
     * { 
         font-family: 'Eulyoo1945-Regular', serif !important; 
         color: #000000 !important; 
+    }
+    
+    /* 📱 모바일 대응 */
+    @media (max-width: 768px) {
+        h1 { font-size: 2.2rem !important; }
+        .fragment-tag { padding: 4px 8px !important; margin: 4px !important; font-size: 0.8rem !important; }
+    }
     }
     
     /* 📱 모바일 대응 */
@@ -154,7 +162,7 @@ def transform_with_logic(line, shift, prob):
             
     return "".join(line_result)
 
-if st.button("✨ EXECUTE TRANSFORMATION"):
+if st.button("✨ 문장 재단하기"):
     if user_input:
         lines = user_input.split('\n')
         st.subheader("🖼️ Resulting Fragment")
@@ -179,7 +187,7 @@ if st.button("✨ EXECUTE TRANSFORMATION"):
 st.divider()
 
 # --- 5. 🏺 따로 움직이는 파편들 ---
-st.subheader("🏺 Lexical Fragments")
+st.subheader("🏺 사전의 파편들")
 washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
 
