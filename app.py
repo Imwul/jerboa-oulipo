@@ -53,27 +53,44 @@ html, body, [class*="css"], h1, h2, h3, h4, h5, h6, p, span, div, label {
 """, unsafe_allow_html=True)
 
 # --- 엔진 부품 ---
-@st.cache_resource
-def load_kiwi():
-    return Kiwi()
-
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
-    # 💡 이물의 초기 아이디어 복원: 가장 안정적이고 방대한 단일 명사 리스트 한 번에 당겨오기
+    # 💡 최후의 보루 (비상용 단어장)
+    base_dict = [
+        "가방", "거울", "고독", "공백", "권태", "기억", "망각", "미학", 
+        "시체", "심연", "악의", "오브제", "육체", "잔해", "파편", "향기", 
+        "형식", "황금", "시간", "공간", "존재", "허무", "환상", "몽상"
+    ]
+    
+    # 한국어 명사 리스트 깃허브 주소
     url = "https://raw.githubusercontent.com/naver/korean-wordlist/master/nouns.txt"
+    
+    raw_words = []
     try:
         res = requests.get(url, timeout=5, verify=False)
-        raw_words = res.text.split('\n')
+        # 💡 방어막 1: 서버가 '정상(200)' 응답을 줄 때만 텍스트를 읽음
+        if res.status_code == 200:
+            raw_words = res.text.split('\n')
+        else:
+            raw_words = base_dict
     except:
-        raw_words = ["가방", "거울", "고독", "공백", "권태", "기억", "망각", "미학", "시체", "심연", "악의", "오브제", "육체", "잔해", "파편", "향기", "형식", "황금"]
+        raw_words = base_dict
 
     clean_words = []
     for w in raw_words:
         w = w.strip()
-        # 북한어, 복합명사 아웃: 띄어쓰기 없고, 순수 한글이며, 2~4글자인 명사만 허용
-        if 2 <= len(w) <= 4 and w.isalpha() and ' ' not in w:
-            clean_words.append(w)
-            
+        # 💡 방어막 2: 철저한 필터링 (띄어쓰기 없고, 2~4글자)
+        if 2 <= len(w) <= 4 and ' ' not in w:
+            # 영어 404 에러 메시지가 섞이는 걸 막기 위해, 완벽한 '한글(가-힣)'만 허용
+            if all(ord('가') <= ord(char) <= ord('힣') for char in w):
+                clean_words.append(w)
+                
+    # 💡 방어막 3: 만약 통신 오류로 필터링된 단어가 10개도 안 남았다면 비상 식량 투입
+    if len(clean_words) < 10:
+        clean_words = base_dict
+        
+    final_dict = sorted(list(set(clean_words)))
+    return final_dict
     # 완벽한 오리지널 S+7을 위해 '가나다순'으로 철저히 정렬
     final_dict = sorted(list(set(clean_words)))
     return final_dict
