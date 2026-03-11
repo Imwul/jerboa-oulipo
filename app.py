@@ -85,9 +85,19 @@ def fetch_words(kw, API_KEY):
         if res.status_code == 200:
             root = ET.fromstring(res.content)
             clean_words = []
-            for word_node in root.findall('.//word'):
-                if word_node is None or not word_node.text: continue
-                w = word_node.text.replace('-', '').replace('^', '').strip()
+            
+            for item in root.findall('.//item'):
+                # 💡 KCISA 규격: 'word'가 아니라 'title' 태그 안에 단어가 있음!
+                title_node = item.find('.//title')
+                if title_node is None or not title_node.text:
+                    title_node = item.find('.//word') # 혹시 몰라 word도 체크
+                    if title_node is None or not title_node.text: continue
+                
+                # '단어명 (부제)' 형태로 올 수 있으니 괄호 앞부분만 추출
+                w = title_node.text.split('(')[0].strip()
+                w = w.replace('-', '').replace('^', '')
+                
+                # 2~4글자, 띄어쓰기 없음, 완벽한 한글
                 if 2 <= len(w) <= 4 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w):
                     clean_words.append(w)
             return clean_words
@@ -115,7 +125,7 @@ def diagnostic_load():
     final_dict = sorted(list(set(total_words)))
     status = "success"
     
-    # 💡 최후의 보루: 아름답고 기괴한 100개의 수동 단어장 (절대 1단어로 수렴하지 않음)
+    # 80개의 아름다운 초현실주의 비상 단어장
     base_dict = [
         "거울", "파편", "심연", "공백", "권태", "기억", "망각", "미학", "시체", "악의",
         "오브제", "육체", "잔해", "향기", "형식", "황금", "시간", "공간", "존재", "허무",
@@ -134,7 +144,6 @@ def diagnostic_load():
              res = requests.get(fallback_url, timeout=5)
              if res.status_code == 200:
                  fallback_words = res.text.split('\n')
-                 # 🚨 한글 필터 완벽 적용! 1단어 에러 원천 차단
                  clean_fallback = [w.strip() for w in fallback_words if 2 <= len(w.strip()) <= 4 and all(ord('가') <= ord(c) <= ord('힣') for c in w.strip())]
                  if len(clean_fallback) > 50:
                      final_dict = sorted(list(set(clean_fallback)))
