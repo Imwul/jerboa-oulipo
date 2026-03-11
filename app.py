@@ -96,14 +96,16 @@ st.title("Jerboa Circle: The Oulipo Engine")
 
 st.markdown("""
 <div class="instruction-box">
-    <b>[Engine Operation Guide]</b><br>
-    - <b>Crucible:</b> 문장을 입력하세요. <b>줄 바꿈</b>과 <b>공백</b>은 수호됩니다.<br>
-    - <b>Sanctuary:</b> 보호할 단어는 <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 보호하세요. 전후 공백이 보존됩니다.<br>
-    - <b>Probability:</b> 모든 명사를 바꿀지, 일부만 치환할지 확률을 조절하세요.
+    <b>[울리포 엔진 가동 지침]</b><br>
+    - <b>해부대:</b> 문장을 입력하세요. <b>줄 바꿈</b>과 <b>단어 사이의 여백</b>은 엄격히 보존됩니다.<br>
+    - <b>S+N 거리:</b> 사전 속에서 명사를 찾아, N번째 뒤의 단어로 치환합니다.
+    - <b>성역 보호:</b> <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싼 부분은 변하지 않는 '성역'이 됩니다. 조사와 함께 감싸면 더 안전히 보호할 수 있습니다.<br>
+    - <b>변환 확률:</b> 문장 속 모든 명사를 바꿀지, 일부만 무작위로 치환할지 결정합니다.<br>
+    - <b>활자의 파동:</b> 진동과 비틀림을 조절하여 문장에 시각적 불안감을 부여하세요.
 </div>
 """, unsafe_allow_html=True)
 
-user_input = st.text_area("해부대(Crucible)", placeholder="여기에 문장을 넣으세요. <나>는 <심연>을 보았다.", height=200)
+user_input = st.text_area("해부대", placeholder="문장을 해부대에 올리세요. <나>는 <심연>을 보았다.", height=200)
 
 # 제어판
 col1, col2 = st.columns(2)
