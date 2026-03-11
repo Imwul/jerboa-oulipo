@@ -160,7 +160,6 @@ with tab2:
         - <b>🧲 마그넷:</b> 자유롭게 드래그하여 배치합니다. 뿌리가 같은 파편은 색상을 공유합니다.<br>
         - <b>🔪 칼 툴:</b> 켜진 상태로 마그넷의 <b>글자를 클릭</b>하면, 그 위치에서 텍스트가 잘려나갑니다.<br>
         - <b>🧴 풀 툴:</b> 켜진 상태로 두 마그넷을 순서대로 클릭하면 하나의 파편으로 다시 붙습니다.<br>
-        - <b>🔄 되돌리기:</b> 키보드 <b>[Ctrl + Z]</b>를 누르면 이전 상태로 돌아갑니다.
     </div>
     """, unsafe_allow_html=True)
 
@@ -224,7 +223,6 @@ with tab2:
                 <div id="toolbar">
                     <button id="knifeToggle" class="tool-btn">🔪 칼 툴 (Off)</button>
                     <button id="glueToggle" class="tool-btn">🧴 풀 툴 (Off)</button>
-                    <span style="color:#fff; font-size:0.9rem; margin-left:15px;">※ 되돌리기: Ctrl+Z</span>
                 </div>
                 <div id="canvas-area"></div>
 
