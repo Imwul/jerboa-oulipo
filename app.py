@@ -129,4 +129,122 @@ def diagnostic_load():
     
     if len(final_dict) < 50:
          status = "fallback"
-         fallback_url = "https://
+         fallback_url = "https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/korean.txt"
+         try:
+             res = requests.get(fallback_url, timeout=5)
+             if res.status_code == 200:
+                 fallback_words = res.text.split('\n')
+                 # 🚨 한글 필터 완벽 적용! 1단어 에러 원천 차단
+                 clean_fallback = [w.strip() for w in fallback_words if 2 <= len(w.strip()) <= 4 and all(ord('가') <= ord(c) <= ord('힣') for c in w.strip())]
+                 if len(clean_fallback) > 50:
+                     final_dict = sorted(list(set(clean_fallback)))
+                 else:
+                     final_dict = sorted(list(set(base_dict)))
+             else:
+                 final_dict = sorted(list(set(base_dict)))
+         except:
+             final_dict = sorted(list(set(base_dict)))
+             
+    return final_dict, status
+
+# --- 엔진 시동 ---
+kiwi = load_kiwi()
+
+with st.spinner("사전의 심연을 탐색하는 중..."):
+    NOUN_DICT, load_status = diagnostic_load()
+
+if load_status == "fallback":
+    st.toast("⚠️ KCISA 방화벽 차단! 비상 단어장으로 안전하게 우회 가동했어.", icon="🛡️")
+
+# --- 4. 사용자 인터페이스 (UI) ---
+st.title("🐦 저보아: 무한 울리포 엔진")
+st.caption(f"정제된 사전을 통과한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
+
+st.subheader("⚙️ 예술적 통제판")
+col1, col2, col3 = st.columns(3)
+with col1:
+    shift_val = st.slider("사전 변조 거리 (S+N)", min_value=1, max_value=50, value=7)
+with col2:
+    bumpy_level = st.slider("활자의 진동 (크기)", min_value=0.0, max_value=0.8, value=0.2, step=0.05)
+with col3:
+    tilt_level = st.slider("활자의 비틀림 (각도)", min_value=0, max_value=30, value=5, step=1)
+
+user_input = st.text_area("해부대에 올릴 문장을 입력해.", placeholder="나는 오늘 공원에서 사과를 먹었다.")
+
+# --- 5. 문장 해부 및 재조립 (로직) ---
+def transform_engine(text, dictionary, shift):
+    if not text.strip(): return "입력된 공백."
+    tokens = kiwi.tokenize(text)
+    result = []
+    dict_len = len(dictionary)
+    
+    for t in tokens:
+        if t.tag.startswith('N'):
+            if t.form in dictionary:
+                idx = (dictionary.index(t.form) + shift) % dict_len
+                new_word = dictionary[idx]
+            else:
+                random.seed(hash(t.form))
+                idx = (random.randint(0, dict_len - 1) + shift) % dict_len
+                new_word = dictionary[idx]
+            result.append((new_word, 'NNG'))
+        else:
+            result.append((t.form, t.tag))
+    return kiwi.join(result)
+
+def render_bumpy_text(text, b_level, t_level):
+    html = '<div style="line-height: 2.5; word-wrap: break-word;">'
+    for char in text:
+        if char == ' ':
+            html += '&nbsp;'
+            continue
+        fs = 1.3 + random.uniform(-b_level, b_level)
+        tilt = random.uniform(-t_level, t_level)
+        html += f'<span style="font-size: {fs}rem; transform: rotate({tilt}deg); display:inline-block; transition: all 0.2s; font-weight: bold;">{char}</span>'
+    html += '</div>'
+    return html
+
+# --- 6. 출력 및 아카이빙 ---
+if st.button("✨ 문장 재단 및 아카이빙"):
+    if user_input:
+        transformed = transform_engine(user_input, NOUN_DICT, shift_val)
+        st.session_state.archive.append((user_input, transformed))
+        
+        st.subheader("🖼️ 변환된 결과")
+        st.markdown(render_bumpy_text(transformed, bumpy_level, tilt_level), unsafe_allow_html=True)
+    else:
+        st.warning("문장을 먼저 입력해야 해.")
+
+st.divider()
+
+col_log1, col_log2 = st.columns([4, 1])
+with col_log1:
+    st.subheader("📜 과거의 흔적 (공동 시집)")
+with col_log2:
+    if st.button("🗑️ 로그 전체 삭제"):
+        st.session_state.archive = []
+        st.rerun()
+
+if st.session_state.archive:
+    for orig, trans in reversed(st.session_state.archive):
+        st.markdown(f"<span style='color:#777777; font-size:0.9rem;'>{orig}</span><br><b style='color:#111111; font-size:1.1rem;'>{trans}</b>", unsafe_allow_html=True)
+        st.caption("---")
+else:
+    st.info("아직 쌓인 흔적이 없어.")
+
+st.divider()
+
+# --- 7. 시각화: 떠다니는 파편들 ---
+st.subheader(f"🏺 {len(NOUN_DICT):,}개의 파편들 중 일부")
+
+visual_samples = random.sample(NOUN_DICT, min(70, len(NOUN_DICT)))
+washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
+
+html_tags = ""
+for w in visual_samples:
+    color = random.choice(washed_colors)
+    font_size = 0.8 + (len(w) * 0.15)
+    anim_delay = random.uniform(0, 3)
+    html_tags += f'<span class="fragment-tag" style="background-color:{color}; font-size:{font_size}rem; animation: float 4s ease-in-out infinite; animation-delay: {anim_delay}s;">{w}</span>'
+
+st.markdown(f'<div style="text-align:center;">{html_tags}</div>', unsafe_allow_html=True)
