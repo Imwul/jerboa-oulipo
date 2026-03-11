@@ -91,3 +91,11 @@ for i, word in enumerate(visual_samples):
     with cols[i % 5]:
         color = random.choice(["#3a3f4a", "#2c3e50", "#31433f", "#4a3c5a"])
         st.markdown(f'<div style="background-color:{color}; color:white; padding:5px; border-radius:10px; text-align:center; margin-bottom:5px; font-size:0.8rem;">{word}</div>', unsafe_allow_html=True)
+
+# UI에 슬라이더 추가
+st.subheader("⚙️ 엔진 제어판")
+shift_val = st.slider("울리포 변조 강도 (N+X)", min_value=1, max_value=50, value=7)
+
+if st.button("✨ 정교한 엔진 가동"):
+    transformed = transform_engine(user_input, NOUN_DICT, shift=shift_val)
+    st.success(transformed)
