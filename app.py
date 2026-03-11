@@ -523,6 +523,7 @@ with tab5:
         st.session_state.corpse_lines = []
         st.rerun()
 
+
 # ==========================================
 # TAB 6: The Babel Glitch (바벨의 균열 - 오독의 시학)
 # ==========================================
@@ -546,7 +547,6 @@ with tab6:
             glitch_result = []
             
             for t in tokens:
-                # 에러 수정: 원래 형태소가 가지고 있던 정확한 태그(t.tag)를 보존
                 if t.tag.startswith('J'): 
                     if random.random() > 0.4: 
                         glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
@@ -560,17 +560,15 @@ with tab6:
                 else:
                     glitch_result.append((t.form, t.tag))
             
-            # 이제 원래 태그가 보존되었으므로 kiwi.join이 정상 작동함
             ruined_text = kiwi.join(glitch_result)
             
             st.subheader("👁️ 오독의 결과물")
+            # 배경을 하얗게, 글씨를 까맣게 수정하여 다른 탭들과 통일성 부여 및 시인성 확보
             st.markdown(f"""
-            <div style='padding: 30px; border: 3px solid #000; background: #000; color: #fff !important; line-height: 2.2; font-size: 1.4rem; font-weight: bold;'>
+            <div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000 !important; line-height: 2.2; font-size: 1.4rem; font-weight: bold;'>
                 {ruined_text}
             </div>
             """, unsafe_allow_html=True)
-
-st.divider()
 
 # --- 하단 🏺 따로 움직이는 파편들 (공통) ---
 st.subheader("🏺 사전의 파편들")
