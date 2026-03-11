@@ -6,81 +6,63 @@ import random
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# --- 1. 페이지 설정 및 상태 관리 ---
+# --- 1. 페이지 및 상태 설정 ---
 st.set_page_config(page_title="Jerboa Oulipo Engine", page_icon="🐦", layout="wide")
 
 if "archive" not in st.session_state:
     st.session_state.archive = []
 
-# --- 2. 🎨 디자인: 을유1945 폰트 & 강제 라이트 모드 (CSS) ---
+# --- 2. 🎨 캔버스 디자인: 애니메이션 & 비틀림 (CSS) ---
 st.markdown("""
 <style>
-    /* 1. 시스템 다크모드 완전 차단 및 라이트모드 고정 */
-    :root { color-scheme: light !important; }
-    
-    /* 2. 전체 배경 및 글자색 강제 고정 (흰 배경, 검은 글자) */
-    [data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
-        background-color: #FFFFFF !important;
-        color: #111111 !important;
-    }
-
-    /* 3. 을유1945 폰트 적용 */
     @font-face {
         font-family: 'Eulyoo1945-Regular';
         src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
-        font-weight: normal; font-style: normal;
     }
 
-    * {
-        font-family: 'Eulyoo1945-Regular', serif !important;
-        color: #111111 !important;
+    * { font-family: 'Eulyoo1945-Regular', serif !important; }
+
+    /* 🌊 유령처럼 떠다니는 애니메이션 정의 */
+    @keyframes float {
+        0% { transform: translateY(0px) rotate(0deg); }
+        50% { transform: translateY(-10px) rotate(1deg); }
+        100% { transform: translateY(0px) rotate(0deg); }
     }
 
-    /* 4. 입력창 및 슬라이더 가독성 (다크모드에서도 보이게) */
-    textarea, [data-testid="stMarkdownContainer"] p, .stSlider {
-        color: #111111 !important;
+    /* 🏷️ 파편 태그 스타일 (다채로운 색상 적용 예정) */
+    .fragment-tag {
+        display: inline-block;
+        padding: 8px 16px;
+        margin: 10px;
+        border-radius: 4px;
+        border: 1px solid rgba(0,0,0,0.1);
+        box-shadow: 2px 4px 10px rgba(0,0,0,0.05);
+        animation: float 4s ease-in-out infinite;
+        transition: all 0.3s;
+        cursor: crosshair;
     }
-    textarea {
-        background-color: #F8F9FA !important;
-        border: 1px solid #DCDCDC !important;
+    .fragment-tag:hover {
+        transform: scale(1.2) rotate(-5deg) !important;
+        z-index: 100;
     }
 
-    /* 5. 🏗️ 금속 활자 버튼 (Metal Movable Type Style) */
+    /* 금속 활자 버튼 */
     div.stButton > button {
         background-color: #ffffff !important;
-        color: #111111 !important;
         border: 2px solid #111111 !important;
         border-radius: 0px !important;
         box-shadow: 4px 4px 0px #111111 !important;
         font-weight: bold !important;
-        transition: all 0.1s;
-    }
-    div.stButton > button:hover {
-        transform: translate(2px, 2px);
-        box-shadow: 1px 1px 0px #111111 !important;
-    }
-
-    /* 6. 파편 태그 디자인 (Surrealist Fragments) */
-    .fragment-tag {
-        display: inline-block;
-        padding: 6px 14px;
-        margin: 6px;
-        border-radius: 2px;
-        background-color: #FDFDFD;
-        border: 1px solid #E0E0E0;
-        box-shadow: 1px 1px 3px rgba(0,0,0,0.05);
-        font-size: 0.9rem;
     }
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. 엔진 코어 부품 ---
+# --- 3. 엔진 코어 ---
 @st.cache_resource
-def load_kiwi():
-    return Kiwi()
+def load_kiwi(): return Kiwi()
+kiwi = load_kiwi()
 
-def fetch_words_final(kw, API_KEY):
-    # 이물이 찾은 Swagger 명세 기반 최신 주소
+def fetch_words_new(kw, API_KEY):
     url = "http://api.kcisa.kr/openapi/service/rest/contents/getContents632"
     params = {"serviceKey": API_KEY, "numOfRows": 40, "keyword": kw}
     try:
@@ -97,24 +79,19 @@ def fetch_words_final(kw, API_KEY):
                             items.append(w)
             return items
         return []
-    except:
-        return []
+    except: return []
 
 @st.cache_data(show_spinner=False)
 def get_oulipo_dictionary():
     API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
-    keywords = ["사람", "마음", "하늘", "바다", "시간", "기억", "공간", "거울", "파편"]
-    
+    keywords = ["사람", "마음", "하늘", "시간", "기억", "공간", "거울", "파편", "심연"]
     total_words = []
     with ThreadPoolExecutor(max_workers=4) as executor:
-        for words in executor.map(lambda kw: fetch_words_final(kw, API_KEY), keywords):
+        for words in executor.map(lambda kw: fetch_words_new(kw, API_KEY), keywords):
             total_words.extend(words)
-            
     final_dict = sorted(list(set(total_words)))
     
-    # 💡 [예술적 안전망] 서버 연결 실패 시 가동될 니치한 단어장
-    # 보들레르, 페렉, 키냐르의 세계관을 반영한 명사들
-    FALLBACK_ART_DICT = [
+    FALLBACK_DICT = sorted([
         "가면", "가구", "거리", "거울", "결말", "경계", "고독", "공백", "과거", "관념", 
         "광장", "궤도", "귀신", "그림", "그늘", "기억", "노을", "눈물", "느낌", "단어", 
         "달빛", "대화", "도시", "동화", "모습", "모서리", "무지개", "미로", "미래", "미학", 
@@ -129,37 +106,30 @@ def get_oulipo_dictionary():
         "철학", "초상", "추억", "축제", "출구", "침묵", "태양", "파도", "파편", "평화", 
         "표정", "풍경", "하늘", "하루", "햇살", "행복", "향기", "허무", "현실", "혈관", 
         "형식", "형태", "혜성", "호수", "혼란", "화가", "화분", "환상", "황금", "황혼", 
-        "흔적", "희망", "희곡", "권태", "몽상", "균열", "착각", "구속", "여로", "안부"
-    ]
+        "흔적", "희망", "희곡", "권태", "몽상", "균열", "착각", "구속"
+    ])
     
-    if len(final_dict) < 20:
-        return sorted(list(set(FALLBACK_ART_DICT))), "FALLBACK_ARTISTIC"
-    return final_dict, "ONLINE_NEW"
+    if len(final_dict) < 20: return FALLBACK_DICT, "FALLBACK"
+    return final_dict, "ONLINE"
 
-# --- 4. 메인 화면 가동 ---
+# --- 4. 메인 화면 ---
 kiwi = load_kiwi()
-with st.spinner("사전의 심연에서 파편을 채집하는 중..."):
+with st.spinner("사전의 심연에서 움직이는 파편들을 채집 중..."):
     NOUN_DICT, load_mode = get_oulipo_dictionary()
 
-st.title("🐦 저보아: NEW 울리포 엔진")
+st.title("🐦 저보아: 무한 울리포 엔진")
+st.caption(f"사전에서 추출한 {len(NOUN_DICT):,}개의 명사가 장전되었습니다.")
 
-if load_mode == "FALLBACK_ARTISTIC":
-    st.info("🌐 서버가 응답하지 않아 우리 서클만의 '예술적 단어장'을 장전했습니다.")
-else:
-    st.success(f"✅ 실시간 사전 연결 성공! {len(NOUN_DICT)}개의 파편이 준비되었습니다.")
-
-st.divider()
-
-# --- 5. 변환 인터페이스 ---
+# --- 5. 변환 및 통제판 ---
 col_in, col_set = st.columns([2, 1])
 with col_in:
     user_input = st.text_area("해부대에 올릴 문장을 입력해.", placeholder="나는 오늘 공원에서 사과를 먹었다.", height=150)
 with col_set:
     shift_val = st.slider("사전 변조 거리 (S+N)", 1, 50, 7)
-    st.caption("사전 속에서 명사를 N단계 뒤의 단어로 교체합니다.")
-    bumpy_val = st.slider("활자의 진동 (크기)", 0.0, 0.5, 0.1)
+    bumpy_val = st.slider("활자의 진동 (크기)", 0.0, 0.5, 0.2)
+    tilt_val = st.slider("활자의 비틀림 (각도)", 0, 30, 10)
 
-if st.button("✨ 문장 재단 및 아카이빙"):
+if st.button("✨ 문장 재단하기"):
     if user_input:
         tokens = kiwi.tokenize(user_input)
         result = []
@@ -179,34 +149,38 @@ if st.button("✨ 문장 재단 및 아카이빙"):
         transformed = kiwi.join(result)
         st.session_state.archive.append((user_input, transformed))
         
-        # 결과 렌더링
+        # 💡 [복구] 비틀리고 진동하는 텍스트 렌더링
         st.subheader("🖼️ 변환 결과")
-        html_res = '<div style="line-height: 2.2; word-wrap: break-word;">'
+        html_res = '<div style="line-height: 2.5; word-wrap: break-word; padding: 20px;">'
         for char in transformed:
-            fs = 1.4 + random.uniform(-bumpy_val, bumpy_val)
-            html_res += f'<span style="font-size:{fs}rem; font-weight:bold;">{char}</span>'
+            if char == ' ':
+                html_res += '&nbsp;'
+                continue
+            fs = 1.5 + random.uniform(-bumpy_val, bumpy_val)
+            rot = random.uniform(-tilt_val, tilt_val)
+            html_res += f'<span style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
         html_res += '</div>'
         st.markdown(html_res, unsafe_allow_html=True)
-    else:
-        st.warning("문장을 먼저 입력해줘.")
 
 st.divider()
 
-# --- 6. 아카이브 및 시각화 ---
-col_log, col_del = st.columns([4, 1])
-with col_log: st.subheader("📜 과거의 흔적")
-with col_del: 
-    if st.button("🗑️ 로그 삭제"):
-        st.session_state.archive = []
-        st.rerun()
-
+# --- 6. 아카이브 및 🏺 떠다니는 파편들 ---
 if st.session_state.archive:
-    for orig, trans in reversed(st.session_state.archive):
-        st.markdown(f"<small style='color:#888;'>{orig}</small><br><b>{trans}</b>", unsafe_allow_html=True)
-        st.caption("---")
+    with st.expander("📜 과거의 흔적 보기"):
+        for orig, trans in reversed(st.session_state.archive):
+            st.markdown(f"<small>{orig}</small><br><b>{trans}</b>", unsafe_allow_html=True)
+            st.caption("---")
 
-st.divider()
-st.subheader("🏺 현재 엔진의 파편들")
-samples = random.sample(NOUN_DICT, min(50, len(NOUN_DICT)))
-html_tags = "".join([f'<span class="fragment-tag">{w}</span>' for w in samples])
-st.markdown(f'<div style="text-align:center;">{html_tags}</div>', unsafe_allow_html=True)
+st.subheader("🏺 사전의 파편들")
+# 💡 [복구] 파스텔톤 색상과 float 애니메이션이 적용된 단어들
+washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
+samples = random.sample(NOUN_DICT, min(60, len(NOUN_DICT)))
+
+html_tags = '<div style="text-align:center; padding: 40px 0;">'
+for i, w in enumerate(samples):
+    color = random.choice(washed_colors)
+    delay = random.uniform(0, 4)
+    html_tags += f'<span class="fragment-tag" style="background-color:{color}; animation-delay: {delay}s;">{w}</span>'
+html_tags += '</div>'
+
+st.markdown(html_tags, unsafe_allow_html=True)
