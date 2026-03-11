@@ -306,9 +306,9 @@ with tab3:
     st.markdown("""
     <div class="instruction-box">
         <b>[자동 기술 지침: 파편의 증발]</b><br>
-        - <b>무의식의 흐름:</b> 텍스트를 입력하세요. 5초간 키보드가 멈추면 <b>최근 당신이 쏟아낸 3~5개의 어절</b>만 붉게 타오르며 사라집니다.<br>
-        - <b>이성의 차단:</b> 백스페이스(수정)를 누르려면 3~5번을 미친 듯이 연타해야 겨우 한 글자가 지워집니다.<br>
-        - 캔버스의 틀은 견고합니다. 사라진 파편은 우연의 흔적으로 남으니 계속 나아가세요.
+        - <b>무의식의 흐름:</b> 5초간 키보드가 멈추면 <b>최근 쏟아낸 3~5개의 어절</b>만 붉게 타오릅니다.<br>
+        - <b>이성의 차단:</b> 백스페이스(수정)를 누르려면 3~5번을 미친 듯이 연타해야 합니다.<br>
+        - <b>활자의 호흡:</b> 타이핑 속도가 빠르면 텍스트가 고양되어 커지고, 망설이면 불안하게 비틀거립니다.
     </div>
     """, unsafe_allow_html=True)
 
@@ -323,9 +323,12 @@ with tab3:
         #progress-bar { width: 100%; height: 100%; background: #000; transition: width 0.1s linear, background 1s ease; }
         .danger #progress-bar { background: #ff4d4d; }
         #editor-wrapper { position: relative; width: 100%; height: 500px; border: 3px solid #000; box-shadow: 4px 4px 0px #000; background: transparent; box-sizing: border-box; overflow: hidden; }
-        textarea, #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; margin: 0; font-family: 'Eulyoo1945-Regular', serif; font-size: 1.5rem; line-height: 1.8; border: none; outline: none; background: transparent; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; }
-        textarea { color: #000; resize: none; z-index: 2; cursor: text; }
-        #overlay { color: transparent; z-index: 1; pointer-events: none; }
+        textarea, #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; margin: 0; font-family: 'Eulyoo1945-Regular', serif; line-height: 1.8; border: none; outline: none; background: transparent; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; }
+        
+        /* 타이핑 호흡을 위한 미묘한 트랜지션 추가 */
+        textarea { color: #000; resize: none; z-index: 2; cursor: text; font-size: 1.5rem; transition: font-size 0.2s ease, transform 0.3s ease; transform-origin: center center; }
+        #overlay { color: transparent; z-index: 1; pointer-events: none; font-size: 1.5rem; }
+        
         .burning-text { display: inline-block; animation: burnTextOnly 1.5s forwards ease-in; }
         @keyframes burnTextOnly {
             0% { color: #ff4d4d; text-shadow: 0 0 0px #ff0000; filter: blur(0px); opacity: 1; transform: translateY(0px); }
@@ -339,7 +342,7 @@ with tab3:
         <div id="progress-container"><div id="progress-bar"></div></div>
         <div id="editor-wrapper">
             <div id="overlay"></div>
-            <textarea id="auto-text" placeholder="의식의 검열을 멈추고 쏟아내세요. 5초 뒤 최근 쓴 단어들이 불탑니다..."></textarea>
+            <textarea id="auto-text" placeholder="의식의 검열을 멈추고 쏟아내세요. 당신의 호흡에 따라 활자가 요동칩니다..."></textarea>
             <div id="bs-warning">이성이 저항합니다! 연타하세요!</div>
         </div>
         <script>
@@ -351,6 +354,9 @@ with tab3:
             const TIME_LIMIT = 5000; let timerInterval; let timeRemaining = TIME_LIMIT; let isBurning = false;
             let bsCount = 0; let bsRequired = Math.floor(Math.random() * 3) + 3;
 
+            // 타이핑 호흡 변수
+            let lastKeyTime = Date.now();
+
             function startTimer() {
                 clearInterval(timerInterval); timeRemaining = TIME_LIMIT; isBurning = false;
                 document.getElementById('progress-container').classList.remove('danger');
@@ -360,6 +366,15 @@ with tab3:
                     if(textarea.value.trim() === '') return; 
                     timeRemaining -= 100;
                     progressBar.style.width = ((timeRemaining / TIME_LIMIT) * 100) + '%';
+                    
+                    // 시간이 지날수록(망설일수록) 서서히 삐뚤어짐
+                    if(timeRemaining < 4000 && !isBurning) {
+                        let sway = (4000 - timeRemaining) * 0.0005; // 최대 2도 내외
+                        let tilt = (Math.random() - 0.5) * sway * 2;
+                        textarea.style.transform = `rotate(${tilt}deg)`;
+                        textarea.style.fontSize = '1.45rem'; // 살짝 위축됨
+                    }
+
                     if (timeRemaining <= 2000) document.getElementById('progress-container').classList.add('danger');
                     if (timeRemaining <= 0) { clearInterval(timerInterval); triggerPartialBurn(); }
                 }, 100);
@@ -369,6 +384,10 @@ with tab3:
                 if(isBurning) return;
                 isBurning = true;
                 
+                // 불타는 동안 캔버스 안정화
+                textarea.style.transform = `rotate(0deg)`;
+                textarea.style.fontSize = '1.5rem';
+
                 const val = textarea.value;
                 const numToDelete = Math.floor(Math.random() * 3) + 3;
                 let wordCount = 0; let splitIndex = 0; let inWord = false;
@@ -394,6 +413,20 @@ with tab3:
                     if(textarea.value.trim() !== '') startTimer();
                 }, 1500);
             }
+
+            // 호흡(타이핑 속도) 계산 로직
+            textarea.addEventListener('keyup', (e) => {
+                const now = Date.now();
+                const diff = now - lastKeyTime;
+                lastKeyTime = now;
+
+                if (!isBurning && diff < 300 && diff > 10) {
+                    // 빠를 때: 폰트가 미묘하게 커짐 (최대 1.65rem)
+                    let newSize = 1.5 + (300 - diff) * 0.0005;
+                    textarea.style.fontSize = newSize + 'rem';
+                    textarea.style.transform = `rotate(0deg)`; // 빠를 땐 비틀림 제거
+                }
+            });
 
             textarea.addEventListener('input', () => { if (textarea.composing) { clearInterval(timerInterval); return; } if(!isBurning) startTimer(); });
             textarea.addEventListener('compositionstart', () => { textarea.composing = true; clearInterval(timerInterval); });
@@ -530,35 +563,26 @@ with tab5:
 with tab6:
     st.markdown("""
     <div class="instruction-box">
-        <b>[바벨의 균열 지침: 오독의 시학]</b><br>
-        - <b>구문 파괴:</b> 완벽한 문장을 넣으세요. 인공적인 '기계 번역 오류'를 시뮬레이션하여 문장을 기괴하게 비틀어버립니다.<br>
-        - <b>균열의 발생:</b> 초현실적인 사물이 난입하고, 단어가 반복되며, 침묵이 끼어듭니다. 낯설고 이질적인 문장을 수집하세요.
+        <b>[바벨의 균열 지침: 타이포그래피 콜라주]</b><br>
+        - <b>구문 파괴:</b> 완벽한 문장을 넣어 기괴한 번역 오류를 발생시키세요.<br>
+        - <b>활자 해체:</b> 폰트 믹스, 진동, 비틀림 슬라이더를 조절하면 <b>결과물이 실시간으로</b> 일그러집니다.
     </div>
     """, unsafe_allow_html=True)
     
     babel_input = st.text_area("해부할 완벽한 문장", placeholder="나는 오늘 아침에 일어나 거울을 보며 깊은 절망을 느꼈다.", height=150, key="babel_input")
     
-    # 기괴함을 더해줄 파편화된 사전들 대폭 확장
-    SURREAL_NOUNS = [
-        "침묵", "기하학", "고깃덩어리", "균열", "환상지", "잔해", "태엽", "미궁", "백색소음", "불안", "이물질",
-        "심연", "권태", "해부대", "잿더미", "육체", "이방인", "기호", "맹목", "궤적", "톱니바퀴", "파편",
-        "내장", "얼룩", "허무", "무의식", "타자", "기생충", "고독", "메스", "몽유병", "사각지대", "구토",
-        "무덤", "망막", "짐승", "유령", "폐허", "강박"
-    ]
-    WEIRD_ADVERBS = [
-        "기계적으로", "불쾌하게", "영원히", "느닷없이", "집요하게", "증발하듯", 
-        "맹목적으로", "불길하게", "기형적으로", "무기력하게", "파편적으로", "신경질적으로", 
-        "발작적으로", "음울하게", "기만적으로", "헛되이", "무자비하게", "조각조각", "병적으로"
-    ]
-    WEIRD_PARTICLES = [
-        "에게로써", "마저도", "조차", "의 곁에서", "를 향한", "치고는", "너머로",
-        "의 밑바닥에", "에 기생하여", "를 찢고서", "조차 외면한", "서껀", "인들", "밖에"
-    ]
-    WEIRD_ENDINGS = [
-        "었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지",
-        "었으리라", "련만", "더이까", "려무나", "쇠다", "소서", "으오", "지어다", "ㄴ대도", "ㄹ망정"
-    ]
-    GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // ", " [검열됨] ", " (정적) "]
+    SURREAL_NOUNS = ["침묵", "기하학", "고깃덩어리", "균열", "환상지", "잔해", "태엽", "미궁", "백색소음", "이물질", "심연", "파편", "얼룩", "구토"]
+    WEIRD_ADVERBS = ["기계적으로", "불쾌하게", "영원히", "느닷없이", "집요하게", "증발하듯", "조각조각", "발작적으로"]
+    WEIRD_PARTICLES = ["에게로써", "마저도", "조차", "의 곁에서", "를 향한", "치고는", "너머로"]
+    WEIRD_ENDINGS = ["었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지", "련만"]
+    GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // "]
+    
+    # 4가지 기괴한 폰트 믹스
+    MIX_FONTS = ["'Eulyoo1945-Regular', serif", "'Courier New', monospace", "Impact, sans-serif", "'Comic Sans MS', cursive, sans-serif"]
+
+    # 세션에 원본(Glitch 완료된) 텍스트를 저장하여 슬라이더 조작 시 텍스트 자체가 바뀌지 않도록 함
+    if 'babel_raw_output' not in st.session_state:
+        st.session_state.babel_raw_output = ""
 
     if st.button("🗼 바벨탑 무너뜨리기", key="babel_btn"):
         if babel_input:
@@ -566,47 +590,58 @@ with tab6:
             glitch_result = []
             
             for t in tokens:
-                # 1. 초현실적 명사 난입 (20% 확률)
                 if t.tag.startswith('N') and random.random() > 0.8:
                     glitch_result.append((random.choice(SURREAL_NOUNS), t.tag))
-                # 2. 기괴한 부사 난입 (부사일 경우 50% 확률)
                 elif t.tag.startswith('M') and random.random() > 0.5:
                     glitch_result.append((random.choice(WEIRD_ADVERBS), t.tag))
-                # 3. 기존의 조사/어미 비틀기
                 elif t.tag.startswith('J'): 
-                    if random.random() > 0.4: 
-                        glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
-                    else:
-                        glitch_result.append((t.form, t.tag))
+                    if random.random() > 0.4: glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
+                    else: glitch_result.append((t.form, t.tag))
                 elif t.tag.startswith('E'):
-                    if random.random() > 0.5:
-                        glitch_result.append((random.choice(WEIRD_ENDINGS), t.tag))
-                    else:
-                        glitch_result.append((t.form, t.tag))
+                    if random.random() > 0.5: glitch_result.append((random.choice(WEIRD_ENDINGS), t.tag))
+                    else: glitch_result.append((t.form, t.tag))
                 else:
                     glitch_result.append((t.form, t.tag))
                 
-                # 4. 기계적 오류 (Stuttering - 10% 확률로 방금 넣은 형태소 기괴하게 반복)
-                if random.random() > 0.9:
-                    glitch_result.append(glitch_result[-1])
+                if random.random() > 0.9: glitch_result.append(glitch_result[-1])
             
-            # 형태소 조립
             ruined_text = kiwi.join(glitch_result)
             
-            # 5. 구두점 파괴 및 시스템 오류 메시지 강제 삽입
             words = ruined_text.split()
             final_text = ""
             for w in words:
                 final_text += w + " "
-                if random.random() > 0.85:
-                    final_text += random.choice(GLITCH_MARKS)
+                if random.random() > 0.85: final_text += random.choice(GLITCH_MARKS)
             
-            st.subheader("👁️ 오독의 결과물")
-            st.markdown(f"""
-            <div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000 !important; line-height: 2.2; font-size: 1.4rem; font-weight: bold;'>
-                {final_text}
-            </div>
-            """, unsafe_allow_html=True)
+            # 생성된 텍스트를 세션에 고정
+            st.session_state.babel_raw_output = final_text
+
+    # 결과물이 있을 때만 슬라이더와 결과창 렌더링 (실시간 업데이트)
+    if st.session_state.babel_raw_output:
+        st.divider()
+        st.subheader("👁️ 시각적 변형 제어")
+        bc1, bc2 = st.columns(2)
+        babel_bumpy = bc1.slider("글자 진동 (높을수록 들쭉날쭉)", 0.0, 1.0, 0.3, key="babel_bumpy")
+        babel_tilt = bc2.slider("글자 비틀림 (각도)", 0, 45, 15, key="babel_tilt")
+
+        styled_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000 !important; line-height: 2.5; word-wrap: break-word; white-space: pre-wrap;'>"
+        
+        # 글자별로 다른 폰트와 크기, 기울기를 적용
+        for char in st.session_state.babel_raw_output:
+            if char == ' ': 
+                styled_html += '&nbsp;'
+            else:
+                fs = 1.4 + random.uniform(-babel_bumpy, babel_bumpy)
+                rot = random.uniform(-babel_tilt, babel_tilt)
+                # 30% 확률로 기본 폰트(을유)를 벗어나 이질적인 폰트로 변형
+                font_choice = random.choice(MIX_FONTS) if random.random() > 0.7 else MIX_FONTS[0]
+                
+                styled_html += f'<span style="font-family:{font_choice}; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
+        
+        styled_html += "</div>"
+        
+        st.subheader("👁️ 오독의 캔버스")
+        st.markdown(styled_html, unsafe_allow_html=True)
 
 # --- 하단 🏺 따로 움직이는 파편들 (공통) ---
 st.subheader("🏺 사전의 파편들")
