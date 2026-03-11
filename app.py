@@ -119,7 +119,7 @@ def get_oulipo_dictionary():
 # --- 4. 메인 가동 ---
 NOUN_DICT, load_mode = get_oulipo_dictionary()
 
-st.title("🐦 저보아: NEW 울리포 엔진")
+st.title("저보아: 울리포 엔진")
 st.caption("선명한 칠흑의 활자들이 준비되었습니다.")
 
 # --- 5. 변환 인터페이스 ---
