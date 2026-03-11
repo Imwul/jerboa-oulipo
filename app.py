@@ -76,15 +76,14 @@ def load_kiwi():
     return Kiwi()
 
 def fetch_words(kw, API_KEY):
-    # 💡 sort=popular 옵션을 추가해서 사람들이 많이 찾는 익숙한 단어 위주로 긁어옴
     url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include&pos=1&sort=popular"
     try:
         res = requests.get(url, timeout=5, verify=False)
         if res.status_code == 200:
             root = ET.fromstring(res.content)
             words = [node.text.replace('-', '').replace('^', '') for node in root.findall('.//item/word') if node.text]
-            # 거름망: 2~4글자, 띄어쓰기 없음, 완벽한 한글
-            return [w for w in words if 2 <= len(w) <= 4 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w)]
+            # 💡 이물의 지시: 4글자 이상 전면 차단! (2~3글자만 허용), 띄어쓰기 없음, 완벽한 한글
+            return [w for w in words if 2 <= len(w) <= 3 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w)]
     except:
         return []
     return []
