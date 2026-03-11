@@ -44,7 +44,7 @@ NOUN_DICT = load_oulipo_dict()
 
 # --- 3. 메인 화면 ---
 st.title("🐦 저보아: 경량화 마스터 엔진")
-st.success(f"✅ {len(NOUN_DICT):,}개의 명사가 로딩되었습니다. 이제 깃허브에서도 무적입니다.")
+st.success(f"✅ {len(NOUN_DICT):,}개의 명사가 로딩되었습니다.")
 
 user_input = st.text_area("해부대에 올릴 문장", placeholder="텍스트를 입력하세요.", height=150)
 col1, col2, col3 = st.columns(3)
