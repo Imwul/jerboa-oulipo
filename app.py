@@ -6,14 +6,13 @@ import random
 import time
 from concurrent.futures import ThreadPoolExecutor
 
-# 페이지 설정
+# --- 1. 페이지 및 상태 설정 ---
 st.set_page_config(page_title="Jerboa Oulipo Engine", page_icon="🐦", layout="wide")
 
-# --- 상태 저장소 ---
 if "archive" not in st.session_state:
     st.session_state.archive = []
 
-# --- 🎨 라이트 모드 & 을유1945 폰트 & 금속 활자 버튼 ---
+# --- 2. 🎨 캔버스 및 활자 디자인 (CSS) ---
 st.markdown("""
 <style>
 @font-face {
@@ -70,19 +69,15 @@ div.stButton > button:hover {
 </style>
 """, unsafe_allow_html=True)
 
-# --- 엔진 부품 ---
+# --- 3. 엔진 코어 부품 ---
 @st.cache_resource
 def load_kiwi():
     return Kiwi()
 
 def fetch_words(kw, API_KEY):
-    # 💡 1. 키 정제: 보안상 32자리 헥스코드를 요구할 수 있으니 하이픈(-) 제거
+    # API 키 하이픈 제거 및 브라우저 위장 (봇 차단 방어)
     clean_key = API_KEY.replace("-", "").strip()
-    
-    # 💡 2. URL 수정: pos=1 변수가 에러를 낼 수 있으므로 URL에서 아예 제거!
     url = f"https://krdict.korean.go.kr/api/search?key={clean_key}&q={kw}&part=word&num=100&advanced=y&method=include"
-    
-    # 💡 3. 위장: 봇(Bot) 차단을 막기 위해 일반 크롬 브라우저인 것처럼 헤더 추가
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
     }
@@ -92,10 +87,9 @@ def fetch_words(kw, API_KEY):
         if res.status_code == 200:
             root = ET.fromstring(res.content)
             
-            # 국립국어원 서버에서 에러(유효하지 않은 키 등)를 뱉는지 확인
-            error_node = root.find('.//error')
-            if error_node is not None:
-                return [] # 에러 시 빈 배열 반환하여 다음으로 넘어감
+            # 에러 감지
+            if root.find('.//error') is not None:
+                return []
                 
             clean_words = []
             for item in root.findall('.//item'):
@@ -103,21 +97,26 @@ def fetch_words(kw, API_KEY):
                 pos_node = item.find('.//pos')
                 
                 if word_node is None or not word_node.text: continue
-                # 💡 4. 자체 수술: API 변수 대신 파이썬에서 직접 '명사'만 도려냄
+                # 명사만 수동으로 도려내기
                 if pos_node is None or '명사' not in pos_node.text: continue
                 
                 w = word_node.text.replace('-', '').replace('^', '')
                 
-                # 글자 수 제한을 2~4글자로 살짝 풀어줌 (너무 타이트하면 수집량이 급감함)
+                # 2~4글자, 띄어쓰기 없음, 완벽한 한글
                 if 2 <= len(w) <= 4 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w):
                     clean_words.append(w)
                     
             return clean_words
     except:
+        return []
+    return []
+
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
+    # 이물의 한국어기초사전 전용 API 키
     API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
     
+    # 기초 음절 폭격 (56개)
     keywords = [
         "가", "고", "구", "기", "나", "노", "누", "니", "다", "도", "두", "디",
         "라", "로", "루", "리", "마", "모", "무", "미", "바", "보", "부", "비",
@@ -127,7 +126,7 @@ def diagnostic_load():
     ]
     
     total_words = []
-    my_bar = st.progress(0, text="한국어기초사전의 방화벽을 우회하여 명사를 채굴하는 중...")
+    my_bar = st.progress(0, text="한국어기초사전의 심연을 탐색하는 중...")
     
     with ThreadPoolExecutor(max_workers=5) as executor:
         for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
@@ -139,19 +138,21 @@ def diagnostic_load():
     
     final_dict = sorted(list(set(total_words)))
     
-    # 만약 수집된 단어가 50개도 안 된다면 통신 실패로 간주하고 경고 알림(Toast) 띄우기
+    # 통신 오류 시 비상 식량 투입 및 알림
     if len(final_dict) < 50:
-         st.toast("⚠️ 서버 응답이 없거나 API 키가 거부되었어! 비상식량으로 가동할게.", icon="🔥")
+         st.toast("⚠️ 서버가 응답하지 않거나 수집이 지연되어 비상 파편을 투입합니다.", icon="🔥")
          base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무"]
          final_dict = sorted(list(set(final_dict + base_dict)))
          
     return final_dict
+
+# 엔진 시동
 kiwi = load_kiwi()
 NOUN_DICT = diagnostic_load()
 
-# --- UI 레이아웃 ---
+# --- 4. 사용자 인터페이스 (UI) ---
 st.title("🐦 저보아: 무한 울리포 엔진")
-st.caption(f"한국어기초사전에서 추출한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
+st.caption(f"정제된 한국어기초사전에서 추출한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
 
 st.subheader("⚙️ 예술적 통제판")
 col1, col2, col3 = st.columns(3)
@@ -164,7 +165,7 @@ with col3:
 
 user_input = st.text_area("해부대에 올릴 문장을 입력해.", placeholder="나는 오늘 공원에서 사과를 먹었다.")
 
-# --- 변환 로직 (오리지널 S+N) ---
+# --- 5. 문장 해부 및 재조립 (로직) ---
 def transform_engine(text, dictionary, shift):
     if not text.strip(): return "입력된 공백."
     tokens = kiwi.tokenize(text)
@@ -185,7 +186,6 @@ def transform_engine(text, dictionary, shift):
             result.append((t.form, t.tag))
     return kiwi.join(result)
 
-# 글자 렌더링
 def render_bumpy_text(text, b_level, t_level):
     html = '<div style="line-height: 2.5; word-wrap: break-word;">'
     for char in text:
@@ -198,6 +198,7 @@ def render_bumpy_text(text, b_level, t_level):
     html += '</div>'
     return html
 
+# --- 6. 출력 및 아카이빙 ---
 if st.button("✨ 문장 재단 및 아카이빙"):
     if user_input:
         transformed = transform_engine(user_input, NOUN_DICT, shift_val)
@@ -210,7 +211,6 @@ if st.button("✨ 문장 재단 및 아카이빙"):
 
 st.divider()
 
-# --- 아카이브 (로그) ---
 col_log1, col_log2 = st.columns([4, 1])
 with col_log1:
     st.subheader("📜 과거의 흔적 (공동 시집)")
@@ -228,7 +228,7 @@ else:
 
 st.divider()
 
-# --- 시각화: 물 빠진 원색 파편들 ---
+# --- 7. 시각화: 떠다니는 파편들 ---
 st.subheader(f"🏺 {len(NOUN_DICT):,}개의 파편들 중 일부")
 
 visual_samples = random.sample(NOUN_DICT, min(70, len(NOUN_DICT)))
