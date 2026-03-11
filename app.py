@@ -105,8 +105,8 @@ def fetch_words(kw, API_KEY):
         return []
     return []
 @st.cache_data(show_spinner=False)
+@st.cache_data(show_spinner=False)
 def diagnostic_load():
-    # 이물의 KCISA 전용 인증키!
     API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
     
     keywords = [
@@ -118,20 +118,20 @@ def diagnostic_load():
     ]
     
     total_words = []
-    my_bar = st.progress(0, text="문화포털(KCISA) 우회로를 통해 한국어기초사전에 접근하는 중...")
     
+    # UI(st.progress 등)를 캐시 함수에서 전부 제거하여 에러 원천 차단
     with ThreadPoolExecutor(max_workers=5) as executor:
-        for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
+        for words in executor.map(lambda kw: fetch_words(kw, API_KEY), keywords):
             total_words.extend(words)
-            my_bar.progress((i + 1) / len(keywords), text=f"음절 '{keywords[i]}' 추출 완료... (현재 {len(total_words)}개 수집)")
             time.sleep(0.05)
             
-    my_bar.empty()
     final_dict = sorted(list(set(total_words)))
     
-    # 만약 KCISA 마저도 클라우드 IP를 차단했다면, 즉시 암호화폐 복구 단어장으로 우회
+    status = "success"
+    
+    # 💡 데이터만 처리하고, UI 경고는 바깥으로 상태값(status)만 넘김
     if len(final_dict) < 50:
-         st.toast("⚠️ KCISA 방화벽도 막혔어! 영구 보안 단어장(BIP-39)으로 우회할게.", icon="🛡️")
+         status = "fallback"
          fallback_url = "https://raw.githubusercontent.com/bitcoin/bips/master/bip-0039/korean.txt"
          try:
              res = requests.get(fallback_url, timeout=5)
@@ -142,11 +142,23 @@ def diagnostic_load():
              base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무"]
              final_dict = sorted(list(set(base_dict)))
              
-    return final_dict
-# 엔진 시동
-kiwi = load_kiwi()
-NOUN_DICT = diagnostic_load()
+    return final_dict, status
 
+# --- 엔진 시동 및 UI 분리 ---
+kiwi = load_kiwi()
+
+# UI 로딩 스피너는 캐시 함수 밖에서 안전하게 처리
+with st.spinner("한국어기초사전의 심연을 탐색하는 중..."):
+    NOUN_DICT, load_status = diagnostic_load()
+
+# 캐시 함수가 끝난 후, 반환받은 상태값에 따라 바깥에서 알림(Toast) 띄우기
+if load_status == "fallback":
+    st.toast("⚠️ KCISA 방화벽이 막혀서 영구 보안 단어장(BIP-39)으로 우회했어.", icon="🛡️")
+
+# --- UI 레이아웃 (이하 기존 코드 동일) ---
+st.title("🐦 저보아: 무한 울리포 엔진")
+st.caption(f"사전에서 추출한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
+# ... (나머지 동일)
 # --- 4. 사용자 인터페이스 (UI) ---
 st.title("🐦 저보아: 무한 울리포 엔진")
 st.caption(f"정제된 한국어기초사전에서 추출한 {len(NOUN_DICT):,}개의 순수 명사가 가나다순으로 장전되었습니다.")
