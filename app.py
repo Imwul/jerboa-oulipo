@@ -4,69 +4,9 @@ import random
 import os
 import re
 
-# --- 1. 페이지 설정 & 스타일 (기존 스타일 계승) ---
+# --- 1. 페이지 설정 & 🎨 디자인 (CSS) ---
 st.set_page_config(page_title="Jerboa Circle", layout="wide")
 
-st.markdown("""
-<style>
-    :root { color-scheme: light !important; }
-    [data-testid="stAppViewContainer"], .stApp { background-color: #FFFFFF !important; }
-    @font-face {
-        font-family: 'Eulyoo1945-Regular';
-        src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
-    }
-    h1 {
-        font-family: 'Trattatello', 'Apple Chancery', cursive !important;
-        font-size: 3.8rem !important; color: #000; text-align: center;
-    }
-    * { font-family: 'Eulyoo1945-Regular', serif !important; color: #000; }
-    
-    /* 해부대 입력창 */
-    textarea {
-        background-color: #111 !important; color: #FFF !important;
-        border: 2px solid #000 !important; font-size: 1.1rem !important;
-    }
-    
-    /* 활자 해부기 타일 스타일 */
-    .dissector-node {
-        display: inline-block; padding: 5px 10px; margin: 4px;
-        border: 1px solid #000; font-weight: bold; cursor: pointer;
-    }
-</style>
-""", unsafe_allow_html=True)
-
-@st.cache_resource
-def load_kiwi(): return Kiwi()
-kiwi = load_kiwi()
-
-@st.cache_data
-def load_oulipo_dict():
-    if os.path.exists("nouns.txt"):
-        with open("nouns.txt", "r", encoding="utf-8") as f:
-            return f.read().splitlines()
-    return ["거울", "파편", "심연", "공백", "기억", "망각", "미학"]
-NOUN_DICT = load_oulipo_dict()
-
-# --- 2. 메인 타이틀 ---
-st.title("Jerboa Circle: Surrealist Workshop")
-
-# --- 3. 탭 구성 ---
-tab1, tab2 = st.tabs(["🏺 Oulipo Engine (S+N)", "🔪 The Dissector (활자 해부)"])
-
-# ---------------------------------------------------------
-# TAB 1: 기존 Oulipo Engine (S+N)
-# ---------------------------------------------------------
-with tab1:
-    mport streamlit as st
-from kiwipiepy import Kiwi
-import random
-import os
-import re
-
-# --- 1. 페이지 설정 ---
-st.set_page_config(page_title="Jerboa Circle", layout="wide")
-
-# --- 2. 🎨 디자인: 제목(Trattatello) & 본문(을유1945) (CSS) ---
 st.markdown("""
 <style>
     :root { color-scheme: light !important; }
@@ -78,29 +18,16 @@ st.markdown("""
         src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
     }
 
-    /* ❗ 제목(h1) 전용: Trattatello (쉼표 오류 수정 및 폴백 추가) */
+    /* 제목(h1) 전용 */
     h1 {
         font-family: 'Trattatello', 'Apple Chancery', 'Chalkduster', cursive !important;
-        font-size: 3.8rem !important;
-        color: #000000 !important;
-        text-align: center;
-        margin-bottom: 1.5rem !important;
-        padding-top: 1rem !important;
+        font-size: 3.8rem !important; color: #000000 !important;
+        text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
     }
 
-    /* ❗ 그 외 모든 본문 및 요소: 을유1945 고정 */
-    * { 
-        font-family: 'Eulyoo1945-Regular', serif !important; 
-        color: #000000 !important; 
-    }
-    
-    /* 📱 모바일 대응 */
-    @media (max-width: 768px) {
-        h1 { font-size: 2.2rem !important; }
-        .fragment-tag { padding: 4px 8px !important; margin: 4px !important; font-size: 0.8rem !important; }
-    }
-    }
-    
+    /* 그 외 모든 본문 및 요소 */
+    * { font-family: 'Eulyoo1945-Regular', serif !important; color: #000000 !important; }
+
     /* 📱 모바일 대응 */
     @media (max-width: 768px) {
         h1 { font-size: 2.2rem !important; }
@@ -109,10 +36,8 @@ st.markdown("""
 
     /* 해부대(입력창): 검은 배경 & 하얀 글씨 */
     textarea {
-        background-color: #111111 !important;
-        color: #FFFFFF !important;
-        border: 2px solid #000000 !important;
-        caret-color: #FFFFFF !important;
+        background-color: #111111 !important; color: #FFFFFF !important;
+        border: 2px solid #000000 !important; caret-color: #FFFFFF !important;
         font-size: 1.1rem !important;
     }
     
@@ -158,94 +83,152 @@ def load_oulipo_dict():
 
 NOUN_DICT = load_oulipo_dict()
 
-# --- 4. 메인 화면 ---
-st.title("Jerboa Circle: The Oulipo Engine")
+# --- 4. 메인 타이틀 ---
+st.title("Jerboa Circle: Surrealist Workshop")
 
-st.markdown("""
-<div class="instruction-box">
-    <b>[울리포 엔진 가동 지침]</b><br>
-    - <b>해부대:</b> 문장을 입력하세요. <b>줄 바꿈</b>과 <b>단어 사이의 여백</b>은 엄격히 보존됩니다.<br>
-    - <b>S+N 거리:</b> 해당 명사를 사전에서 찾아, N번째 뒤에 위치한 단어로 치환합니다.<br>
-    - <b>성역 보호:</b> <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싼 부분은 변하지 않는 '성역'이 됩니다. 조사와 함께 감싸면 더 안전히 보호할 수 있습니다.<br>
-    - <b>변환 확률:</b> 문장 속 모든 명사를 바꿀지, 일부만 무작위로 치환할지 결정합니다.<br>
-    - <b>활자의 파동:</b> 진동과 비틀림을 조절하여 문장에 시각적 불안감을 부여하세요.
-</div>
-""", unsafe_allow_html=True)
+# --- 5. 탭 구성 ---
+tab1, tab2 = st.tabs(["🏺 Oulipo Engine (S+N)", "🔪 The Dissector (활자 해부)"])
 
-user_input = st.text_area("해부대", placeholder="문장을 해부대에 올리세요. 나는 <심연을> 보았다.", height=200)
+# ---------------------------------------------------------
+# TAB 1: 기존 Oulipo Engine (S+N)
+# ---------------------------------------------------------
+with tab1:
+    st.markdown("""
+    <div class="instruction-box">
+        <b>[울리포 엔진 가동 지침]</b><br>
+        - <b>해부대:</b> 문장을 입력하세요. <b>줄 바꿈</b>과 <b>단어 사이의 여백</b>은 엄격히 보존됩니다.<br>
+        - <b>S+N 거리:</b> 해당 명사를 사전에서 찾아, N번째 뒤에 위치한 단어로 치환합니다.<br>
+        - <b>성역 보호:</b> <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 감싼 부분은 변하지 않는 '성역'이 됩니다.<br>
+        - <b>변환 확률:</b> 문장 속 모든 명사를 바꿀지, 일부만 무작위로 치환할지 결정합니다.<br>
+        - <b>활자의 파동:</b> 진동과 비틀림을 조절하여 문장에 시각적 불안감을 부여하세요.
+    </div>
+    """, unsafe_allow_html=True)
 
-# 제어판
-col1, col2 = st.columns(2)
-with col1: shift_val = st.slider("S+N 거리", 1, 1000, 7)
-with col2: prob_val = st.slider("변환 확률 (%)", 0, 100, 100)
+    user_input = st.text_area("해부대", placeholder="문장을 해부대에 올리세요. 나는 <심연을> 보았다.", height=200, key="engine_input")
 
-col3, col4 = st.columns(2)
-with col3: bumpy_val = st.slider("진동", 0.0, 0.6, 0.15)
-with col4: tilt_val = st.slider("비틀림", 0, 30, 10)
+    col1, col2 = st.columns(2)
+    with col1: shift_val = st.slider("S+N 거리", 1, 1000, 7, key="shift_val")
+    with col2: prob_val = st.slider("변환 확률 (%)", 0, 100, 100, key="prob_val")
 
-def transform_with_logic(line, shift, prob):
-    parts = re.split(r'(<.*?>)', line)
-    d_len = len(NOUN_DICT)
-    line_result = []
-    
-    for part in parts:
-        if part.startswith('<') and part.endswith('>'):
-            line_result.append(part[1:-1])
-        elif part == '':
-            continue
-        else:
-            leading_ws = re.match(r'^\s*', part).group()
-            trailing_ws = re.search(r'\s*$', part).group()
-            content = part.strip()
-            
-            if not content:
-                line_result.append(part)
+    col3, col4 = st.columns(2)
+    with col3: bumpy_val = st.slider("진동", 0.0, 0.6, 0.15, key="bumpy_val")
+    with col4: tilt_val = st.slider("비틀림", 0, 30, 10, key="tilt_val")
+
+    def transform_with_logic(line, shift, prob):
+        parts = re.split(r'(<.*?>)', line)
+        d_len = len(NOUN_DICT)
+        line_result = []
+        
+        for part in parts:
+            if part.startswith('<') and part.endswith('>'):
+                line_result.append(part[1:-1])
+            elif part == '':
                 continue
-            
-            tokens = kiwi.tokenize(content)
-            sub_res = []
-            for t in tokens:
-                if t.tag.startswith('N'):
-                    if (hash(t.form) % 100) < prob:
-                        if t.form in NOUN_DICT:
-                            idx = (NOUN_DICT.index(t.form) + shift) % d_len
-                            new_w = NOUN_DICT[idx]
-                        else:
-                            random.seed(hash(t.form))
-                            new_w = NOUN_DICT[random.randint(0, d_len-1)]
-                        sub_res.append((new_w, 'NNG'))
+            else:
+                leading_ws = re.match(r'^\s*', part).group()
+                trailing_ws = re.search(r'\s*$', part).group()
+                content = part.strip()
+                
+                if not content:
+                    line_result.append(part)
+                    continue
+                
+                tokens = kiwi.tokenize(content)
+                sub_res = []
+                for t in tokens:
+                    if t.tag.startswith('N'):
+                        if (hash(t.form) % 100) < prob:
+                            if t.form in NOUN_DICT:
+                                idx = (NOUN_DICT.index(t.form) + shift) % d_len
+                                new_w = NOUN_DICT[idx]
+                            else:
+                                random.seed(hash(t.form))
+                                new_w = NOUN_DICT[random.randint(0, d_len-1)]
+                            sub_res.append((new_w, 'NNG'))
+                        else: sub_res.append((t.form, t.tag))
                     else: sub_res.append((t.form, t.tag))
-                else: sub_res.append((t.form, t.tag))
-            
-            line_result.append(leading_ws + kiwi.join(sub_res) + trailing_ws)
-            
-    return "".join(line_result)
+                
+                line_result.append(leading_ws + kiwi.join(sub_res) + trailing_ws)
+                
+        return "".join(line_result)
 
-if st.button("✨ 문장 재단하기"):
-    if user_input:
-        lines = user_input.split('\n')
-        st.subheader("🖼️ Resulting Fragment")
-        html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
-        
-        for line in lines:
-            if not line.strip():
+    if st.button("✨ 문장 재단하기", key="engine_btn"):
+        if user_input:
+            lines = user_input.split('\n')
+            st.subheader("🖼️ Resulting Fragment")
+            html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
+            
+            for line in lines:
+                if not line.strip():
+                    html_res += '\n'
+                    continue
+                transformed_line = transform_with_logic(line, shift_val, prob_val)
+                for char in transformed_line:
+                    if char == ' ': html_res += '&nbsp;'
+                    else:
+                        fs = 1.4 + random.uniform(-bumpy_val, bumpy_val)
+                        rot = random.uniform(-tilt_val, tilt_val)
+                        html_res += f'<span style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
                 html_res += '\n'
-                continue
-            transformed_line = transform_with_logic(line, shift_val, prob_val)
-            for char in transformed_line:
-                if char == ' ': html_res += '&nbsp;'
-                else:
-                    fs = 1.4 + random.uniform(-bumpy_val, bumpy_val)
-                    rot = random.uniform(-tilt_val, tilt_val)
-                    html_res += f'<span style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
-            html_res += '\n'
-        
-        html_res += '</div>'
-        st.markdown(html_res, unsafe_allow_html=True)
+            
+            html_res += '</div>'
+            st.markdown(html_res, unsafe_allow_html=True)
+
+# ---------------------------------------------------------
+# TAB 2: The Dissector (신규 활자 해부기)
+# ---------------------------------------------------------
+with tab2:
+    st.markdown("""
+    <div class="instruction-box">
+        <b>[활자 해부 지침]</b><br>
+        - <b>🧪 활자 추출:</b> 입력한 시를 글자 단위로 쪼개어 해부대에 올립니다.<br>
+        - <b>🔒 조사의 성역화:</b> 글자를 클릭하면 검은색(고정)으로 변하며, 재배치 시 위치가 굳어집니다.<br>
+        - <b>🔀 파편 재배치:</b> 고정되지 않은 나머지 활자들만 무작위로 뒤섞어 새로운 맥락을 발견합니다.
+    </div>
+    """, unsafe_allow_html=True)
+
+    if 'fragments' not in st.session_state: st.session_state.fragments = []
+    if 'locked_indices' not in st.session_state: st.session_state.locked_indices = set()
+
+    user_input_2 = st.text_area("해부대 (재배치용)", placeholder="해부할 문장을 넣으세요.", height=200, key="dissector_input")
+
+    c_a, c_b = st.columns(2)
+    if c_a.button("🧪 활자 추출", key="extract_btn"):
+        st.session_state.fragments = list(user_input_2)
+        st.session_state.locked_indices = set()
+        st.rerun()
+
+    if c_b.button("🔀 파편 재배치 (고정 제외)", key="shuffle_btn"):
+        if st.session_state.fragments:
+            frags = st.session_state.fragments
+            locks = st.session_state.locked_indices
+            non_locked_indices = [i for i in range(len(frags)) if i not in locks]
+            non_locked_chars = [frags[i] for i in non_locked_indices]
+            random.shuffle(non_locked_chars)
+            
+            new_frags = list(frags)
+            for i, char in zip(non_locked_indices, non_locked_chars):
+                new_frags[i] = char
+            st.session_state.fragments = new_frags
+            st.rerun()
+
+    if st.session_state.fragments:
+        st.write("---")
+        # Streamlit의 한계상 너무 많은 버튼은 속도가 느려질 수 있으므로 적절히 배치
+        cols = st.columns(15) 
+        for i, char in enumerate(st.session_state.fragments):
+            with cols[i % 15]:
+                display_char = char if char.strip() else "⎵"
+                is_locked = i in st.session_state.locked_indices
+                btn_type = "primary" if is_locked else "secondary"
+                if st.button(display_char, key=f"f_{i}", type=btn_type):
+                    if is_locked: st.session_state.locked_indices.remove(i)
+                    else: st.session_state.locked_indices.add(i)
+                    st.rerun()
 
 st.divider()
 
-# --- 5. 🏺 따로 움직이는 파편들 ---
+# --- 6. 🏺 따로 움직이는 파편들 (오리지널 디자인 복구) ---
 st.subheader("🏺 사전의 파편들")
 washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
@@ -259,56 +242,3 @@ for w in samples:
 html_tags += '</div>'
 
 st.markdown(html_tags, unsafe_allow_html=True)
-
-# ---------------------------------------------------------
-# TAB 2: 신규 활자 해부기 (Dissector)
-# ---------------------------------------------------------
-with tab2:
-    st.markdown("### [활자 해부기: 조사의 성역화]")
-    
-    if 'fragments' not in st.session_state: st.session_state.fragments = []
-    if 'locked_indices' not in st.session_state: st.session_state.locked_indices = set()
-
-    user_input_2 = st.text_area("해부대 (재배치)", placeholder="조사를 클릭해 고정하고 나머지를 섞으세요.", height=150, key="input2")
-
-    col_a, col_b = st.columns(2)
-    if col_a.button("🧪 활자 추출"):
-        # 공백을 포함한 모든 글자를 파편화
-        st.session_state.fragments = list(user_input_2)
-        st.session_state.locked_indices = set()
-
-    if col_b.button("🔀 파편 재배치 (고정 제외)"):
-        if st.session_state.fragments:
-            indices = list(range(len(st.session_state.fragments)))
-            non_locked_indices = [i for i in indices if i not in st.session_state.locked_indices]
-            
-            # 고정되지 않은 글자들만 추출해서 셔플
-            non_locked_chars = [st.session_state.fragments[i] for i in non_locked_indices]
-            random.shuffle(non_locked_chars)
-            
-            # 다시 제자리에 끼워넣기
-            new_fragments = list(st.session_state.fragments)
-            for i, char in zip(non_locked_indices, non_locked_chars):
-                new_fragments[i] = char
-            st.session_state.fragments = new_fragments
-
-    st.divider()
-
-    # 인터랙티브 해부대
-    if st.session_state.fragments:
-        st.write("클릭하여 고정(검은색) / 해제(흰색):")
-        
-        # Streamlit에서 개별 클릭을 받기 위해 버튼들을 나열 (반응형 위해 flex 처리 권장)
-        # 여기서는 간단히 나열하지만, 실제로는 CSS와 엮어 타일처럼 보이게 함
-        cols = st.columns(min(len(st.session_state.fragments), 20)) 
-        
-        for i, char in enumerate(st.session_state.fragments):
-            char_display = char if char != " " else "⎵"
-            is_locked = i in st.session_state.locked_indices
-            
-            # 버튼 스타일을 이용해 '고정' 상태 표시
-            button_type = "primary" if is_locked else "secondary"
-            if st.button(char_display, key=f"fragment_{i}", type=button_type):
-                if is_locked: st.session_state.locked_indices.remove(i)
-                else: st.session_state.locked_indices.add(i)
-                st.rerun()
