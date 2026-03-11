@@ -1,54 +1,88 @@
 import streamlit as st
 from kiwipiepy import Kiwi
+import requests
+import xml.etree.ElementTree as ET
 import os
 
-st.set_page_config(page_title="Jerboa Master Engine", page_icon="🐦")
+st.set_page_config(page_title="Jerboa Global Engine", page_icon="🐦")
+
+# 1. 이물의 국립국어원 API 키
+API_KEY = "E14AAE57D9E8F2214E247F3D5953E31B"
 
 @st.cache_resource
-def load_jerboa_dict():
+def load_hybrid_dict():
     kiwi = Kiwi()
-    # 깃허브에 직접 올린 nouns.txt만 믿고 갑니다.
+    
+    # 기본 사전 (니치한 예술 단어들)
+    niche_words = ["심연", "권태", "알바트로스", "오브제", "해부대", "재봉틀", "초현실", "파스칼키냐르"]
+    
+    # 로컬 nouns.txt 읽기
     if os.path.exists("nouns.txt"):
         with open("nouns.txt", "r", encoding="utf-8") as f:
-            # 404 같은 쓰레기 텍스트가 섞이지 않게 필터링 로직 추가
-            lines = f.readlines()
-            words = [l.strip() for l in lines if len(l.strip()) > 1 and "404" not in l]
-    else:
-        # 파일이 없을 때를 대비한 최소한의 예술적 안전망
-        words = ["심연", "권태", "알바트로스", "오브제", "인생", "예술"]
-    
-    words.sort()
-    return kiwi, words
+            niche_words = list(set(niche_words + [l.strip() for l in f if len(l.strip()) > 1]))
 
-kiwi, NOUN_DICT = load_jerboa_dict()
+    # 외부 대규모 사전 시도 (가장 안정적인 NLP 데이터 주소)
+    external_url = "https://raw.githubusercontent.com/monologg/korean-wordlist/master/nouns.txt"
+    try:
+        res = requests.get(external_url, timeout=5)
+        if res.status_code == 200:
+            ext_words = [w.strip() for w in res.text.split('\n') if len(w.strip()) > 1]
+            final_dict = sorted(list(set(niche_words + ext_words)))
+            status = f"✅ 외부 연결 성공 ({len(ext_words):,}개 로드)"
+        else:
+            final_dict = sorted(niche_words)
+            status = "⚠️ 외부 주소 응답 없음, 로컬 사전 가동"
+    except:
+        final_dict = sorted(niche_words)
+        status = "⚠️ 네트워크 오류, 로컬 사전 가동"
+        
+    return kiwi, final_dict, status
 
-st.title("🐦 저보아: 국가 공인(?) 무한 엔진")
-st.write(f"현재 엔진에 장전된 단어: **{len(NOUN_DICT)}개**")
+kiwi, NOUN_DICT, engine_status = load_hybrid_dict()
 
-# 진단 모드 (사전 내용 직접 확인)
-with st.expander("🔍 현재 사전 단어 목록 보기"):
-    st.write(", ".join(NOUN_DICT))
+# 국립국어원 API 검증 함수
+def check_api(word):
+    url = f"https://stdict.korean.go.kr/api/search.do?key={API_KEY}&q={word}&part=word&type_search=search"
+    try:
+        r = requests.get(url, timeout=3)
+        root = ET.fromstring(r.text)
+        return any('명사' in item.find('pos').text for item in root.findall('.//item'))
+    except:
+        return False
 
-# (치환 로직 부분)
-def oulipo_process(text, n):
+st.title("🐦 저보아: 외부 통합 무한 엔진")
+st.sidebar.success(engine_status)
+st.write(f"현재 탐색 가능한 어휘: **{len(NOUN_DICT):,}개**")
+
+def oulipo_hybrid(text, n):
     tokens = kiwi.tokenize(text)
     result = []
     last_end = 0
-    for token in tokens:
-        result.append(text[last_end:token.start])
-        if token.tag in ['NNG', 'NNP'] and token.form in NOUN_DICT:
-            idx = NOUN_DICT.index(token.form)
-            result.append(NOUN_DICT[(idx + n) % len(NOUN_DICT)])
-        else:
-            result.append(token.form)
-        last_end = token.end
-    result.append(text[last_end:])
+    
+    with st.status("국립국어원 및 외부 DB 탐색 중...", expanded=False) as status:
+        for token in tokens:
+            result.append(text[last_end:token.start])
+            if token.tag in ['NNG', 'NNP']:
+                # 사전이나 API 중 하나라도 명사로 인정하면 치환!
+                if token.form in NOUN_DICT or check_api(token.form):
+                    try:
+                        idx = NOUN_DICT.index(token.form)
+                    except ValueError:
+                        idx = len(NOUN_DICT) // 2 # 사전에 없으면 중간 지점부터
+                    result.append(NOUN_DICT[(idx + n) % len(NOUN_DICT)])
+                else:
+                    result.append(token.form)
+            else:
+                result.append(token.form)
+            last_end = token.end
+        status.update(label="해체 및 재구성 완료!", state="complete")
     return "".join(result)
 
-shift_n = st.sidebar.slider("치환 간격 (S+n)", 1, 20, 7)
-user_input = st.text_area("문장을 입력하세요:", height=150)
+shift_n = st.sidebar.slider("치환 간격 (n)", 1, 1000, 7)
+user_input = st.text_area("해체할 문장을 입력하세요:", height=150)
 
-if st.button("변환 실행"):
+if st.button("무한 엔진 실행"):
     if user_input:
-        output = oulipo_process(user_input, shift_n)
+        output = oulipo_hybrid(user_input, shift_n)
+        st.markdown("### ✨ 변환 결과")
         st.success(output)
