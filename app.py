@@ -304,21 +304,17 @@ with tab2:
             components.html(custom_html_2, height=750)
 
 # ---------------------------------------------------------
-# TAB 3: The Automaton (무의식의 방 & 불타는 캔버스 - Mosaic & Shuffle Edition)
+# TAB 3: The Automaton (무의식의 방 & 불타는 캔버스 - Text Only Burn Edition)
 # ---------------------------------------------------------
 with tab3:
     st.markdown("""
     <div class="instruction-box">
         <b>[자동 기술 지침: 파편의 증발]</b><br>
-        - <b>무의식의 흐름:</b> 텍스트를 입력하세요. 5초간 키보드가 멈추면 <b>최근 당신이 쏟아낸 3~5개의 문장 성분(어절)</b>이 불타 없어집니다.<br>
+        - <b>무의식의 흐름:</b> 텍스트를 입력하세요. 5초간 키보드가 멈추면 <b>최근 당신이 쏟아낸 3~5개의 어절</b>만 붉게 타오르며 사라집니다.<br>
         - <b>이성의 차단:</b> 백스페이스(수정)를 누르려면 3~5번을 미친 듯이 연타해야 겨우 한 글자가 지워집니다.<br>
-        - 의식을 검열하지 말고 그저 쏟아내세요. 사라진 파편은 우연의 흔적으로 남습니다.
+        - 캔버스의 틀은 견고합니다. 사라진 파편은 우연의 흔적으로 남으니 계속 나아가세요.
     </div>
     """, unsafe_allow_html=True)
-
-    # image_0.png에 묘사된 '프레임은 유지되고 텍스트만 타는' 효과 구현
-    # image_0.png의 Instruction Box 내용 일부 차용하여 지침 업데이트
-    # image_0.png의 Tab bar 구성 및 스타일 Preservation
 
     automaton_html_updated = """
     <!DOCTYPE html>
@@ -335,47 +331,53 @@ with tab3:
         #progress-bar { width: 100%; height: 100%; background: #000; transition: width 0.1s linear, background 1s ease; }
         .danger #progress-bar { background: #ff4d4d; }
         
-        #editor-container { position: relative; width: 100%; height: 500px; padding: 20px; box-sizing: border-box; }
-        
-        /* 캔버스 테두리 스타일 Preservation */
-        textarea {
-            width: 100%; height: 100%; background: transparent; border: 3px solid #000; padding: 20px;
-            font-family: 'Eulyoo1945-Regular', serif; font-size: 1.5rem; line-height: 1.8; color: #000;
-            resize: none; outline: none; transition: all 0.5s ease;
-            box-shadow: 4px 4px 0px #000;
-            cursor: text;
+        /* 캔버스 래퍼: 여기서 견고한 테두리와 그림자를 담당 */
+        #editor-wrapper { 
+            position: relative; width: 100%; height: 500px; 
+            border: 3px solid #000; box-shadow: 4px 4px 0px #000; 
+            background: transparent; box-sizing: border-box; overflow: hidden;
         }
         
-        /* ❗ 텍스트만 태워지게 수정 (프레임 흐려짐 문제 해결) */
-        @keyframes burnTextOnly {
-            0% { color: #000; text-shadow: 0 0 0 transparent; filter: blur(0px); }
-            30% { color: #ff4d4d; text-shadow: 0 0 10px #ff9900; filter: blur(1.5px); }
-            /* 100%에서 color를 transparent로, text-shadow를conceptual 'fade'로 유도 */
-            100% { color: transparent; text-shadow: 0 -20px 40px #000; filter: blur(6px); opacity: 0; }
+        /* 입력창과 오버레이는 완전히 겹쳐지게 설정 */
+        textarea, #overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            padding: 20px; box-sizing: border-box; margin: 0;
+            font-family: 'Eulyoo1945-Regular', serif; font-size: 1.5rem; line-height: 1.8; 
+            border: none; outline: none; background: transparent;
+            white-space: pre-wrap; word-wrap: break-word; overflow-y: auto;
         }
         
-        /* Applied to Textarea, but we target only the text-related properties *conceptual fade* */
-        .burning {
+        textarea { color: #000; resize: none; z-index: 2; cursor: text; }
+        /* 오버레이는 평소엔 투명하고 이벤트 무시 */
+        #overlay { color: transparent; z-index: 1; pointer-events: none; }
+        
+        /* 특정 파편만 타들어가는 마법의 CSS */
+        .burning-text {
+            display: inline-block;
             animation: burnTextOnly 1.5s forwards ease-in;
-            pointer-events: none;
-            /* 테두리와 배경은 sharp하게 유지 */
-            border: 3px solid #000 !important;
-            box-shadow: 4px 4px 0px #000 !important;
-            background-color: transparent !important;
         }
         
-        #bs-warning { position: absolute; top: 30px; right: 40px; color: #ff4d4d; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+        @keyframes burnTextOnly {
+            0% { color: #ff4d4d; text-shadow: 0 0 0px #ff0000; filter: blur(0px); opacity: 1; transform: translateY(0px); }
+            40% { color: #ff3333; text-shadow: 0 -3px 8px #ff9900; filter: blur(2px); transform: translateY(-2px); }
+            100% { color: transparent; text-shadow: 0 -15px 25px #ff0000; filter: blur(6px); opacity: 0; transform: translateY(-8px); }
+        }
+        
+        #bs-warning { position: absolute; top: 20px; right: 20px; color: #ff4d4d; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
     </style>
     </head>
     <body>
         <div id="progress-container"><div id="progress-bar"></div></div>
-        <div id="editor-container">
-            <textarea id="auto-text" placeholder="최근 쏟아낸 파편들이 증발합니다..."></textarea>
+        
+        <div id="editor-wrapper">
+            <div id="overlay"></div>
+            <textarea id="auto-text" placeholder="의식의 검열을 멈추고 쏟아내세요. 5초 뒤 최근 쓴 단어들이 불탑니다..."></textarea>
             <div id="bs-warning">이성이 저항합니다! 연타하세요!</div>
         </div>
 
         <script>
             const textarea = document.getElementById('auto-text');
+            const overlay = document.getElementById('overlay');
             const progressBar = document.getElementById('progress-bar');
             const bsWarning = document.getElementById('bs-warning');
             
@@ -384,20 +386,18 @@ with tab3:
             let timeRemaining = TIME_LIMIT;
             let isBurning = false;
             
-            // 백스페이스 저항 로직 Preservation
             let bsCount = 0;
-            let bsRequired = Math.floor(Math.random() * 3) + 3; // 3~5회 요구
+            let bsRequired = Math.floor(Math.random() * 3) + 3;
 
             function startTimer() {
                 clearInterval(timerInterval);
                 timeRemaining = TIME_LIMIT;
                 isBurning = false;
-                textarea.classList.remove('burning');
+                
                 document.getElementById('progress-container').classList.remove('danger');
                 progressBar.style.width = '100%';
 
                 timerInterval = setInterval(() => {
-                    // 비어있거나, 입력 도중 멈춘 ' composition' 상태일 때 타이머 작동 안 함
                     if(textarea.value.trim() === '') return; 
 
                     timeRemaining -= 100;
@@ -410,71 +410,91 @@ with tab3:
 
                     if (timeRemaining <= 0) {
                         clearInterval(timerInterval);
-                        triggerBurn();
+                        triggerPartialBurn();
                     }
                 }, 100);
             }
 
-            // ❗ 부분 삭제 로직 (최근 3~5개 어절 지우기) 및 Text-Only Burn 효과
-            function triggerBurn() {
+            // ❗ 부분 삭제 및 오버레이 애니메이션 로직
+            function triggerPartialBurn() {
                 if(isBurning) return;
                 isBurning = true;
                 
-                // image_0.png와 같이 텍스트만 녹아내리는 효과 (테두리는 sharp)
-                textarea.classList.add('burning');
+                const val = textarea.value;
+                const numToDelete = Math.floor(Math.random() * 3) + 3; // 3~5 단어 삭제
                 
-                // 불타는 애니메이션 끝난 후 부분 삭제
-                setTimeout(() => {
-                    const currentValue = textarea.value;
-                    // 공백 기준으로 어절 분리 (빈 어절 제거)
-                    const words = currentValue.split(/\s+/).filter(Boolean);
-
-                    if (words.length > 0) {
-                        // 랜덤 삭제 개수 (3~5개)
-                        const numToDelete = Math.floor(Math.random() * 3) + 3;
-                        // 최근 쏟아낸 부분(맨 뒤)에서 도려냄
-                        const remainingWords = words.slice(0, words.length - numToDelete);
-                        
-                        // 캔버스 업데이트
-                        textarea.value = remainingWords.join(' ');
+                // 뒤에서부터 단어 개수를 세어 잘라낼 위치(Index)를 찾는 안전한 로직
+                let wordCount = 0;
+                let splitIndex = 0;
+                let inWord = false;
+                
+                for(let i = val.length - 1; i >= 0; i--) {
+                    if (/\\s/.test(val[i])) {
+                        inWord = false;
+                    } else {
+                        if (!inWord) { wordCount++; inWord = true; }
                     }
-
-                    // 애니메이션 클래스 제거 및 초기화
-                    textarea.classList.remove('burning');
+                    if (wordCount > numToDelete) {
+                        splitIndex = i + 1;
+                        break;
+                    }
+                }
+                
+                const safePart = val.substring(0, splitIndex);
+                const burningPart = val.substring(splitIndex);
+                
+                // 특수문자 안전 처리 (HTML 렌더링용)
+                const escapeHTML = (str) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                
+                // 애니메이션 준비: 입력창 글자는 숨기고, 오버레이에 분리된 텍스트 렌더링
+                overlay.innerHTML = `<span style="color: #000;">${escapeHTML(safePart)}</span><span class="burning-text">${escapeHTML(burningPart)}</span>`;
+                overlay.scrollTop = textarea.scrollTop; // 스크롤 위치 동기화
+                
+                textarea.style.color = 'transparent'; // 원본 텍스트 숨김 (테두리는 wrapper에 있으니 영향 없음)
+                textarea.disabled = true; // 타는 동안 입력 방지
+                
+                // 1.5초 후 재가 된 텍스트 제거하고 캔버스 복구
+                setTimeout(() => {
+                    textarea.value = safePart;
+                    textarea.style.color = '#000';
+                    textarea.disabled = false;
+                    overlay.innerHTML = '';
+                    
                     progressBar.style.width = '100%';
                     document.getElementById('progress-container').classList.remove('danger');
                     isBurning = false;
+                    textarea.focus();
                     
-                    // 삭제 후 텍스트가 남아있다면 타이머 다시 시작
                     if(textarea.value.trim() !== '') startTimer();
-                }, 1500); // Animation duration (sync with CSS)
+                }, 1500);
             }
 
             textarea.addEventListener('input', () => {
-                // 한글 composition 시작 시 타이머 멈추게 함 (IME 이슈 대응)
                 if (textarea.composing) { clearInterval(timerInterval); return; }
                 if(!isBurning) startTimer();
             });
 
-            // IME composition 이벤트 처리
             textarea.addEventListener('compositionstart', () => { textarea.composing = true; clearInterval(timerInterval); });
             textarea.addEventListener('compositionend', () => { textarea.composing = false; if(!isBurning) startTimer(); });
 
+            // 스크롤 동기화 (오버레이와 텍스트 에어리어가 같이 움직이도록)
+            textarea.addEventListener('scroll', () => { overlay.scrollTop = textarea.scrollTop; });
+
             textarea.addEventListener('keydown', (e) => {
-                if (isBurning) { e.preventDefault(); return; } // 태워지는 중엔 입력 불가
+                if (isBurning) { e.preventDefault(); return; }
 
                 if (e.key === 'Backspace') {
-                    if (textarea.composing) return; // 한글 입력 중엔 저항 없음
+                    if (textarea.composing) return;
 
                     bsWarning.style.opacity = '1';
                     setTimeout(() => bsWarning.style.opacity = '0', 500);
 
                     bsCount++;
                     if (bsCount < bsRequired) {
-                        e.preventDefault(); // 횟수 못 채우면 삭제 취소
+                        e.preventDefault();
                     } else {
                         bsCount = 0;
-                        bsRequired = Math.floor(Math.random() * 3) + 3; // 다음 번 요구 횟수 재설정
+                        bsRequired = Math.floor(Math.random() * 3) + 3;
                     }
                 } else {
                     bsWarning.style.opacity = '0';
@@ -485,7 +505,6 @@ with tab3:
     </body>
     </html>
     """
-    # Components.html 호출 (preserves style of Tabbar and instruction boxes)
     components.html(automaton_html_updated, height=600)
     
 # --- 하단 🏺 따로 움직이는 파편들 (공통) ---
