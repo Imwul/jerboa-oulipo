@@ -17,35 +17,38 @@ def load_kiwi_engine():
 
 # 3. 메인 진단 및 단어 로드 함수
 def diagnostic_load():
-    kiwi = load_kiwi_engine() # 위에서 정의한 함수 호출
+    kiwi = load_kiwi_engine()
     
-    # 이물의 안목을 위한 기본 단어 (보들레르와 초현실주의의 파편들)
+    # 기본 단어장
     base_dict = ["심연", "권태", "알바트로스", "오브제", "해부대", "재봉틀", "초현실", "파편", "공백", "소멸"]
     
     API_KEY = "E14AAE57D9E8F2214E247F3D5953E31B"
-    # 울리포적 확장을 위해 다양한 키워드로 낚시질을 해보자
- keywords = ["오브제", "파편", "흔적", "심연", "거울", "그림자", "자동", "복제", "기계", "신체", "시선", "공백"]
+    
+    # ⚠️ 이 부분의 들여쓰기가 위 코드들과 일치해야 해!
+    keywords = [
+        "오브제", "파편", "흔적", "심연", "거울", "그림자", 
+        "자동", "복제", "기계", "신체", "시선", "공백"
+    ]
+    
     total_ext_words = []
 
     try:
         for kw in keywords:
-            # num=100으로 설정해서 최대한 많이 긁어오기
+            # API 호출 시 num=100으로 최대치 확보
             url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include"
             res = requests.get(url, timeout=10, verify=False)
             
             if res.status_code == 200:
                 root = ET.fromstring(res.content)
-                # XML에서 단어 텍스트만 추출
                 words = [node.text.replace('-', '') for node in root.findall('.//item/word') if node.text]
                 total_ext_words.extend(words)
         
-        # 중복 제거 및 정렬
         final_dict = sorted(list(set(base_dict + total_ext_words)))
-        status = f"✅ 성공! (API에서 {len(total_ext_words)}개 수혈 완료)"
+        status = f"✅ 성공! (총 {len(final_dict)}개 장전)"
         return kiwi, final_dict, status
 
     except Exception as e:
-        return kiwi, base_dict, f"⚠️ 통신 장애: {str(e)} (로컬 모드)"
+        return kiwi, base_dict, f"⚠️ 통신 장애: {str(e)}"
 
 # --- 실행부 ---
 kiwi, NOUN_DICT, network_status = diagnostic_load()
