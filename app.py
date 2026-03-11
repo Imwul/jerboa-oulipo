@@ -76,14 +76,14 @@ def load_kiwi():
     return Kiwi()
 
 def fetch_words(kw, API_KEY):
-    # pos=1 (명사만 가져오기)
-    url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include&pos=1"
+    # 💡 sort=popular 옵션을 추가해서 사람들이 많이 찾는 익숙한 단어 위주로 긁어옴
+    url = f"https://opendict.korean.go.kr/api/search?key={API_KEY}&q={kw}&target=1&num=100&advanced=y&method=include&pos=1&sort=popular"
     try:
         res = requests.get(url, timeout=5, verify=False)
         if res.status_code == 200:
             root = ET.fromstring(res.content)
             words = [node.text.replace('-', '').replace('^', '') for node in root.findall('.//item/word') if node.text]
-            # 철저한 거름망: 2~4글자, 띄어쓰기 없음, 완벽한 한글
+            # 거름망: 2~4글자, 띄어쓰기 없음, 완벽한 한글
             return [w for w in words if 2 <= len(w) <= 4 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w)]
     except:
         return []
@@ -92,11 +92,33 @@ def fetch_words(kw, API_KEY):
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
     API_KEY = "E14AAE57D9E8F2214E247F3D5953E31B"
-    # 광범위한 명사 수집을 위한 근원적 키워드들
-    keywords = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하", "물", "불", "별", "달", "해", "꽃"]
+    
+    # 💡 이물의 지시 반영: 너무 니치한 것을 빼고, 일상적이고 감성적인 '대중 픽' 키워드로 전면 교체
+    keywords = [
+        "사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", 
+        "바람", "하늘", "바다", "얼굴", "소리", "가족", "이야기", "노래", "마을", "도시", 
+        "나무", "우주", "역사", "미래", "과거", "눈물", "웃음", "약속", "여행", "사진"
+    ]
     
     total_words = []
-    my_bar = st.progress(0, text="국립국어원(우리말샘) 서버 접속 중...")
+    my_bar = st.progress(0, text="대중적이고 익숙한 일상 단어들을 수집하는 중...")
+    
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
+            total_words.extend(words)
+            my_bar.progress((i + 1) / len(keywords), text=f"일상 파편 발굴 중... (현재 {len(total_words)}개 수집)")
+            time.sleep(0.05)
+            
+    my_bar.empty()
+    
+    final_dict = sorted(list(set(total_words)))
+    
+    if len(final_dict) < 50:
+         # 비상용 단어들도 아주 일상적인 것으로 교체
+         base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무"]
+         final_dict = sorted(list(set(final_dict + base_dict)))
+         
+    return final_dict
     
     # 5개씩 부드럽게 병렬 처리 (서버 차단 방지 및 속도 확보)
     with ThreadPoolExecutor(max_workers=5) as executor:
