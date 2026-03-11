@@ -4,28 +4,43 @@ import random
 import os
 import re
 
-# --- 1. 페이지 설정 및 폰트 ---
+# --- 1. 페이지 설정 ---
 st.set_page_config(page_title="Jerboa Circle", layout="wide")
 
-# --- 2. 🎨 디자인: Trattatello 미학 & 모바일 최적화 (CSS) ---
+# --- 2. 🎨 디자인: 제목(Trattatello) & 본문(을유1945) (CSS) ---
 st.markdown("""
 <style>
     :root { color-scheme: light !important; }
     [data-testid="stAppViewContainer"], .stApp { background-color: #FFFFFF !important; }
 
-    /* Trattatello 및 고전적 세리프 폰트 설정 */
+    /* 을유1945 폰트 로드 */
+    @font-face {
+        font-family: 'Eulyoo1945-Regular';
+        src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
+    }
+
+    /* ❗ 제목(h1)만 Trattatello 적용 */
+    h1 {
+        font-family: 'Trattatello', 'Apple Chancery', 'cursive' !important;
+        font-size: 3.5rem !important;
+        color: #000000 !important;
+        text-align: center;
+        margin-bottom: 0.5rem !important;
+    }
+
+    /* ❗ 그 외 모든 본문 폰트 설정 */
     * { 
-        font-family: 'Trattatello', 'Apple Chancery', 'Palatino', 'serif' !important; 
+        font-family: 'Eulyoo1945-Regular', serif !important; 
         color: #000000 !important; 
     }
     
     /* 📱 모바일 대응 */
     @media (max-width: 768px) {
+        h1 { font-size: 2.2rem !important; }
         .fragment-tag { padding: 4px 8px !important; margin: 4px !important; font-size: 0.8rem !important; }
-        h1 { font-size: 1.8rem !important; }
     }
 
-    /* ❗ 해부대(입력창): 검은 배경 & 하얀 글씨 */
+    /* 해부대(입력창): 검은 배경 & 하얀 글씨 */
     textarea {
         background-color: #111111 !important;
         color: #FFFFFF !important;
@@ -39,7 +54,7 @@ st.markdown("""
         margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem;
     }
 
-    /* 🌊 유령의 군무 애니메이션 */
+    /* 유령의 군무 애니메이션 */
     @keyframes float {
         0% { transform: translateY(0px) rotate(0deg); }
         50% { transform: translateY(-12px) rotate(1.5deg); }
@@ -56,7 +71,7 @@ st.markdown("""
     div.stButton > button { 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
-        height: 3.5rem; font-size: 1.3rem !important;
+        height: 3.5rem; font-size: 1.2rem !important;
     }
     div.stButton > button p { color: #FFFFFF !important; }
 </style>
@@ -72,24 +87,25 @@ def load_oulipo_dict():
     if os.path.exists("nouns.txt"):
         with open("nouns.txt", "r", encoding="utf-8") as f:
             return f.read().splitlines()
-    return ["거울", "파편", "심연", "공백", "기억", "망각"]
+    return ["거울", "파편", "심연", "공백", "기억", "망각", "미학"]
 
 NOUN_DICT = load_oulipo_dict()
 
 # --- 4. 메인 화면 ---
-st.title("🐀 Jerboa Circle: The Oulipo Engine")
+st.title("Jerboa Circle: The Oulipo Engine")
 
 st.markdown("""
 <div class="instruction-box">
     <b>[Engine Operation Guide]</b><br>
-    - <b>The Crucible:</b> 문장을 입력하세요. 줄 바꿈과 여백은 엄격히 수호됩니다.<br>
-    - <b>The Sanctuary:</b> 보호할 단어는 <b>&lt;단어&gt;</b> 와 같이 표기하세요. 전후 공백이 보존됩니다.<br>
-    - <b>N+7 Probability:</b> 모든 명사를 바꿀지, 일부만 치환할지 결정하세요.
+    - <b>Crucible:</b> 문장을 입력하세요. <b>줄 바꿈</b>과 <b>공백</b>은 수호됩니다.<br>
+    - <b>Sanctuary:</b> 보호할 단어는 <b>&lt;단어&gt;</b> 와 같이 꺽쇠로 보호하세요. 전후 공백이 보존됩니다.<br>
+    - <b>Probability:</b> 모든 명사를 바꿀지, 일부만 치환할지 확률을 조절하세요.
 </div>
 """, unsafe_allow_html=True)
 
-user_input = st.text_area("Crucible", placeholder="여기에 문장을 넣으세요.", height=200)
+user_input = st.text_area("해부대(Crucible)", placeholder="여기에 문장을 넣으세요. <나>는 <심연>을 보았다.", height=200)
 
+# 제어판
 col1, col2 = st.columns(2)
 with col1: shift_val = st.slider("S+N 거리", 1, 1000, 7)
 with col2: prob_val = st.slider("변환 확률 (%)", 0, 100, 100)
@@ -140,7 +156,7 @@ if st.button("✨ EXECUTE TRANSFORMATION"):
     if user_input:
         lines = user_input.split('\n')
         st.subheader("🖼️ Resulting Fragment")
-        html_res = '<div style="line-height: 2.4; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
+        html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
         
         for line in lines:
             if not line.strip():
@@ -160,14 +176,17 @@ if st.button("✨ EXECUTE TRANSFORMATION"):
 
 st.divider()
 
-# --- 5. 🏺 유령처럼 떠다니는 파편들 ---
+# --- 5. 🏺 따로 움직이는 파편들 ---
 st.subheader("🏺 Lexical Fragments")
 washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
 samples = random.sample(NOUN_DICT, min(40, len(NOUN_DICT)))
 
 html_tags = '<div style="text-align:center; padding-bottom: 50px;">'
 for w in samples:
-    html_tags += f'<span class="fragment-tag" style="background-color:{random.choice(washed_colors)}; animation-delay: {random.uniform(0, 4)}s;">{w}</span>'
+    color = random.choice(washed_colors)
+    delay = random.uniform(0, 4)
+    duration = random.uniform(5, 8)
+    html_tags += f'<span class="fragment-tag" style="background-color:{color}; animation-delay: {delay}s; animation-duration: {duration}s;">{w}</span>'
 html_tags += '</div>'
 
 st.markdown(html_tags, unsafe_allow_html=True)
