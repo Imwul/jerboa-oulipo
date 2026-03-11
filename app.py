@@ -14,29 +14,56 @@ if "archive" not in st.session_state:
 if "raw_xml" not in st.session_state:
     st.session_state.raw_xml = ""
 
-# --- 2. 🎨 디자인 (CSS) ---
+# --- 2. 🎨 가독성 강화 라이트 모드 디자인 (CSS) ---
 st.markdown("""
 <style>
+/* 1. 시스템 테마를 무시하고 강제로 라이트 모드 설정 */
+:root {
+    color-scheme: light !important;
+}
+
+/* 2. 전체 배경과 글자색 강제 고정 */
+[data-testid="stAppViewContainer"], [data-testid="stHeader"], .stApp {
+    background-color: #FFFFFF !important;
+    color: #111111 !important;
+}
+
+/* 3. 폰트 설정 및 모든 요소의 글자색 강제 */
 @font-face {
     font-family: 'Eulyoo1945-Regular';
     src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff');
-    font-weight: normal; font-style: normal;
 }
-.stApp { background-color: #FFFFFF !important; }
-html, body, [class*="css"], h1, h2, h3, h4, h5, h6, p, span, div, label {
-    color: #111111 !important; font-family: 'Eulyoo1945-Regular', serif !important;
+
+* {
+    font-family: 'Eulyoo1945-Regular', serif !important;
+    color: #111111 !important;
 }
-.fragment-tag {
-    display: inline-block; padding: 6px 14px; margin: 8px; border-radius: 4px;
-    color: #222222 !important; border: 1px solid #dcdcdc;
+
+/* 4. 입력창(Text Area)과 슬라이더 가독성 확보 */
+textarea, input, [data-testid="stMarkdownContainer"] p {
+    background-color: #F0F2F6 !important; /* 연한 회색 배경 */
+    color: #111111 !important; /* 진한 검정 글자 */
+    border: 1px solid #dcdcdc !important;
 }
+
+/* 5. 버튼 디자인 (검은 테두리에 검은 글자) */
 div.stButton > button {
-    background-color: #ffffff !important; color: #111111 !important;
-    border: 2px solid #111111 !important; border-radius: 0px !important;
-    box-shadow: 3px 3px 0px #111111 !important; font-weight: bold !important;
+    background-color: #ffffff !important;
+    color: #111111 !important;
+    border: 2px solid #111111 !important;
+    border-radius: 0px !important;
+    box-shadow: 3px 3px 0px #111111 !important;
+    font-weight: bold !important;
 }
-.debug-box {
-    background-color: #f0f0f0; border: 1px dashed #ff0000; padding: 10px; font-family: monospace; font-size: 0.8rem; overflow: auto;
+
+/* 6. 파편 태그 (가독성 높은 파스텔톤) */
+.fragment-tag {
+    display: inline-block;
+    padding: 6px 14px;
+    margin: 8px;
+    border-radius: 4px;
+    color: #111111 !important; /* 태그 안의 글자도 검정으로 고정 */
+    border: 1px solid #dcdcdc;
 }
 </style>
 """, unsafe_allow_html=True)
