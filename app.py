@@ -197,7 +197,6 @@ with tab2:
                     border: 3px solid #000; border-top: none; cursor: default; overflow: hidden;
                 }}
                 
-                /* 마그넷: 이제 내부 글자들의 색을 보여주기 위해 투명한 플렉스 박스가 됨 */
                 .magnet {{
                     position: absolute; border: 2px solid #000; padding: 0; display: flex;
                     font-size: 1.4rem; font-weight: bold; cursor: grab; 
@@ -206,7 +205,6 @@ with tab2:
                 }}
                 .magnet:active {{ cursor: grabbing; transform: scale(1.05); z-index: 1000 !important; }}
                 
-                /* 개별 글자 스타일 */
                 .char {{ 
                     display: inline-block; padding: 6px 3px; transition: color 0.2s; 
                 }}
@@ -241,7 +239,6 @@ with tab2:
                     let glueMode = false;
                     let glueTarget = null;
                     let zIndex = 10;
-                    let historyStack = [];
 
                     const knifeBtn = document.getElementById('knifeToggle');
                     const glueBtn = document.getElementById('glueToggle');
@@ -275,7 +272,6 @@ with tab2:
                         glueTarget = null;
                     }}
 
-                    // DOM에서 마그넷 데이터(글자+색상 배열) 추출
                     function getCharData(magnetEl) {{
                         return Array.from(magnetEl.children).map(span => ({{
                             char: span.innerText,
@@ -283,21 +279,9 @@ with tab2:
                         }}));
                     }}
 
-                    // 💾 상태 저장
-                    function saveState() {{
-                        const state = Array.from(document.querySelectorAll('.magnet')).map(m => ({{
-                            charData: getCharData(m),
-                            left: m.style.left,
-                            top: m.style.top
-                        }}));
-                        historyStack.push(state);
-                    }}
-
-               
-                    // 🧲 마그넷 생성 (charDataArray = [{char: '가', bg: 'red'}, ...])
-                    function createMagnet(charDataArray, startX, startY, save = true) {{
+                    // 🧲 마그넷 생성 (charDataArray = [{{char: '가', bg: 'red'}}, ...])
+                    function createMagnet(charDataArray, startX, startY) {{
                         if (!charDataArray || charDataArray.length === 0) return;
-                        if (save) saveState();
 
                         const div = document.createElement('div');
                         div.className = 'magnet';
@@ -309,7 +293,7 @@ with tab2:
                             const span = document.createElement('span');
                             span.className = 'char';
                             span.innerText = item.char;
-                            span.style.backgroundColor = item.bg; // 개별 글자에 색상 부여
+                            span.style.backgroundColor = item.bg;
                             span.dataset.index = index;
                             
                             // 🔪 자르기 이벤트
@@ -318,7 +302,7 @@ with tab2:
                                 e.stopPropagation(); 
                                 
                                 const clickedIdx = parseInt(e.target.dataset.index);
-                                if (clickedIdx === 0) return; // 첫 글자 방지
+                                if (clickedIdx === 0) return;
 
                                 const currentData = getCharData(div);
                                 const part1 = currentData.slice(0, clickedIdx);
@@ -327,11 +311,10 @@ with tab2:
                                 const pX = parseFloat(div.style.left);
                                 const pY = parseFloat(div.style.top);
 
-                                saveState();
                                 div.remove();
 
-                                createMagnet(part1, pX, pY, false);
-                                createMagnet(part2, pX + e.target.offsetLeft + 5, pY + 15, false);
+                                createMagnet(part1, pX, pY);
+                                createMagnet(part2, pX + e.target.offsetLeft + 5, pY + 15);
                             }});
                             div.appendChild(span);
                         }});
@@ -346,14 +329,12 @@ with tab2:
                                     glueTarget = div;
                                     div.classList.add('glue-selected');
                                 }} else if (glueTarget !== div) {{
-                                    saveState();
                                     const data1 = getCharData(glueTarget);
                                     const data2 = getCharData(div);
                                     
                                     const t1X = parseFloat(glueTarget.style.left);
                                     const t2X = parseFloat(div.style.left);
                                     
-                                    // 왼쪽에 있는 것을 앞으로
                                     const combinedData = t1X <= t2X ? data1.concat(data2) : data2.concat(data1);
                                     const newX = Math.min(t1X, t2X);
                                     const newY = parseFloat(glueTarget.style.top);
@@ -362,7 +343,7 @@ with tab2:
                                     div.remove();
                                     glueTarget = null;
                                     
-                                    createMagnet(combinedData, newX, newY, false);
+                                    createMagnet(combinedData, newX, newY);
                                 }} else {{
                                     clearGlueTarget();
                                 }}
@@ -371,7 +352,6 @@ with tab2:
 
                             // 드래그
                             e.preventDefault();
-                            saveState();
                             div.style.zIndex = ++zIndex;
                             let pos3 = e.clientX, pos4 = e.clientY;
                             
@@ -391,48 +371,43 @@ with tab2:
 
                     // ✨ 영감 (셔플) 로직
                     shuffleBtn.addEventListener('click', () => {{
-                        saveState();
                         let allMagnets = Array.from(document.querySelectorAll('.magnet'));
                         let dataList = allMagnets.map(m => getCharData(m));
 
-                        // 배열 무작위 섞기
                         for (let i = dataList.length - 1; i > 0; i--) {{
                             const j = Math.floor(Math.random() * (i + 1));
                             [dataList[i], dataList[j]] = [dataList[j], dataList[i]];
                         }}
 
-                        canvas.innerHTML = ''; // 캔버스 초기화
+                        canvas.innerHTML = '';
                         clearGlueTarget();
 
                         let currentY = 50;
                         let currentX = 50;
                         let countInRow = 0;
-                        let targetInRow = Math.floor(Math.random() * 3) + 3; // 3~5개
+                        let targetInRow = Math.floor(Math.random() * 3) + 3;
 
                         dataList.forEach((charData) => {{
-                            createMagnet(charData, currentX, currentY, false);
-                            currentX += (charData.length * 28) + 30; // 글자 수 기반 대략적인 간격
+                            createMagnet(charData, currentX, currentY);
+                            currentX += (charData.length * 28) + 30;
                             countInRow++;
 
-                            // 캔버스 오른쪽을 벗어나거나 설정된 행의 개수를 채우면 줄바꿈
                             if (countInRow >= targetInRow || currentX > canvas.offsetWidth - 150) {{
                                 currentY += 75;
-                                currentX = 40 + Math.random() * 60; // 다음 줄 시작 위치도 약간 무작위로
+                                currentX = 40 + Math.random() * 60;
                                 countInRow = 0;
                                 targetInRow = Math.floor(Math.random() * 3) + 3;
                             }}
                         }});
                     }});
 
-                    // 초기 생성 시 단어를 charDataArray 형태로 변환 후 배치
                     initialWords.forEach((word, i) => {{
                         const x = 30 + (i % 6) * 110 + Math.random() * 30;
                         const y = 30 + Math.floor(i / 6) * 70 + Math.random() * 30;
                         const initialColor = colorPalette[Math.floor(Math.random() * colorPalette.length)];
                         
-                        // 단어를 글자 단위로 쪼개고 동일한 배경색 부여
                         const charDataArray = Array.from(word).map(c => ({{ char: c, bg: initialColor }}));
-                        createMagnet(charDataArray, x, y, false);
+                        createMagnet(charDataArray, x, y);
                     }});
                 </script>
             </body>
