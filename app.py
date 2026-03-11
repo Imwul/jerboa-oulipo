@@ -531,15 +531,34 @@ with tab6:
     st.markdown("""
     <div class="instruction-box">
         <b>[바벨의 균열 지침: 오독의 시학]</b><br>
-        - <b>구문 파괴:</b> 완벽한 문장을 넣으세요. 인공적인 '기계 번역 오류'를 시뮬레이션하여 문장의 조사와 어미를 기괴하게 비틀어버립니다.<br>
-        - 누보로망 작가들이 사랑할 만한 낯설고 이질적인 문장을 수집하세요.
+        - <b>구문 파괴:</b> 완벽한 문장을 넣으세요. 인공적인 '기계 번역 오류'를 시뮬레이션하여 문장을 기괴하게 비틀어버립니다.<br>
+        - <b>균열의 발생:</b> 초현실적인 사물이 난입하고, 단어가 반복되며, 침묵이 끼어듭니다. 낯설고 이질적인 문장을 수집하세요.
     </div>
     """, unsafe_allow_html=True)
     
     babel_input = st.text_area("해부할 완벽한 문장", placeholder="나는 오늘 아침에 일어나 거울을 보며 깊은 절망을 느꼈다.", height=150, key="babel_input")
     
-    WEIRD_PARTICLES = ["에게로써", "마저도", "조차", "의 곁에서", "를 향한", "치고는"]
-    WEIRD_ENDINGS = ["었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다"]
+    # 기괴함을 더해줄 파편화된 사전들 대폭 확장
+    SURREAL_NOUNS = [
+        "침묵", "기하학", "고깃덩어리", "균열", "환상지", "잔해", "태엽", "미궁", "백색소음", "불안", "이물질",
+        "심연", "권태", "해부대", "잿더미", "육체", "이방인", "기호", "맹목", "궤적", "톱니바퀴", "파편",
+        "내장", "얼룩", "허무", "무의식", "타자", "기생충", "고독", "메스", "몽유병", "사각지대", "구토",
+        "무덤", "망막", "짐승", "유령", "폐허", "강박"
+    ]
+    WEIRD_ADVERBS = [
+        "기계적으로", "불쾌하게", "영원히", "느닷없이", "집요하게", "증발하듯", 
+        "맹목적으로", "불길하게", "기형적으로", "무기력하게", "파편적으로", "신경질적으로", 
+        "발작적으로", "음울하게", "기만적으로", "헛되이", "무자비하게", "조각조각", "병적으로"
+    ]
+    WEIRD_PARTICLES = [
+        "에게로써", "마저도", "조차", "의 곁에서", "를 향한", "치고는", "너머로",
+        "의 밑바닥에", "에 기생하여", "를 찢고서", "조차 외면한", "서껀", "인들", "밖에"
+    ]
+    WEIRD_ENDINGS = [
+        "었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지",
+        "었으리라", "련만", "더이까", "려무나", "쇠다", "소서", "으오", "지어다", "ㄴ대도", "ㄹ망정"
+    ]
+    GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // ", " [검열됨] ", " (정적) "]
 
     if st.button("🗼 바벨탑 무너뜨리기", key="babel_btn"):
         if babel_input:
@@ -547,7 +566,14 @@ with tab6:
             glitch_result = []
             
             for t in tokens:
-                if t.tag.startswith('J'): 
+                # 1. 초현실적 명사 난입 (20% 확률)
+                if t.tag.startswith('N') and random.random() > 0.8:
+                    glitch_result.append((random.choice(SURREAL_NOUNS), t.tag))
+                # 2. 기괴한 부사 난입 (부사일 경우 50% 확률)
+                elif t.tag.startswith('M') and random.random() > 0.5:
+                    glitch_result.append((random.choice(WEIRD_ADVERBS), t.tag))
+                # 3. 기존의 조사/어미 비틀기
+                elif t.tag.startswith('J'): 
                     if random.random() > 0.4: 
                         glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
                     else:
@@ -559,14 +585,26 @@ with tab6:
                         glitch_result.append((t.form, t.tag))
                 else:
                     glitch_result.append((t.form, t.tag))
+                
+                # 4. 기계적 오류 (Stuttering - 10% 확률로 방금 넣은 형태소 기괴하게 반복)
+                if random.random() > 0.9:
+                    glitch_result.append(glitch_result[-1])
             
+            # 형태소 조립
             ruined_text = kiwi.join(glitch_result)
             
+            # 5. 구두점 파괴 및 시스템 오류 메시지 강제 삽입
+            words = ruined_text.split()
+            final_text = ""
+            for w in words:
+                final_text += w + " "
+                if random.random() > 0.85:
+                    final_text += random.choice(GLITCH_MARKS)
+            
             st.subheader("👁️ 오독의 결과물")
-            # 배경을 하얗게, 글씨를 까맣게 수정하여 다른 탭들과 통일성 부여 및 시인성 확보
             st.markdown(f"""
             <div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000 !important; line-height: 2.2; font-size: 1.4rem; font-weight: bold;'>
-                {ruined_text}
+                {final_text}
             </div>
             """, unsafe_allow_html=True)
 
