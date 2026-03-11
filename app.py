@@ -41,23 +41,37 @@ kiwi, NOUN_DICT, network_status = diagnostic_load()
 st.title("🐦 저보아: 무한 울리포 엔진")
 
 # --- 변환 엔진 (ValueError 수정됨) ---
-def transform_engine(text, dictionary):
+def transform_engine(text, dictionary, shift=7):
     if not text.strip(): return "입력된 문장이 없어."
+    
+    # 1. 사전 정제: 띄어쓰기가 있는 단어는 리듬을 깨므로 필터링 (선택 사항)
+    # 1:1 대응을 원한다면 띄어쓰기 없는 단어만 남기는 게 좋아.
+    clean_dict = [w for w in dictionary if ' ' not in w]
     
     tokens = kiwi.tokenize(text)
     result = []
     
     for t in tokens:
-        if t.tag.startswith('N'): # 명사라면
-            new_word = random.choice(dictionary)
-            # 💡 중요: (단어, 품사) 형태의 튜플로 전달해야 ValueError가 안 나!
-            result.append((new_word, 'NNG'))
+        if t.tag.startswith('N'): # 명사일 때
+            try:
+                # 2. S+N 알고리즘: 현재 단어가 사전의 몇 번째인지 찾고 shift만큼 이동
+                # 만약 사전에 없는 단어라면 랜덤하게 하되, seed를 써서 고정함
+                if t.form in clean_dict:
+                    current_idx = clean_dict.index(t.form)
+                    new_idx = (current_idx + shift) % len(clean_dict)
+                    new_word = clean_dict[new_idx]
+                else:
+                    # 사전에 없는 단어는 일관성을 위해 해시값을 시드로 사용
+                    random.seed(hash(t.form))
+                    new_word = random.choice(clean_dict)
+                
+                result.append((new_word, 'NNG'))
+            except:
+                result.append((t.form, t.tag))
         else:
-            # 기존 토큰의 형태와 품사를 그대로 유지
             result.append((t.form, t.tag))
             
-    return kiwi.join(result) # 이제 여기서 에러가 나지 않아!
-
+    return kiwi.join(result)
 # UI 부분
 user_input = st.text_area("텍스트를 투입해봐.", placeholder="예: 나는 오늘 거울 속에서 파편을 발견했다.")
 
