@@ -5,13 +5,13 @@ import re
 import random
 import os
 
-# --- 1. 페이지 설정 및 시각적 고정 ---
+# --- 1. 페이지 설정 ---
 st.set_page_config(page_title="Jerboa Oulipo Engine", page_icon="🐦", layout="wide")
 
 if "archive" not in st.session_state:
     st.session_state.archive = []
 
-# --- 2. 🎨 칠흑의 활자와 역동적인 캔버스 (CSS) ---
+# --- 2. 🎨 시각적 고정: 칠흑의 활자 & 화이트 배경 (CSS) ---
 st.markdown("""
 <style>
     :root { color-scheme: light !important; }
@@ -55,61 +55,52 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# --- 3. 엔진 코어: 로컬 사전 파싱 (인코딩 우회 버전) ---
+# --- 3. 엔진 코어: 자동 파일 탐색기 (Hunter Mode) ---
 @st.cache_resource
 def load_kiwi(): return Kiwi()
 kiwi = load_kiwi()
 
 @st.cache_data(show_spinner=False)
 def load_local_dictionary():
-    files = [
-        "1_30000_20260226.xls - Sheet0.csv",
-        "2_30000_20260226.xls - Sheet0.csv",
-        "3_14936_20260226.xls - Sheet0.csv"
-    ]
-    
     all_nouns = []
-    encodings = ['utf-8-sig', 'cp949', 'euc-kr'] # 💡 인코딩 3중망
+    encodings = ['utf-8-sig', 'cp949', 'euc-kr']
     
-    for f in files:
-        if os.path.exists(f):
-            success = False
-            for enc in encodings:
-                try:
-                    # 💡 파일마다 맞는 인코딩을 찾을 때까지 시도
-                    df = pd.read_csv(f, encoding=enc)
-                    if '품사' in df.columns and '표제어' in df.columns:
-                        nouns_df = df[df['품사'].fillna('').str.contains('명사')]
-                        for word in nouns_df['표제어'].astype(str):
-                            clean_word = word.strip().replace('-', '').replace('^', '')
-                            if 2 <= len(clean_word) <= 4 and re.match(r'^[가-힣]+$', clean_word):
-                                all_nouns.append(clean_word)
-                        success = True
-                        break # 성공하면 다음 파일로
-                except:
-                    continue
-            if not success:
-                st.sidebar.error(f"'{f}' 파일을 읽는 데 실패했어. 인코딩이 특이한가 봐.")
+    # 💡 현재 폴더에 있는 모든 CSV 파일을 자동으로 찾아냄
+    csv_files = [f for f in os.listdir('.') if f.endswith('.csv')]
+    
+    if not csv_files:
+        # 파일이 없을 때만 비상 단어장 가동
+        return sorted(["거울", "파편", "심연", "공백", "권태", "기억", "망각", "미학", "시체", "악의", "오브제", "육체", "잔해", "향기", "형식", "시간", "공간", "존재", "허무", "환상", "몽상", "균열", "착각", "구속", "여백", "침묵", "단어", "운명", "지옥", "천국", "안개", "촛불", "가면", "보석", "칼날", "유리", "유령", "철학", "초상", "축제", "풍경", "햇살", "호수", "화가", "흔적", "희망", "희곡"]), "FALLBACK"
+
+    for f in csv_files:
+        for enc in encodings:
+            try:
+                df = pd.read_csv(f, encoding=enc)
+                # 표제어와 품사 열이 있는지 확인
+                target_cols = ['표제어', '품사']
+                if all(col in df.columns for col in target_cols):
+                    nouns_df = df[df['품사'].fillna('').str.contains('명사')]
+                    for word in nouns_df['표제어'].astype(str):
+                        clean_word = word.strip().replace('-', '').replace('^', '')
+                        if 2 <= len(clean_word) <= 4 and re.match(r'^[가-힣]+$', clean_word):
+                            all_nouns.append(clean_word)
+                    break 
+            except: continue
                 
     final_dict = sorted(list(set(all_nouns)))
-    
-    # 💡 20개만 로드되는 비극을 막기 위한 최후의 비상 단어장 (니치 버전)
-    if len(final_dict) < 100:
-        final_dict = sorted(["거울", "파편", "심연", "공백", "권태", "기억", "망각", "미학", "시체", "악의", "오브제", "육체", "잔해", "향기", "형식", "시간", "공간", "존재", "허무", "환상", "몽상", "균열", "착각", "구속", "여백", "침묵", "단어", "운명", "지옥", "천국", "안개", "촛불", "가면", "보석", "칼날", "유리", "유령", "철학", "초상", "축제", "풍경", "햇살", "호수", "화가", "흔적", "희망", "희곡"])
-    
-    return final_dict
+    return final_dict, "SUCCESS"
 
-with st.spinner("사전의 인코딩을 해독하며 언어의 성채를 짓는 중..."):
-    NOUN_DICT = load_local_dictionary()
+with st.spinner("폴더 안의 사전 파일들을 포식하는 중..."):
+    NOUN_DICT, load_status = load_local_dictionary()
 
 # --- 4. 메인 화면 ---
 st.title("🐦 저보아: 사전 전권 탑재 엔진")
-st.caption(f"사전 해독 완료: {len(NOUN_DICT):,}개의 순수 명사가 장전되었습니다.")
+st.caption(f"사전 탐색 완료: {len(NOUN_DICT):,}개의 명사가 장전되었습니다.")
 
 # UI 레이아웃
 user_input = st.text_area("해부대에 올릴 문장", placeholder="여기에 텍스트를 넣으세요.", height=150)
 col1, col2, col3 = st.columns(3)
-with col1: shift_val = st.slider("사전 변조 거리 (S+N)", 1, 500, 7)
+with col1: shift_val = st.slider("사전 변조 거리 (S+N)", 1, 1000, 7)
 with col2: bumpy_val = st.slider("활자의 진동", 0.0, 0.8, 0.2)
 with col3: tilt_val = st.slider("활자의 비틀림", 0, 40, 15)
 
