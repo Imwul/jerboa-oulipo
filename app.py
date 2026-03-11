@@ -10,7 +10,7 @@ st.set_page_config(page_title="Jerboa Oulipo Engine", page_icon="🐦", layout="
 if "archive" not in st.session_state:
     st.session_state.archive = []
 
-# --- 🎨 라이트 모드 & 을유1945 폰트 ---
+# --- 🎨 라이트 모드 & 을유1945 폰트 & 버튼 디자인 ---
 st.markdown("""
 <style>
 @font-face {
@@ -49,26 +49,42 @@ html, body, [class*="css"], h1, h2, h3, h4, h5, h6, p, span, div, label {
     color: #111111 !important;
     border: 1px solid #cccccc !important;
 }
+/* 💡 버튼 글자 은폐 현상 해결 및 타자기 갬성 디자인 */
+div.stButton > button {
+    background-color: #ffffff !important;
+    color: #111111 !important;
+    border: 2px solid #111111 !important;
+    border-radius: 0px !important; /* 직각 테두리 */
+    box-shadow: 3px 3px 0px #111111 !important; /* 묵직한 그림자 */
+    font-family: 'Eulyoo1945-Regular', serif !important;
+    font-weight: bold !important;
+    transition: all 0.1s ease-in-out;
+}
+div.stButton > button:hover {
+    transform: translate(2px, 2px);
+    box-shadow: 1px 1px 0px #111111 !important; /* 눌리는 효과 */
+    background-color: #f1f1f1 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # --- 엔진 부품 ---
+@st.cache_resource
+def load_kiwi():
+    return Kiwi()
+
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
-    # 💡 최후의 보루 (비상용 단어장)
     base_dict = [
         "가방", "거울", "고독", "공백", "권태", "기억", "망각", "미학", 
         "시체", "심연", "악의", "오브제", "육체", "잔해", "파편", "향기", 
         "형식", "황금", "시간", "공간", "존재", "허무", "환상", "몽상"
     ]
     
-    # 한국어 명사 리스트 깃허브 주소
     url = "https://raw.githubusercontent.com/naver/korean-wordlist/master/nouns.txt"
-    
     raw_words = []
     try:
         res = requests.get(url, timeout=5, verify=False)
-        # 💡 방어막 1: 서버가 '정상(200)' 응답을 줄 때만 텍스트를 읽음
         if res.status_code == 200:
             raw_words = res.text.split('\n')
         else:
@@ -79,22 +95,17 @@ def diagnostic_load():
     clean_words = []
     for w in raw_words:
         w = w.strip()
-        # 💡 방어막 2: 철저한 필터링 (띄어쓰기 없고, 2~4글자)
+        # 띄어쓰기 없고, 2~4글자이며, 순수 한글 유니코드만 허용!
         if 2 <= len(w) <= 4 and ' ' not in w:
-            # 영어 404 에러 메시지가 섞이는 걸 막기 위해, 완벽한 '한글(가-힣)'만 허용
             if all(ord('가') <= ord(char) <= ord('힣') for char in w):
                 clean_words.append(w)
                 
-    # 💡 방어막 3: 만약 통신 오류로 필터링된 단어가 10개도 안 남았다면 비상 식량 투입
     if len(clean_words) < 10:
         clean_words = base_dict
         
-    final_dict = sorted(list(set(clean_words)))
-    return final_dict
-    # 완벽한 오리지널 S+7을 위해 '가나다순'으로 철저히 정렬
-    final_dict = sorted(list(set(clean_words)))
-    return final_dict
+    return sorted(list(set(clean_words)))
 
+# 엔진 가동
 kiwi = load_kiwi()
 with st.spinner("사전의 뼈대를 조립하는 중..."):
     NOUN_DICT = diagnostic_load()
@@ -114,7 +125,7 @@ with col3:
 
 user_input = st.text_area("해부대에 올릴 문장을 입력해.", placeholder="나는 오늘 공원에서 사과를 먹었다.")
 
-# --- 변환 로직 (오리지널 S+7) ---
+# --- 변환 로직 (오리지널 S+N) ---
 def transform_engine(text, dictionary, shift):
     if not text.strip(): return "입력된 공백."
     tokens = kiwi.tokenize(text)
@@ -123,12 +134,10 @@ def transform_engine(text, dictionary, shift):
     
     for t in tokens:
         if t.tag.startswith('N'):
-            # 진짜 S+N: 현재 단어가 사전에 있으면 완벽하게 N번째 뒤의 단어로 이동
             if t.form in dictionary:
                 idx = (dictionary.index(t.form) + shift) % dict_len
                 new_word = dictionary[idx]
             else:
-                # 사전에 없는 단어라도 해시를 이용해 규칙적으로 변환 (무작위성 통제)
                 random.seed(hash(t.form))
                 idx = (random.randint(0, dict_len - 1) + shift) % dict_len
                 new_word = dictionary[idx]
@@ -183,7 +192,6 @@ st.divider()
 # --- 시각화: 물 빠진 원색 파편들 ---
 st.subheader(f"🏺 {len(NOUN_DICT):,}개의 파편들 중 일부")
 
-# 파편이 너무 많으므로 무작위로 70개만 전시
 visual_samples = random.sample(NOUN_DICT, min(70, len(NOUN_DICT)))
 washed_colors = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
 
