@@ -9,7 +9,7 @@ with tab6:
         @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
     </style>
     """, unsafe_allow_html=True)
-
+ 
     st.markdown("""
     <div class="instruction-box">
         <b>[바벨의 균열 지침: 타이포그래피 콜라주]</b><br>
