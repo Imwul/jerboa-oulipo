@@ -76,36 +76,48 @@ def load_kiwi():
     return Kiwi()
 
 def fetch_words(kw, API_KEY):
-    # 💡 완벽한 규범의 성전: 한국어기초사전(krdict) API로 주소 변경 완료!
-    url = f"https://krdict.korean.go.kr/api/search?key={API_KEY}&q={kw}&part=word&num=100&advanced=y&method=include&pos=1"
+    # 💡 1. 키 정제: 보안상 32자리 헥스코드를 요구할 수 있으니 하이픈(-) 제거
+    clean_key = API_KEY.replace("-", "").strip()
+    
+    # 💡 2. URL 수정: pos=1 변수가 에러를 낼 수 있으므로 URL에서 아예 제거!
+    url = f"https://krdict.korean.go.kr/api/search?key={clean_key}&q={kw}&part=word&num=100&advanced=y&method=include"
+    
+    # 💡 3. 위장: 봇(Bot) 차단을 막기 위해 일반 크롬 브라우저인 것처럼 헤더 추가
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+    }
+    
     try:
-        res = requests.get(url, timeout=5, verify=False)
+        res = requests.get(url, timeout=5, verify=False, headers=headers)
         if res.status_code == 200:
             root = ET.fromstring(res.content)
-            clean_words = []
             
-            # 한국어기초사전은 이미 정제되어 있으므로, 글자수와 한글 여부만 깐깐하게 체크!
+            # 국립국어원 서버에서 에러(유효하지 않은 키 등)를 뱉는지 확인
+            error_node = root.find('.//error')
+            if error_node is not None:
+                return [] # 에러 시 빈 배열 반환하여 다음으로 넘어감
+                
+            clean_words = []
             for item in root.findall('.//item'):
                 word_node = item.find('.//word')
+                pos_node = item.find('.//pos')
+                
                 if word_node is None or not word_node.text: continue
+                # 💡 4. 자체 수술: API 변수 대신 파이썬에서 직접 '명사'만 도려냄
+                if pos_node is None or '명사' not in pos_node.text: continue
                 
                 w = word_node.text.replace('-', '').replace('^', '')
                 
-                # 💡 2~3글자, 띄어쓰기 없음, 완벽한 한글
-                if 2 <= len(w) <= 3 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w):
+                # 글자 수 제한을 2~4글자로 살짝 풀어줌 (너무 타이트하면 수집량이 급감함)
+                if 2 <= len(w) <= 4 and ' ' not in w and all(ord('가') <= ord(c) <= ord('힣') for c in w):
                     clean_words.append(w)
                     
             return clean_words
     except:
-        return []
-    return []
-
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
-    # 💡 이물이 발급받은 새로운 한국어기초사전 API 키 장착!
     API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
     
-    # 의미 궤도를 벗어난 순수 음절 폭격 (56개)
     keywords = [
         "가", "고", "구", "기", "나", "노", "누", "니", "다", "도", "두", "디",
         "라", "로", "루", "리", "마", "모", "무", "미", "바", "보", "부", "비",
@@ -115,7 +127,7 @@ def diagnostic_load():
     ]
     
     total_words = []
-    my_bar = st.progress(0, text="한국어기초사전의 심연에서 가장 순수하고 일상적인 명사를 채굴하는 중...")
+    my_bar = st.progress(0, text="한국어기초사전의 방화벽을 우회하여 명사를 채굴하는 중...")
     
     with ThreadPoolExecutor(max_workers=5) as executor:
         for i, words in enumerate(executor.map(lambda kw: fetch_words(kw, API_KEY), keywords)):
@@ -125,15 +137,15 @@ def diagnostic_load():
             
     my_bar.empty()
     
-    # 가나다순 완벽 정렬 (오리지널 S+N의 절대 규칙)
     final_dict = sorted(list(set(total_words)))
     
+    # 만약 수집된 단어가 50개도 안 된다면 통신 실패로 간주하고 경고 알림(Toast) 띄우기
     if len(final_dict) < 50:
+         st.toast("⚠️ 서버 응답이 없거나 API 키가 거부되었어! 비상식량으로 가동할게.", icon="🔥")
          base_dict = ["사람", "마음", "시간", "하루", "사랑", "친구", "세상", "이유", "생각", "기억", "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무"]
          final_dict = sorted(list(set(final_dict + base_dict)))
          
     return final_dict
-
 kiwi = load_kiwi()
 NOUN_DICT = diagnostic_load()
 
