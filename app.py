@@ -11,8 +11,8 @@ st.set_page_config(page_title="Jerboa Oulipo Engine", page_icon="🐦", layout="
 
 if "archive" not in st.session_state:
     st.session_state.archive = []
-if "api_log" not in st.session_state:
-    st.session_state.api_log = ""
+if "raw_xml" not in st.session_state:
+    st.session_state.raw_xml = ""
 
 # --- 2. 🎨 디자인 (CSS) ---
 st.markdown("""
@@ -29,12 +29,14 @@ html, body, [class*="css"], h1, h2, h3, h4, h5, h6, p, span, div, label {
 .fragment-tag {
     display: inline-block; padding: 6px 14px; margin: 8px; border-radius: 4px;
     color: #222222 !important; border: 1px solid #dcdcdc;
-    box-shadow: 1px 2px 5px rgba(0,0,0,0.05);
 }
 div.stButton > button {
     background-color: #ffffff !important; color: #111111 !important;
     border: 2px solid #111111 !important; border-radius: 0px !important;
     box-shadow: 3px 3px 0px #111111 !important; font-weight: bold !important;
+}
+.debug-box {
+    background-color: #f0f0f0; border: 1px dashed #ff0000; padding: 10px; font-family: monospace; font-size: 0.8rem; overflow: auto;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -45,43 +47,46 @@ def load_kiwi():
     return Kiwi()
 
 def fetch_words_new(kw, API_KEY):
-    # 💡 이물이 발견한 'NEW' API 전용 엔드포인트
     url = "http://api.kcisa.kr/openapi/service/rest/contents/getContents632"
     params = {
         "serviceKey": API_KEY,
-        "numOfRows": 100,
+        "numOfRows": 50,
         "pageNo": 1,
         "keyword": kw
     }
-    headers = {"Accept": "application/xml", "User-Agent": "Mozilla/5.0"}
     
     try:
-        res = requests.get(url, params=params, timeout=10, headers=headers)
+        res = requests.get(url, params=params, timeout=10)
         if res.status_code == 200:
-            # 💡 XML 네임스페이스 무시 파싱
+            # 💡 디버깅을 위해 생 XML 저장
+            st.session_state.raw_xml = res.text[:800] 
+            
             root = ET.fromstring(res.content)
             items = []
             
-            # KCISA NEW API는 <item> 내의 <title> 태그를 사용함
-            for item in root.findall('.//item'):
-                title = item.find('title')
-                if title is not None and title.text:
-                    # 괄호 제거 (예: 사과(명사) -> 사과)
-                    w = title.text.split('(')[0].strip().replace('-', '').replace('^', '')
-                    if 2 <= len(w) <= 4 and all(ord('가') <= ord(c) <= ord('힣') for c in w):
-                        items.append(w)
+            # 💡 네임스페이스를 완전히 무시하고 모든 요소 순회
+            for elem in root.iter():
+                # 태그명에서 '{url}tag' 중 'tag'만 추출
+                tag_name = elem.tag.split('}')[-1]
+                
+                # KCISA NEW API는 단어명을 title 혹은 word에 담음
+                if tag_name in ['title', 'word']:
+                    if elem.text:
+                        # 괄호 및 부제 제거
+                        w = elem.text.split('(')[0].strip().replace('-', '').replace('^', '')
+                        # 2~4글자 순수 한글 필터
+                        if 2 <= len(w) <= 4 and all(ord('가') <= ord(c) <= ord('힣') for c in w):
+                            items.append(w)
             return items
         else:
-            st.session_state.api_log = f"Error {res.status_code}: {res.text[:50]}"
             return []
-    except Exception as e:
-        st.session_state.api_log = str(e)
+    except:
         return []
 
 @st.cache_data(show_spinner=False)
 def diagnostic_load():
     API_KEY = "8f778621-2475-45d2-955c-c4dc91543917"
-    # 수집 범위를 넓히기 위한 핵심 음절
+    # 수집 범위를 좁히되 확실한 키워드들
     keywords = ["가", "나", "다", "라", "마", "바", "사", "아", "자", "차", "카", "타", "파", "하"]
     
     total_words = []
@@ -92,33 +97,38 @@ def diagnostic_load():
     final_dict = sorted(list(set(total_words)))
     status = "success"
     
-    # 실패 시 80개 비상 단어장
+    # 실패 시 80개 초현실주의 비상 단어장
+    base_dict = sorted([
+        "거울", "파편", "심연", "공백", "권태", "기억", "망각", "미학", "시체", "악의",
+        "오브제", "육체", "잔해", "향기", "형식", "황금", "시간", "공간", "존재", "허무",
+        "환상", "몽상", "사람", "마음", "하루", "사랑", "친구", "세상", "이유", "생각",
+        "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무",
+        "우주", "역사", "미래", "과거", "눈물", "웃음", "약속", "여행", "사진", "그림",
+        "새벽", "황혼", "노을", "구름", "별빛", "달빛", "햇살", "그림자", "골목", "계절",
+        "침묵", "언어", "문장", "단어", "여백", "비밀", "거짓", "진실", "운명", "우연",
+        "인연", "이별", "만남", "슬픔", "기쁨", "고독", "자유", "구속", "착각", "균열"
+    ])
+    
     if len(final_dict) < 20:
         status = "fallback"
-        final_dict = sorted([
-            "거울", "파편", "심연", "공백", "권태", "기억", "망각", "미학", "시체", "악의",
-            "오브제", "육체", "잔해", "향기", "형식", "황금", "시간", "공간", "존재", "허무",
-            "환상", "몽상", "사람", "마음", "하루", "사랑", "친구", "세상", "이유", "생각",
-            "바람", "하늘", "바다", "얼굴", "소리", "이야기", "노래", "마을", "도시", "나무",
-            "우주", "역사", "미래", "과거", "눈물", "웃음", "약속", "여행", "사진", "그림",
-            "새벽", "황혼", "노을", "구름", "별빛", "달빛", "햇살", "그림자", "골목", "계절",
-            "침묵", "언어", "문장", "단어", "여백", "비밀", "거짓", "진실", "운명", "우연",
-            "인연", "이별", "만남", "슬픔", "기쁨", "고독", "자유", "구속", "착각", "균열"
-        ])
+        final_dict = base_dict
              
     return final_dict, status
 
 # --- 4. 메인 화면 ---
 kiwi = load_kiwi()
 
-with st.spinner("'한국어기초사전_NEW' 서버에 접속 중..."):
+with st.spinner("NEW API의 네임스페이스를 해킹하는 중..."):
     NOUN_DICT, load_status = diagnostic_load()
 
 st.title("🐦 저보아: NEW 울리포 엔진")
 
 if load_status == "fallback":
-    st.error(f"⚠️ NEW API 연결 실패. 원인: {st.session_state.api_log if st.session_state.api_log else '데이터 없음'}")
-    st.caption("현재 80개의 비상 단어장으로 가동 중입니다.")
+    st.error("⚠️ NEW API에서 데이터를 찾지 못했습니다. 비상 단어장으로 가동합니다.")
+    # 💡 서버가 보낸 날것의 데이터를 보여줌 (디버깅용)
+    with st.expander("🔍 서버 응답 분석 (디버깅 정보)"):
+        st.write("서버에서 받은 XML의 일부입니다. 단어가 어디 있는지 확인해보세요:")
+        st.code(st.session_state.raw_xml, language="xml")
 else:
     st.success(f"성공! 'NEW' 엔진이 {len(NOUN_DICT):,}개의 순수 명사를 발굴했습니다.")
 
