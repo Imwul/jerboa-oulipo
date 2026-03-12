@@ -6,78 +6,73 @@ import os
 import re
 import json
 
-# --- 1. 페이지 설정 & 🎨 반응형 디자인 (CSS) ---
+# --- 1. 공통 폰트 로더 (모든 Iframe에 강제 주입용) ---
+FONT_CSS = """
+<style>
+    @font-face { font-family: 'Eulyoo1945-Regular'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff'); font-weight: normal; font-style: normal; }
+    @font-face { font-family: 'GmarketSansMedium'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); font-weight: normal; font-style: normal; }
+    @font-face { font-family: 'KyoboHandwriting2019'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); font-weight: normal; font-style: normal; }
+    @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); font-weight: normal; font-style: normal; }
+</style>
+"""
+
+# --- 2. 페이지 설정 & 🎨 Streamlit 전역 디자인 ---
 st.set_page_config(page_title="Jerboa Circle", layout="wide")
 
-st.markdown("""
+st.markdown(f"""
+{FONT_CSS}
 <style>
-    :root { color-scheme: light !important; }
-    [data-testid="stAppViewContainer"], .stApp { background-color: #FFFFFF !important; }
+    :root {{ color-scheme: light !important; }}
+    [data-testid="stAppViewContainer"], .stApp {{ background-color: #FFFFFF !important; }}
 
-    /* 폰트 4종 로드 */
-    @font-face { font-family: 'Eulyoo1945'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff'); }
-    @font-face { font-family: 'GmarketSans'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); }
-    @font-face { font-family: 'KyoboHandwriting'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); }
-    @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
+    /* 기본 텍스트는 모두 을유명조로 덮어씌움 */
+    html, body, [class*="st-"], p, span, div, h1, h2, h3, h4, h5, h6, textarea, input, button {{ 
+        font-family: 'Eulyoo1945-Regular', serif !important; 
+    }}
 
-    /* 기본 텍스트 설정 */
-    html, body, [data-testid="stHeader"], .stMarkdown, p, span, div { 
-        font-family: 'Eulyoo1945', serif; 
-        color: #000000;
-    }
-
-    h1 {
-        font-family: 'Trattatello', 'Apple Chancery', cursive !important;
+    h1 {{
         font-size: 3.8rem !important; color: #000000 !important;
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
-    }
+    }}
 
     /* 해부대(입력창) 하얀 글씨 강제 고정 */
-    .stTextArea textarea, .stTextInput input {
+    .stTextArea textarea, .stTextInput input {{
         background-color: #111111 !important;
         color: #FFFFFF !important;
-        font-family: 'Eulyoo1945', serif !important;
         -webkit-text-fill-color: #FFFFFF !important;
         border: 2px solid #000000 !important;
         caret-color: #FFFFFF !important;
         font-size: 1.1rem !important;
-    }
+    }}
     
-    .instruction-box {
+    .instruction-box {{
         background-color: #F9F9F9; padding: 18px; border-left: 5px solid #000000;
         margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem; color: #000000 !important;
-    }
+    }}
 
-    /* 하단 사전 파편 애니메이션 CSS */
-    @keyframes float {
-        0% { transform: translateY(0px) rotate(0deg); }
-        50% { transform: translateY(-12px) rotate(1.5deg); }
-        100% { transform: translateY(0px) rotate(0deg); }
-    }
-    .fragment-tag {
+    /* 하단 파편 애니메이션 CSS */
+    @keyframes float {{
+        0% {{ transform: translateY(0px) rotate(0deg); }}
+        50% {{ transform: translateY(-12px) rotate(1.5deg); }}
+        100% {{ transform: translateY(0px) rotate(0deg); }}
+    }}
+    .fragment-tag {{
         display: inline-block; padding: 8px 16px; margin: 10px; border-radius: 2px;
         border: 1px solid #000000; animation: float 5s ease-in-out infinite;
         font-weight: bold; cursor: default; color: #000000 !important;
-    }
+    }}
 
-    /* 버튼 텍스트 색상 픽스 */
-    div.stButton > button, div[data-testid="stFormSubmitButton"] > button { 
+    /* 버튼 스타일 */
+    div.stButton > button, div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
         height: 3.5rem; font-size: 1.2rem !important;
-    }
-    div.stButton > button p, div[data-testid="stFormSubmitButton"] > button p { color: #FFFFFF !important; }
-
-    /* 📱 모바일 반응형 폰트 조절 로직 */
-    @media (max-width: 768px) {
-        html { font-size: 13px !important; }
-        h1 { font-size: 2.5rem !important; }
-        .stTextArea textarea, .stTextInput input { font-size: 1rem !important; }
-        .instruction-box { font-size: 0.9rem !important; padding: 12px; }
-    }
+    }}
+    div.stButton > button p, div[data-testid="stFormSubmitButton"] > button p {{ color: #FFFFFF !important; }}
 </style>
 """, unsafe_allow_html=True)
 
+# --- 3. 모델 및 사전 로드 ---
 @st.cache_resource
 def load_kiwi(): return Kiwi()
 kiwi = load_kiwi()
@@ -99,7 +94,7 @@ tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
 ])
 
 # ==========================================
-# TAB 1: Oulipo Engine (지침서 완벽 복구)
+# TAB 1: Oulipo Engine (S+N 치환 + 격리 렌더링)
 # ==========================================
 with tab1:
     st.markdown("""
@@ -126,19 +121,13 @@ with tab1:
                 leading_ws = re.match(r'^\s*', part).group() if re.match(r'^\s*', part) else ""
                 trailing_ws = re.search(r'\s*$', part).group() if re.search(r'\s*$', part) else ""
                 content = part.strip()
-                if not content:
-                    line_result.append(part)
-                    continue
+                if not content: line_result.append(part); continue
                 tokens = kiwi.tokenize(content)
                 sub_res = []
                 for t in tokens:
                     if t.tag.startswith('N') and (hash(t.form) % 100) < prob:
-                        if t.form in NOUN_DICT:
-                            idx = (NOUN_DICT.index(t.form) + shift) % d_len
-                            new_w = NOUN_DICT[idx]
-                        else:
-                            random.seed(hash(t.form))
-                            new_w = NOUN_DICT[random.randint(0, d_len-1)]
+                        if t.form in NOUN_DICT: idx = (NOUN_DICT.index(t.form) + shift) % d_len; new_w = NOUN_DICT[idx]
+                        else: random.seed(hash(t.form)); new_w = NOUN_DICT[random.randint(0, d_len-1)]
                         sub_res.append((new_w, 'NNG'))
                     else: sub_res.append((t.form, t.tag))
                 line_result.append(leading_ws + kiwi.join(sub_res) + trailing_ws)
@@ -147,24 +136,26 @@ with tab1:
     if st.button("✨ 문장 재단하기", key="engine_btn"):
         if user_input:
             lines = user_input.split('\n')
-            html_res = '<div style="line-height: 2.3; word-wrap: break-word; padding: 25px; border: 3px solid #000000; background-color: #FFFFFF; white-space: pre-wrap;">'
+            # Streamlit 간섭을 막기 위해 Iframe 사용
+            html_res = f"""
+            <!DOCTYPE html><html><head>{FONT_CSS}
+            <style>body{{margin:0; padding:10px; background:transparent;}} .box{{padding:25px; border:3px solid #000; background:#fff; line-height:2.3; word-wrap:break-word; white-space:pre-wrap; color:#000; font-family:'Eulyoo1945-Regular', serif;}}</style>
+            </head><body><div class="box">
+            """
             for line in lines:
-                if not line.strip():
-                    html_res += '\n'
-                    continue
+                if not line.strip(): html_res += '\n'; continue
                 transformed_line = transform_with_logic(line, shift_val, prob_val)
                 for char in transformed_line:
                     if char == ' ': html_res += '&nbsp;'
                     else:
-                        fs = 1.4 + random.uniform(-bumpy_val, bumpy_val)
-                        rot = random.uniform(-tilt_val, tilt_val)
-                        html_res += f'<span style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold; color:#000;">{char}</span>'
+                        fs = 1.4 + random.uniform(-bumpy_val, bumpy_val); rot = random.uniform(-tilt_val, tilt_val)
+                        html_res += f'<span style="font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold;">{char}</span>'
                 html_res += '\n'
-            html_res += '</div>'
-            st.markdown(html_res, unsafe_allow_html=True)
+            html_res += '</div></body></html>'
+            components.html(html_res, height=400)
 
 # ==========================================
-# TAB 2: The Dissector (📱 모바일 터치 완벽 대응)
+# TAB 2: The Dissector (모바일 터치 대응 마그넷)
 # ==========================================
 with tab2:
     st.markdown("""
@@ -189,10 +180,11 @@ with tab2:
             <!DOCTYPE html>
             <html>
             <head>
+            {FONT_CSS}
             <style>
-                body {{ font-family: 'Eulyoo1945', serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }}
+                body {{ font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }}
                 #toolbar {{ background: #000; padding: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }}
-                .tool-btn {{ background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: all 0.2s; touch-action: manipulation; }}
+                .tool-btn {{ background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: all 0.2s; touch-action: manipulation; font-family: 'Eulyoo1945-Regular', serif; }}
                 .tool-btn.active-knife {{ background: #ff4d4d; color: #fff; border-color: #ff4d4d; }}
                 .tool-btn.active-glue {{ background: #4d79ff; color: #fff; border-color: #4d79ff; }}
                 #canvas-area {{ width: 100%; height: 600px; background: #fafafa; position: relative; border: 3px solid #000; border-top: none; cursor: default; overflow: hidden; touch-action: none; }}
@@ -205,12 +197,7 @@ with tab2:
                 body.glue-mode #canvas-area, body.glue-mode .magnet {{ cursor: cell; }}
                 body.glue-mode .char {{ pointer-events: none; }}
                 .glue-selected {{ box-shadow: 0 0 15px 5px #4d79ff !important; border-color: #4d79ff; transform: scale(1.05); }}
-                
-                @media (max-width: 768px) {{
-                    #canvas-area {{ height: 450px; }}
-                    .magnet {{ font-size: 1.1rem; padding: 0; }}
-                    .char {{ padding: 4px 2px; }}
-                }}
+                @media (max-width: 768px) {{ #canvas-area {{ height: 450px; }} .magnet {{ font-size: 1.1rem; }} .char {{ padding: 4px 2px; }} }}
             </style>
             </head>
             <body>
@@ -242,7 +229,6 @@ with tab2:
                         
                         charDataArr.forEach((item, idx) => {{
                             const span = document.createElement('span'); span.className = 'char'; span.innerText = item.char; span.style.backgroundColor = item.bg; span.dataset.index = idx;
-                            // 포인터 이벤트: 모바일 터치와 PC 마우스를 모두 커버
                             span.addEventListener('pointerdown', (e) => {{
                                 if (!knifeMode) return; e.stopPropagation(); 
                                 const clickedIdx = parseInt(e.target.dataset.index); if (clickedIdx === 0) return;
@@ -267,7 +253,6 @@ with tab2:
                                 }} else clearGlueTarget();
                                 return;
                             }}
-                            // 드래그 로직 (터치/마우스)
                             e.preventDefault(); div.style.zIndex = ++zIndex; 
                             let pos3 = e.clientX, pos4 = e.clientY;
                             const move = (ev) => {{
@@ -277,8 +262,7 @@ with tab2:
                                 div.style.top = (div.offsetTop - p2) + "px"; div.style.left = (div.offsetLeft - p1) + "px";
                             }};
                             const up = () => {{ document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); }};
-                            document.addEventListener('pointermove', move, {{passive: false}});
-                            document.addEventListener('pointerup', up);
+                            document.addEventListener('pointermove', move, {{passive: false}}); document.addEventListener('pointerup', up);
                         }});
                         canvas.appendChild(div);
                     }}
@@ -307,7 +291,7 @@ with tab2:
             components.html(custom_html, height=700)
 
 # ==========================================
-# TAB 3: The Automaton (오버레이 및 불타는 로직 / 모바일 폰트 최적화)
+# TAB 3: The Automaton (오버레이 및 불타는 로직)
 # ==========================================
 with tab3:
     st.markdown("""
@@ -318,31 +302,28 @@ with tab3:
     </div>
     """, unsafe_allow_html=True)
 
-    automaton_html = """
+    automaton_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
+    {FONT_CSS}
     <style>
-        body { font-family: 'Eulyoo1945', serif; margin: 0; padding: 0; background: #fafafa; user-select: none; }
-        #progress-container { width: 100%; height: 8px; background: #ddd; }
-        #progress-bar { width: 100%; height: 100%; background: #000; transition: width 0.1s linear, background 1s ease; }
-        .danger #progress-bar { background: #ff4d4d; }
-        #editor-wrapper { position: relative; width: 100%; height: 500px; border: 3px solid #000; box-shadow: 4px 4px 0px #000; background: transparent; box-sizing: border-box; overflow: hidden; }
-        textarea, #overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; margin: 0; font-family: 'Eulyoo1945', serif; font-size: 1.5rem; line-height: 1.8; border: none; outline: none; background: transparent; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; }
-        textarea { color: #000; resize: none; z-index: 2; cursor: text; }
-        #overlay { color: transparent; z-index: 1; pointer-events: none; }
-        .burning-text { display: inline-block; animation: burnTextOnly 1.5s forwards ease-in; }
-        @keyframes burnTextOnly {
-            0% { color: #ff4d4d; text-shadow: 0 0 0px #ff0000; opacity: 1; transform: translateY(0px); }
-            40% { color: #ff3333; text-shadow: 0 -3px 8px #ff9900; opacity: 0.8; transform: translateY(-2px); }
-            100% { color: transparent; text-shadow: 0 -15px 25px #ff0000; opacity: 0; transform: translateY(-8px); }
-        }
-        #bs-warning { position: absolute; top: 20px; right: 20px; color: #ff4d4d; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
-        
-        @media (max-width: 768px) {
-            #editor-wrapper { height: 350px; }
-            textarea, #overlay { font-size: 1.1rem; padding: 15px; }
-        }
+        body {{ font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 0; background: #fafafa; user-select: none; }}
+        #progress-container {{ width: 100%; height: 8px; background: #ddd; }}
+        #progress-bar {{ width: 100%; height: 100%; background: #000; transition: width 0.1s linear, background 1s ease; }}
+        .danger #progress-bar {{ background: #ff4d4d; }}
+        #editor-wrapper {{ position: relative; width: 100%; height: 500px; border: 3px solid #000; box-shadow: 4px 4px 0px #000; background: transparent; box-sizing: border-box; overflow: hidden; }}
+        textarea, #overlay {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; padding: 20px; box-sizing: border-box; margin: 0; font-family: 'Eulyoo1945-Regular', serif; font-size: 1.5rem; line-height: 1.8; border: none; outline: none; background: transparent; white-space: pre-wrap; word-wrap: break-word; overflow-y: auto; }}
+        textarea {{ color: #000; resize: none; z-index: 2; cursor: text; }}
+        #overlay {{ color: transparent; z-index: 1; pointer-events: none; }}
+        .burning-text {{ display: inline-block; animation: burnTextOnly 1.5s forwards ease-in; }}
+        @keyframes burnTextOnly {{
+            0% {{ color: #ff4d4d; text-shadow: 0 0 0px #ff0000; opacity: 1; transform: translateY(0px); }}
+            40% {{ color: #ff3333; text-shadow: 0 -3px 8px #ff9900; opacity: 0.8; transform: translateY(-2px); }}
+            100% {{ color: transparent; text-shadow: 0 -15px 25px #ff0000; opacity: 0; transform: translateY(-8px); }}
+        }}
+        #bs-warning {{ position: absolute; top: 20px; right: 20px; color: #ff4d4d; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }}
+        @media (max-width: 768px) {{ #editor-wrapper {{ height: 350px; }} textarea, #overlay {{ font-size: 1.1rem; padding: 15px; }} }}
     </style>
     </head>
     <body>
@@ -358,49 +339,49 @@ with tab3:
             const TIME_LIMIT = 5000; let timerInterval; let timeRemaining = TIME_LIMIT; let isBurning = false;
             let bsCount = 0; let bsRequired = Math.floor(Math.random() * 3) + 3;
 
-            function startTimer() {
+            function startTimer() {{
                 clearInterval(timerInterval); timeRemaining = TIME_LIMIT; isBurning = false;
                 document.getElementById('progress-container').classList.remove('danger'); progressBar.style.width = '100%';
-                timerInterval = setInterval(() => {
+                timerInterval = setInterval(() => {{
                     if(textarea.value.trim() === '') return; 
                     timeRemaining -= 100; progressBar.style.width = ((timeRemaining / TIME_LIMIT) * 100) + '%';
                     if (timeRemaining <= 2000) document.getElementById('progress-container').classList.add('danger');
-                    if (timeRemaining <= 0) { clearInterval(timerInterval); triggerPartialBurn(); }
-                }, 100);
-            }
+                    if (timeRemaining <= 0) {{ clearInterval(timerInterval); triggerPartialBurn(); }}
+                }}, 100);
+            }}
 
-            function triggerPartialBurn() {
+            function triggerPartialBurn() {{
                 if(isBurning) return; isBurning = true;
                 const val = textarea.value; const numToDelete = Math.floor(Math.random() * 3) + 3; 
                 let wordCount = 0; let splitIndex = 0; let inWord = false;
-                for(let i = val.length - 1; i >= 0; i--) {
-                    if (/\\s/.test(val[i])) { inWord = false; } else { if (!inWord) { wordCount++; inWord = true; } }
-                    if (wordCount > numToDelete) { splitIndex = i + 1; break; }
-                }
+                for(let i = val.length - 1; i >= 0; i--) {{
+                    if (/\\s/.test(val[i])) {{ inWord = false; }} else {{ if (!inWord) {{ wordCount++; inWord = true; }} }}
+                    if (wordCount > numToDelete) {{ splitIndex = i + 1; break; }}
+                }}
                 const safePart = val.substring(0, splitIndex); const burningPart = val.substring(splitIndex);
                 const escapeHTML = (str) => str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-                overlay.innerHTML = `<span style="color: #000;">${escapeHTML(safePart)}</span><span class="burning-text">${escapeHTML(burningPart)}</span>`;
+                overlay.innerHTML = `<span>${{escapeHTML(safePart)}}</span><span class="burning-text">${{escapeHTML(burningPart)}}</span>`;
                 overlay.scrollTop = textarea.scrollTop; 
                 textarea.style.color = 'transparent'; textarea.disabled = true; 
-                setTimeout(() => {
+                setTimeout(() => {{
                     textarea.value = safePart; textarea.style.color = '#000'; textarea.disabled = false; overlay.innerHTML = '';
                     progressBar.style.width = '100%'; document.getElementById('progress-container').classList.remove('danger');
                     isBurning = false; textarea.focus(); if(textarea.value.trim() !== '') startTimer();
-                }, 1500);
-            }
+                }}, 1500);
+            }}
 
-            textarea.addEventListener('input', () => { if (textarea.composing) { clearInterval(timerInterval); return; } if(!isBurning) startTimer(); });
-            textarea.addEventListener('compositionstart', () => { textarea.composing = true; clearInterval(timerInterval); });
-            textarea.addEventListener('compositionend', () => { textarea.composing = false; if(!isBurning) startTimer(); });
-            textarea.addEventListener('scroll', () => { overlay.scrollTop = textarea.scrollTop; });
-            textarea.addEventListener('keydown', (e) => {
-                if (isBurning) { e.preventDefault(); return; }
-                if (e.key === 'Backspace') {
+            textarea.addEventListener('input', () => {{ if (textarea.composing) {{ clearInterval(timerInterval); return; }} if(!isBurning) startTimer(); }});
+            textarea.addEventListener('compositionstart', () => {{ textarea.composing = true; clearInterval(timerInterval); }});
+            textarea.addEventListener('compositionend', () => {{ textarea.composing = false; if(!isBurning) startTimer(); }});
+            textarea.addEventListener('scroll', () => {{ overlay.scrollTop = textarea.scrollTop; }});
+            textarea.addEventListener('keydown', (e) => {{
+                if (isBurning) {{ e.preventDefault(); return; }}
+                if (e.key === 'Backspace') {{
                     if (textarea.composing) return;
                     bsWarning.style.opacity = '1'; setTimeout(() => bsWarning.style.opacity = '0', 500);
-                    bsCount++; if (bsCount < bsRequired) { e.preventDefault(); } else { bsCount = 0; bsRequired = Math.floor(Math.random() * 3) + 3; }
-                } else { bsWarning.style.opacity = '0'; if(!isBurning) startTimer(); }
-            });
+                    bsCount++; if (bsCount < bsRequired) {{ e.preventDefault(); }} else {{ bsCount = 0; bsRequired = Math.floor(Math.random() * 3) + 3; }}
+                }} else {{ bsWarning.style.opacity = '0'; if(!isBurning) startTimer(); }}
+            }});
         </script>
     </body>
     </html>
@@ -429,37 +410,30 @@ with tab4:
         <!DOCTYPE html>
         <html>
         <head>
+        {FONT_CSS}
         <style>
-            body {{ font-family: 'Eulyoo1945', serif; margin: 0; padding: 15px; background: #fafafa; user-select: none; touch-action: none; }}
+            body {{ font-family: 'Eulyoo1945-Regular', serif; margin: 0; padding: 15px; background: #fafafa; user-select: none; touch-action: none; }}
             #canvas {{ width: 100%; min-height: 300px; border: 3px solid #000; padding: 20px; line-height: 2.2; font-size: 1.5rem; background: #fff; box-shadow: 4px 4px 0px #000; box-sizing: border-box; }}
             .word {{ display: inline-block; padding: 2px 5px; margin: 0 3px; cursor: pointer; transition: background-color 0.1s, color 0.1s; border-radius: 2px; color: #000; touch-action: none; }}
             .blackout {{ background-color: #000 !important; color: #000 !important; text-shadow: none; user-select: none; }}
-            
-            @media (max-width: 768px) {{
-                #canvas {{ font-size: 1.1rem; padding: 15px; line-height: 2.0; }}
-            }}
+            @media (max-width: 768px) {{ #canvas {{ font-size: 1.1rem; padding: 15px; line-height: 2.0; }} }}
         </style>
         </head>
         <body>
             <div id="canvas"></div>
             <script>
                 const words = {words_json}; const canvas = document.getElementById('canvas'); let isDragging = false;
-                
                 canvas.addEventListener('pointerdown', () => isDragging = true);
                 document.addEventListener('pointerup', () => isDragging = false);
-                
                 words.forEach(word => {{
                     const span = document.createElement('span'); span.className = 'word'; span.innerText = word;
                     span.addEventListener('pointerdown', (e) => {{ e.preventDefault(); span.classList.toggle('blackout'); }});
                     span.addEventListener('pointerenter', () => {{ if(isDragging) span.classList.add('blackout'); }});
                     canvas.appendChild(span);
                 }});
-
-                // 모바일 터치 드래그 호환 패치
                 document.addEventListener('touchmove', (e) => {{
                     if(isDragging) {{
-                        e.preventDefault();
-                        let touch = e.touches[0];
+                        e.preventDefault(); let touch = e.touches[0];
                         let el = document.elementFromPoint(touch.clientX, touch.clientY);
                         if(el && el.classList.contains('word')) el.classList.add('blackout');
                     }}
@@ -496,7 +470,6 @@ with tab5:
     with st.form(key='corpse_form', clear_on_submit=True):
         new_line = st.text_input("다음 문장 이어쓰기:", placeholder="무의식이 이끄는 대로 적으세요...")
         submit_btn = st.form_submit_button("✒️ 종이 접어 넘기기")
-        
         if submit_btn and new_line.strip():
             st.session_state.corpse_lines.append(new_line.strip())
             st.rerun()
@@ -507,19 +480,17 @@ with tab5:
             st.divider()
             st.subheader("🖼️ Cadavre Exquis (완성된 시체)")
             poem_html = "<div style='padding: 20px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.0; font-size: 1.1rem;'>"
-            for line in st.session_state.corpse_lines:
-                poem_html += f"{line}<br>"
+            for line in st.session_state.corpse_lines: poem_html += f"{line}<br>"
             poem_html += "</div>"
             st.markdown(poem_html, unsafe_allow_html=True)
         else:
             st.warning("아직 작성된 문장이 없습니다.")
-            
     if c2.button("🗑️ 시체 태우기 (초기화)"):
         st.session_state.corpse_lines = []
         st.rerun()
 
 # ==========================================
-# TAB 6: The Babel Glitch (폰트 적용 인라인 믹스 완벽 복구)
+# TAB 6: The Babel Glitch (격리 렌더링을 통한 폰트 강제 적용)
 # ==========================================
 with tab6:
     st.markdown("""
@@ -538,8 +509,8 @@ with tab6:
     WEIRD_ENDINGS = ["었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지", "련만"]
     GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // "]
     
-    # 폰트 이름 직접 지정
-    MIX_FONTS = ["Eulyoo1945", "GmarketSans", "KyoboHandwriting", "DungGeunMo"]
+    # 폰트 이름 (CSS @font-face에 정의된 이름과 정확히 일치)
+    MIX_FONTS = ["'Eulyoo1945-Regular'", "'GmarketSansMedium'", "'KyoboHandwriting2019'", "'DungGeunMo'"]
 
     if 'babel_raw_output' not in st.session_state:
         st.session_state.babel_raw_output = ""
@@ -548,25 +519,20 @@ with tab6:
         if babel_input:
             tokens = kiwi.tokenize(babel_input)
             glitch_result = []
-            
             for t in tokens:
-                if t.tag.startswith('N') and random.random() > 0.8:
-                    glitch_result.append((random.choice(SURREAL_NOUNS), t.tag))
-                elif t.tag.startswith('M') and random.random() > 0.5:
-                    glitch_result.append((random.choice(WEIRD_ADVERBS), t.tag))
+                if t.tag.startswith('N') and random.random() > 0.8: glitch_result.append((random.choice(SURREAL_NOUNS), t.tag))
+                elif t.tag.startswith('M') and random.random() > 0.5: glitch_result.append((random.choice(WEIRD_ADVERBS), t.tag))
                 elif t.tag.startswith('J'): 
                     if random.random() > 0.4: glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
                     else: glitch_result.append((t.form, t.tag))
                 elif t.tag.startswith('E'):
                     if random.random() > 0.5: glitch_result.append((random.choice(WEIRD_ENDINGS), t.tag))
                     else: glitch_result.append((t.form, t.tag))
-                else:
-                    glitch_result.append((t.form, t.tag))
+                else: glitch_result.append((t.form, t.tag))
                 
                 if random.random() > 0.9: glitch_result.append(glitch_result[-1])
             
             ruined_text = kiwi.join(glitch_result)
-            
             words = ruined_text.split()
             final_text = ""
             for w in words:
@@ -582,23 +548,32 @@ with tab6:
         babel_bumpy = bc1.slider("글자 진동 (높을수록 들쭉날쭉)", 0.0, 1.0, 0.3, key="babel_bumpy")
         babel_tilt = bc2.slider("글자 비틀림 (각도)", 0, 45, 15, key="babel_tilt")
 
-        # 모바일 대응을 위해 폰트 베이스 사이즈를 약간 줄임
-        styled_html = "<div style='padding: 20px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.2; word-wrap: break-word; white-space: pre-wrap;'>"
-        
+        # Streamlit의 간섭을 100% 차단하기 위해 Iframe(components.html)으로 렌더링
+        res_h = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        {FONT_CSS}
+        <style>
+            body {{ margin: 0; padding: 10px; background: transparent; }}
+            .box {{ padding: 30px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.5; word-wrap: break-word; white-space: pre-wrap; }}
+            @media (max-width: 768px) {{ .box {{ padding: 15px; line-height: 2.0; }} }}
+        </style>
+        </head>
+        <body>
+            <div class="box">
+        """
         for char in st.session_state.babel_raw_output:
             if char == ' ': 
-                styled_html += '&nbsp;'
+                res_h += '&nbsp;'
             else:
                 fs = 1.3 + random.uniform(-babel_bumpy, babel_bumpy)
                 rot = random.uniform(-babel_tilt, babel_tilt)
                 font_choice = random.choice(MIX_FONTS) if random.random() > 0.65 else MIX_FONTS[0]
-                
-                styled_html += f'<span style="font-family: \'{font_choice}\', sans-serif !important; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold; color: #000;">{char}</span>'
+                res_h += f'<span style="font-family: {font_choice}, sans-serif; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold; color: #000;">{char}</span>'
         
-        styled_html += "</div>"
-        
-        st.subheader("👁️ 오독의 캔버스")
-        st.markdown(styled_html, unsafe_allow_html=True)
+        res_h += "</div></body></html>"
+        components.html(res_h, height=500)
 
 # ---------------------------------------------------------
 # 🏺 하단: 사전의 파편들 (Floating Animation)
