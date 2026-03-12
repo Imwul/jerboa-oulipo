@@ -510,15 +510,15 @@ with tab6:
             glitch_result = []
             
             for t in tokens:
-                if t.tag.startswith('N') and random.random() > 0.8:
+                if t.tag.startswith('N') and random.random() > 0.7:
                     glitch_result.append((random.choice(SURREAL_NOUNS), t.tag))
-                elif t.tag.startswith('M') and random.random() > 0.5:
+                elif t.tag.startswith('M') and random.random() > 0.4:
                     glitch_result.append((random.choice(WEIRD_ADVERBS), t.tag))
                 elif t.tag.startswith('J'): 
-                    if random.random() > 0.4: glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
+                    if random.random() > 0.2: glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
                     else: glitch_result.append((t.form, t.tag))
                 elif t.tag.startswith('E'):
-                    if random.random() > 0.5: glitch_result.append((random.choice(WEIRD_ENDINGS), t.tag))
+                    if random.random() > 0.3: glitch_result.append((random.choice(WEIRD_ENDINGS), t.tag))
                     else: glitch_result.append((t.form, t.tag))
                 else:
                     glitch_result.append((t.form, t.tag))
