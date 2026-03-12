@@ -4,7 +4,7 @@ from kiwipiepy import Kiwi
 import random
 import os
 import re
-import json
+import json 
 
 # --- 1. 페이지 설정 & 🎨 디자인 (CSS) ---
 st.set_page_config(page_title="Jerboa Circle", layout="wide")
