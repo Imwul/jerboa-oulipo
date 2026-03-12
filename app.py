@@ -25,14 +25,22 @@ st.markdown(f"""
     :root {{ color-scheme: light !important; }}
     [data-testid="stAppViewContainer"], .stApp {{ background-color: #FFFFFF !important; }}
 
-    /* 기본 텍스트는 모두 을유명조로 덮어씌움 */
-    html, body, [class*="st-"], p, span, div, h1, h2, h3, h4, h5, h6, textarea, input, button {{ 
+    /* 기본 텍스트는 모두 을유명조 (h1은 제외하여 Trattatello 보호) */
+    html, body, [class*="st-"], p, span, div, h2, h3, h4, h5, h6, textarea, input, button {{ 
         font-family: 'Eulyoo1945-Regular', serif !important; 
     }}
 
-    h1 {{
+    /* ❗ 제목 폰트 Trattatello 복구 */
+    h1, [data-testid="stHeadingWithActionElements"] h1, h1 * {{
+        font-family: 'Trattatello', 'Apple Chancery', fantasy, cursive !important;
         font-size: 3.8rem !important; color: #000000 !important;
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
+    }}
+
+    /* ❗ 탭(Tab) 글씨가 하얗게 변하는 현상 픽스 (무조건 검은색) */
+    button[data-baseweb="tab"] *, div[data-testid="stTabs"] button * {{
+        color: #000000 !important;
+        font-weight: bold !important;
     }}
 
     /* 해부대(입력창) 하얀 글씨 강제 고정 */
@@ -62,7 +70,7 @@ st.markdown(f"""
         font-weight: bold; cursor: default; color: #000000 !important;
     }}
 
-    /* 버튼 스타일 */
+    /* 일반 동작 버튼 스타일 */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
@@ -82,7 +90,7 @@ def load_oulipo_dict():
     if os.path.exists("nouns.txt"):
         with open("nouns.txt", "r", encoding="utf-8") as f:
             return f.read().splitlines()
-    return ["거울", "파편", "심연", "공백", "기억", "망각", "미학", "구토", "이방인", "페스트", "시시포스", "환영", "균열", "기하학"]
+    return ["거울", "파편", "심연", "공백", "기억", "망각", "미학", "구토", "이방인", "페스트", "시시포스", "환영", "균열", "기하학", "태엽", "미궁", "내장", "잿더미", "권태", "맹목"]
 
 NOUN_DICT = load_oulipo_dict()
 WASHED_COLORS = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
@@ -136,7 +144,6 @@ with tab1:
     if st.button("✨ 문장 재단하기", key="engine_btn"):
         if user_input:
             lines = user_input.split('\n')
-            # Streamlit 간섭을 막기 위해 Iframe 사용
             html_res = f"""
             <!DOCTYPE html><html><head>{FONT_CSS}
             <style>body{{margin:0; padding:10px; background:transparent;}} .box{{padding:25px; border:3px solid #000; background:#fff; line-height:2.3; word-wrap:break-word; white-space:pre-wrap; color:#000; font-family:'Eulyoo1945-Regular', serif;}}</style>
