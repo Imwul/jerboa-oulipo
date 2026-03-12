@@ -4,9 +4,9 @@ from kiwipiepy import Kiwi
 import random
 import os
 import re
-import json 
+import json
 
-# --- 1. 페이지 설정 & 🎨 디자인 (CSS) ---
+# --- 1. 페이지 설정 & 🎨 반응형 디자인 (CSS) ---
 st.set_page_config(page_title="Jerboa Circle", layout="wide")
 
 st.markdown("""
@@ -14,13 +14,13 @@ st.markdown("""
     :root { color-scheme: light !important; }
     [data-testid="stAppViewContainer"], .stApp { background-color: #FFFFFF !important; }
 
-    /* 폰트 4종을 앱이 켜질 때 한 번에 모두 로드 */
+    /* 폰트 4종 로드 */
     @font-face { font-family: 'Eulyoo1945'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2102-01@1.0/Eulyoo1945-Regular.woff') format('woff'); }
     @font-face { font-family: 'GmarketSans'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); }
     @font-face { font-family: 'KyoboHandwriting'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_20-04@1.0/KyoboHandwriting2019.woff') format('woff'); }
     @font-face { font-family: 'DungGeunMo'; src: url('https://fastly.jsdelivr.net/gh/projectnoonnu/noonfonts_six@1.2/DungGeunMo.woff') format('woff'); }
 
-    /* 기본 설정: 모든 텍스트는 명조체로 */
+    /* 기본 텍스트 설정 */
     html, body, [data-testid="stHeader"], .stMarkdown, p, span, div { 
         font-family: 'Eulyoo1945', serif; 
         color: #000000;
@@ -32,7 +32,7 @@ st.markdown("""
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
     }
 
-    /* ❗ 해부대(입력창) 하얀 글씨 강제 고정 */
+    /* 해부대(입력창) 하얀 글씨 강제 고정 */
     .stTextArea textarea, .stTextInput input {
         background-color: #111111 !important;
         color: #FFFFFF !important;
@@ -67,6 +67,14 @@ st.markdown("""
         height: 3.5rem; font-size: 1.2rem !important;
     }
     div.stButton > button p, div[data-testid="stFormSubmitButton"] > button p { color: #FFFFFF !important; }
+
+    /* 📱 모바일 반응형 폰트 조절 로직 */
+    @media (max-width: 768px) {
+        html { font-size: 13px !important; }
+        h1 { font-size: 2.5rem !important; }
+        .stTextArea textarea, .stTextInput input { font-size: 1rem !important; }
+        .instruction-box { font-size: 0.9rem !important; padding: 12px; }
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -156,7 +164,7 @@ with tab1:
             st.markdown(html_res, unsafe_allow_html=True)
 
 # ==========================================
-# TAB 2: The Dissector (마그넷 풀/칼 기능 완벽 복구)
+# TAB 2: The Dissector (📱 모바일 터치 완벽 대응)
 # ==========================================
 with tab2:
     st.markdown("""
@@ -184,26 +192,32 @@ with tab2:
             <style>
                 body {{ font-family: 'Eulyoo1945', serif; margin: 0; padding: 0; overflow: hidden; user-select: none; }}
                 #toolbar {{ background: #000; padding: 10px; display: flex; gap: 10px; align-items: center; justify-content: center; flex-wrap: wrap; }}
-                .tool-btn {{ background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: all 0.2s; }}
+                .tool-btn {{ background: #fff; color: #000; border: 2px solid #fff; padding: 8px 16px; font-size: 0.95rem; font-weight: bold; cursor: pointer; transition: all 0.2s; touch-action: manipulation; }}
                 .tool-btn.active-knife {{ background: #ff4d4d; color: #fff; border-color: #ff4d4d; }}
                 .tool-btn.active-glue {{ background: #4d79ff; color: #fff; border-color: #4d79ff; }}
-                #canvas-area {{ width: 100%; height: 650px; background: #fafafa; position: relative; border: 3px solid #000; border-top: none; cursor: default; overflow: hidden; }}
-                .magnet {{ position: absolute; border: 2px solid #000; padding: 0; display: flex; font-size: 1.4rem; font-weight: bold; cursor: grab; white-space: nowrap; box-shadow: 4px 4px 0px #000; background: transparent; }}
+                #canvas-area {{ width: 100%; height: 600px; background: #fafafa; position: relative; border: 3px solid #000; border-top: none; cursor: default; overflow: hidden; touch-action: none; }}
+                .magnet {{ position: absolute; border: 2px solid #000; padding: 0; display: flex; font-size: 1.4rem; font-weight: bold; cursor: grab; white-space: nowrap; box-shadow: 4px 4px 0px #000; background: transparent; touch-action: none; }}
                 .magnet:active {{ cursor: grabbing; z-index: 1000 !important; transform: scale(1.05); }}
-                .char {{ display: inline-block; padding: 6px 3px; color: #000; transition: color 0.2s; }}
+                .char {{ display: inline-block; padding: 6px 3px; color: #000; transition: color 0.2s; pointer-events: auto; }}
                 .char:first-child {{ padding-left: 8px; }} .char:last-child {{ padding-right: 8px; }}
                 body.knife-mode #canvas-area, body.knife-mode .magnet {{ cursor: crosshair; }}
                 body.knife-mode .char:hover {{ color: #ff4d4d; font-weight: 900; transform: translateY(-2px); }}
                 body.glue-mode #canvas-area, body.glue-mode .magnet {{ cursor: cell; }}
                 body.glue-mode .char {{ pointer-events: none; }}
                 .glue-selected {{ box-shadow: 0 0 15px 5px #4d79ff !important; border-color: #4d79ff; transform: scale(1.05); }}
+                
+                @media (max-width: 768px) {{
+                    #canvas-area {{ height: 450px; }}
+                    .magnet {{ font-size: 1.1rem; padding: 0; }}
+                    .char {{ padding: 4px 2px; }}
+                }}
             </style>
             </head>
             <body>
                 <div id="toolbar">
-                    <button id="knifeToggle" class="tool-btn">🔪 칼 툴 (Off)</button>
-                    <button id="glueToggle" class="tool-btn">🧴 풀 툴 (Off)</button>
-                    <button id="shuffleBtn" class="tool-btn">✨ 영감 (셔플)</button>
+                    <button id="knifeToggle" class="tool-btn">🔪 칼 (Off)</button>
+                    <button id="glueToggle" class="tool-btn">🧴 풀 (Off)</button>
+                    <button id="shuffleBtn" class="tool-btn" style="background:#ffe3b3; border-color:#ffe3b3;">✨ 셔플</button>
                 </div>
                 <div id="canvas-area"></div>
                 <script>
@@ -217,7 +231,7 @@ with tab2:
                     function updateBtns() {{
                         document.body.classList.toggle('knife-mode', knifeMode); document.body.classList.toggle('glue-mode', glueMode);
                         knifeBtn.classList.toggle('active-knife', knifeMode); glueBtn.classList.toggle('active-glue', glueMode);
-                        knifeBtn.innerText = knifeMode ? '🔪 칼 툴 (On)' : '🔪 칼 툴 (Off)'; glueBtn.innerText = glueMode ? '🧴 풀 툴 (On)' : '🧴 풀 툴 (Off)';
+                        knifeBtn.innerText = knifeMode ? '🔪 칼 (On)' : '🔪 칼 (Off)'; glueBtn.innerText = glueMode ? '🧴 풀 (On)' : '🧴 풀 (Off)';
                     }}
                     function clearGlueTarget() {{ if (glueTarget) glueTarget.classList.remove('glue-selected'); glueTarget = null; }}
                     function getCharData(el) {{ return Array.from(el.children).map(span => ({{ char: span.innerText, bg: span.style.backgroundColor }})); }}
@@ -228,7 +242,8 @@ with tab2:
                         
                         charDataArr.forEach((item, idx) => {{
                             const span = document.createElement('span'); span.className = 'char'; span.innerText = item.char; span.style.backgroundColor = item.bg; span.dataset.index = idx;
-                            span.addEventListener('mousedown', (e) => {{
+                            // 포인터 이벤트: 모바일 터치와 PC 마우스를 모두 커버
+                            span.addEventListener('pointerdown', (e) => {{
                                 if (!knifeMode) return; e.stopPropagation(); 
                                 const clickedIdx = parseInt(e.target.dataset.index); if (clickedIdx === 0) return;
                                 const curData = getCharData(div); const p1 = curData.slice(0, clickedIdx); const p2 = curData.slice(clickedIdx);
@@ -238,7 +253,7 @@ with tab2:
                             div.appendChild(span);
                         }});
 
-                        div.addEventListener('mousedown', (e) => {{
+                        div.addEventListener('pointerdown', (e) => {{
                             if (knifeMode) return;
                             if (glueMode) {{
                                 e.stopPropagation();
@@ -252,12 +267,18 @@ with tab2:
                                 }} else clearGlueTarget();
                                 return;
                             }}
-                            e.preventDefault(); div.style.zIndex = ++zIndex; let pos3 = e.clientX, pos4 = e.clientY;
-                            document.onmouseup = () => {{ document.onmouseup = null; document.onmousemove = null; }};
-                            document.onmousemove = (ev) => {{
-                                ev.preventDefault(); let p1 = pos3 - ev.clientX; let p2 = pos4 - ev.clientY; pos3 = ev.clientX; pos4 = ev.clientY;
+                            // 드래그 로직 (터치/마우스)
+                            e.preventDefault(); div.style.zIndex = ++zIndex; 
+                            let pos3 = e.clientX, pos4 = e.clientY;
+                            const move = (ev) => {{
+                                ev.preventDefault(); 
+                                let p1 = pos3 - ev.clientX; let p2 = pos4 - ev.clientY; 
+                                pos3 = ev.clientX; pos4 = ev.clientY;
                                 div.style.top = (div.offsetTop - p2) + "px"; div.style.left = (div.offsetLeft - p1) + "px";
                             }};
+                            const up = () => {{ document.removeEventListener('pointermove', move); document.removeEventListener('pointerup', up); }};
+                            document.addEventListener('pointermove', move, {{passive: false}});
+                            document.addEventListener('pointerup', up);
                         }});
                         canvas.appendChild(div);
                     }}
@@ -266,15 +287,15 @@ with tab2:
                         let mags = Array.from(document.querySelectorAll('.magnet')); let dList = mags.map(m => getCharData(m));
                         for (let i = dList.length - 1; i > 0; i--) {{ const j = Math.floor(Math.random() * (i + 1)); [dList[i], dList[j]] = [dList[j], dList[i]]; }}
                         canvas.innerHTML = ''; clearGlueTarget();
-                        let cy = 50, cx = 50, cnt = 0, trg = Math.floor(Math.random() * 3) + 3;
+                        let cy = 50, cx = 20, cnt = 0, trg = Math.floor(Math.random() * 3) + 3;
                         dList.forEach((cD) => {{
-                            createMagnet(cD, cx, cy); cx += (cD.length * 28) + 30; cnt++;
-                            if (cnt >= trg || cx > canvas.offsetWidth - 150) {{ cy += 75; cx = 40 + Math.random() * 60; cnt = 0; trg = Math.floor(Math.random() * 3) + 3; }}
+                            createMagnet(cD, cx, cy); cx += (cD.length * 28) + 20; cnt++;
+                            if (cnt >= trg || cx > canvas.offsetWidth - 100) {{ cy += 75; cx = 20 + Math.random() * 40; cnt = 0; trg = Math.floor(Math.random() * 3) + 3; }}
                         }});
                     }});
 
                     initialWords.forEach((word, i) => {{
-                        const x = 30 + (i % 6) * 110 + Math.random() * 30; const y = 30 + Math.floor(i / 6) * 70 + Math.random() * 30;
+                        const x = 20 + (i % 4) * 80 + Math.random() * 20; const y = 20 + Math.floor(i / 4) * 60 + Math.random() * 20;
                         const c = colorPalette[Math.floor(Math.random() * colorPalette.length)];
                         const cArr = Array.from(word).map(ch => ({{ char: ch, bg: c }}));
                         createMagnet(cArr, x, y);
@@ -283,18 +304,17 @@ with tab2:
             </body>
             </html>
             """
-            components.html(custom_html, height=750)
+            components.html(custom_html, height=700)
 
 # ==========================================
-# TAB 3: The Automaton (오버레이 및 불타는 로직 완벽 복구)
+# TAB 3: The Automaton (오버레이 및 불타는 로직 / 모바일 폰트 최적화)
 # ==========================================
 with tab3:
     st.markdown("""
     <div class="instruction-box">
         <b>[자동 기술 지침: 파편의 증발]</b><br>
-        - <b>무의식의 흐름:</b> 텍스트를 입력하세요. 5초간 키보드가 멈추면 <b>최근 당신이 쏟아낸 3~5개의 어절</b>만 붉게 타오르며 사라집니다.<br>
-        - <b>이성의 차단:</b> 백스페이스(수정)를 누르려면 3~5번을 미친 듯이 연타해야 겨우 한 글자가 지워집니다.<br>
-        - 캔버스의 틀은 견고합니다. 사라진 파편은 우연의 흔적으로 남으니 계속 나아가세요.
+        - <b>무의식의 흐름:</b> 텍스트를 입력하세요. 5초간 멈추면 <b>최근 당신이 쏟아낸 3~5개의 어절</b>만 붉게 타오르며 사라집니다.<br>
+        - <b>이성의 차단:</b> 백스페이스(수정)를 누르려면 3~5번을 연타해야 겨우 한 글자가 지워집니다.
     </div>
     """, unsafe_allow_html=True)
 
@@ -313,11 +333,16 @@ with tab3:
         #overlay { color: transparent; z-index: 1; pointer-events: none; }
         .burning-text { display: inline-block; animation: burnTextOnly 1.5s forwards ease-in; }
         @keyframes burnTextOnly {
-            0% { color: #ff4d4d; text-shadow: 0 0 0px #ff0000; filter: blur(0px); opacity: 1; transform: translateY(0px); }
-            40% { color: #ff3333; text-shadow: 0 -3px 8px #ff9900; filter: blur(2px); transform: translateY(-2px); }
-            100% { color: transparent; text-shadow: 0 -15px 25px #ff0000; filter: blur(6px); opacity: 0; transform: translateY(-8px); }
+            0% { color: #ff4d4d; text-shadow: 0 0 0px #ff0000; opacity: 1; transform: translateY(0px); }
+            40% { color: #ff3333; text-shadow: 0 -3px 8px #ff9900; opacity: 0.8; transform: translateY(-2px); }
+            100% { color: transparent; text-shadow: 0 -15px 25px #ff0000; opacity: 0; transform: translateY(-8px); }
         }
         #bs-warning { position: absolute; top: 20px; right: 20px; color: #ff4d4d; font-weight: bold; opacity: 0; transition: opacity 0.2s; pointer-events: none; z-index: 100; }
+        
+        @media (max-width: 768px) {
+            #editor-wrapper { height: 350px; }
+            textarea, #overlay { font-size: 1.1rem; padding: 15px; }
+        }
     </style>
     </head>
     <body>
@@ -380,21 +405,20 @@ with tab3:
     </body>
     </html>
     """
-    components.html(automaton_html, height=600)
+    components.html(automaton_html, height=550)
 
 # ==========================================
-# TAB 4: The Erasure (소거의 미학)
+# TAB 4: The Erasure (모바일 터치 소거 대응)
 # ==========================================
 with tab4:
     st.markdown("""
     <div class="instruction-box">
         <b>[블랙아웃 지침: 소거의 미학]</b><br>
-        - <b>은폐의 조각:</b> 방대한 텍스트 위를 마우스로 드래그(또는 클릭)하여 불필요한 단어를 지워버리세요.<br>
-        - 마치 돌을 깎아 조각상을 만들듯, <b>살아남은 텍스트들만이 모여 한 편의 시</b>가 됩니다.
+        - <b>은폐의 조각:</b> 텍스트 위를 드래그하거나 터치하여 불필요한 단어를 지워버리세요. 남은 조각들이 시가 됩니다.
     </div>
     """, unsafe_allow_html=True)
     
-    default_text = "이성은 언제나 우리를 배신한다. 논리는 껍데기에 불과하며, 진정한 구원은 무의식의 심연 속에서 헤엄치는 파편화된 이미지들에 있다. 당신은 오늘 거울을 보며 무엇을 기억했는가? 망각은 구토를 유발하지만 동시에 새로운 미학의 탄생을 예고한다. 보이지 않는 것을 보라."
+    default_text = "이성은 언제나 우리를 배신한다. 논리는 껍데기에 불과하며, 진정한 구원은 무의식의 심연 속에서 헤엄치는 파편화된 이미지들에 있다. 당신은 오늘 거울을 보며 무엇을 기억했는가? 망각은 구토를 유발하지만 동시에 새로운 미학의 탄생을 예고한다."
     erasure_input = st.text_area("원본 텍스트 (직접 입력 가능)", value=default_text, height=120, key="erasure_input")
 
     if st.button("⬛ 소거 캔버스 생성", key="create_erasure"):
@@ -406,29 +430,45 @@ with tab4:
         <html>
         <head>
         <style>
-            body {{ font-family: 'Eulyoo1945', serif; margin: 0; padding: 20px; background: #fafafa; user-select: none; }}
-            #canvas {{ width: 100%; min-height: 400px; border: 3px solid #000; padding: 30px; line-height: 2.5; font-size: 1.6rem; background: #fff; box-shadow: 4px 4px 0px #000; box-sizing: border-box; }}
-            .word {{ display: inline-block; padding: 2px 6px; margin: 0 4px; cursor: pointer; transition: background-color 0.2s, color 0.2s; border-radius: 2px; color: #000; }}
-            .blackout {{ background-color: #000; color: #000 !important; text-shadow: none; user-select: none; }}
-            .word:hover:not(.blackout) {{ background-color: #eee; }}
+            body {{ font-family: 'Eulyoo1945', serif; margin: 0; padding: 15px; background: #fafafa; user-select: none; touch-action: none; }}
+            #canvas {{ width: 100%; min-height: 300px; border: 3px solid #000; padding: 20px; line-height: 2.2; font-size: 1.5rem; background: #fff; box-shadow: 4px 4px 0px #000; box-sizing: border-box; }}
+            .word {{ display: inline-block; padding: 2px 5px; margin: 0 3px; cursor: pointer; transition: background-color 0.1s, color 0.1s; border-radius: 2px; color: #000; touch-action: none; }}
+            .blackout {{ background-color: #000 !important; color: #000 !important; text-shadow: none; user-select: none; }}
+            
+            @media (max-width: 768px) {{
+                #canvas {{ font-size: 1.1rem; padding: 15px; line-height: 2.0; }}
+            }}
         </style>
         </head>
         <body>
             <div id="canvas"></div>
             <script>
                 const words = {words_json}; const canvas = document.getElementById('canvas'); let isDragging = false;
-                document.body.onmousedown = () => isDragging = true; document.body.onmouseup = () => isDragging = false;
+                
+                canvas.addEventListener('pointerdown', () => isDragging = true);
+                document.addEventListener('pointerup', () => isDragging = false);
+                
                 words.forEach(word => {{
                     const span = document.createElement('span'); span.className = 'word'; span.innerText = word;
-                    span.onmousedown = (e) => {{ e.preventDefault(); span.classList.toggle('blackout'); }};
-                    span.onmouseenter = (e) => {{ if(isDragging) span.classList.add('blackout'); }};
+                    span.addEventListener('pointerdown', (e) => {{ e.preventDefault(); span.classList.toggle('blackout'); }});
+                    span.addEventListener('pointerenter', () => {{ if(isDragging) span.classList.add('blackout'); }});
                     canvas.appendChild(span);
                 }});
+
+                // 모바일 터치 드래그 호환 패치
+                document.addEventListener('touchmove', (e) => {{
+                    if(isDragging) {{
+                        e.preventDefault();
+                        let touch = e.touches[0];
+                        let el = document.elementFromPoint(touch.clientX, touch.clientY);
+                        if(el && el.classList.contains('word')) el.classList.add('blackout');
+                    }}
+                }}, {{passive: false}});
             </script>
         </body>
         </html>
         """
-        components.html(erasure_html, height=500)
+        components.html(erasure_html, height=450)
 
 # ==========================================
 # TAB 5: Cadavre Exquis (우아한 시체)
@@ -466,7 +506,7 @@ with tab5:
         if st.session_state.corpse_lines:
             st.divider()
             st.subheader("🖼️ Cadavre Exquis (완성된 시체)")
-            poem_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.2; font-size: 1.3rem;'>"
+            poem_html = "<div style='padding: 20px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.0; font-size: 1.1rem;'>"
             for line in st.session_state.corpse_lines:
                 poem_html += f"{line}<br>"
             poem_html += "</div>"
@@ -492,11 +532,11 @@ with tab6:
     
     babel_input = st.text_area("해부할 완벽한 문장", placeholder="나는 오늘 아침에 일어나 거울을 보며 깊은 절망을 느꼈다.", height=150, key="babel_input")
     
-    SURREAL_NOUNS = ["침묵", "기하학", "고깃덩어리", "균열", "환상지", "잔해", "태엽", "미궁", "백색소음", "이물질", "심연", "파편", "얼룩", "구토", "오류", "무한", "영원", "비정형", "적막", "초월", "고통", "비명"]
-    WEIRD_ADVERBS = ["기계적으로", "불쾌하게", "영원히", "느닷없이", "집요하게", "증발하듯", "조각조각", "발작적으로", "순간적인", "기묘한", "부유하는", "휩싸인", "원형적인", "신회적인", "뒤틀린", "일그러진", "어스름한", "희미한", "처절한"  ]
-    WEIRD_PARTICLES = ["에게로써", "마저도", "조차", "의 곁에서", "를 향한", "치고는", "너머로", "야말로", "뿐"]
+    SURREAL_NOUNS = ["침묵", "기하학", "고깃덩어리", "균열", "환상지", "잔해", "태엽", "미궁", "백색소음", "이물질", "심연", "파편", "얼룩", "구토"]
+    WEIRD_ADVERBS = ["기계적으로", "불쾌하게", "영원히", "느닷없이", "집요하게", "증발하듯", "조각조각", "발작적으로"]
+    WEIRD_PARTICLES = ["에게로써", "마저도", "조차", "의 곁에서", "를 향한", "치고는", "너머로"]
     WEIRD_ENDINGS = ["었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지", "련만"]
-    GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " ░▒▓ ", " • ", "༒", "🜄"]
+    GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // "]
     
     # 폰트 이름 직접 지정
     MIX_FONTS = ["Eulyoo1945", "GmarketSans", "KyoboHandwriting", "DungGeunMo"]
@@ -510,15 +550,15 @@ with tab6:
             glitch_result = []
             
             for t in tokens:
-                if t.tag.startswith('N') and random.random() > 0.7:
+                if t.tag.startswith('N') and random.random() > 0.8:
                     glitch_result.append((random.choice(SURREAL_NOUNS), t.tag))
-                elif t.tag.startswith('M') and random.random() > 0.4:
+                elif t.tag.startswith('M') and random.random() > 0.5:
                     glitch_result.append((random.choice(WEIRD_ADVERBS), t.tag))
                 elif t.tag.startswith('J'): 
-                    if random.random() > 0.2: glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
+                    if random.random() > 0.4: glitch_result.append((random.choice(WEIRD_PARTICLES), t.tag))
                     else: glitch_result.append((t.form, t.tag))
                 elif t.tag.startswith('E'):
-                    if random.random() > 0.3: glitch_result.append((random.choice(WEIRD_ENDINGS), t.tag))
+                    if random.random() > 0.5: glitch_result.append((random.choice(WEIRD_ENDINGS), t.tag))
                     else: glitch_result.append((t.form, t.tag))
                 else:
                     glitch_result.append((t.form, t.tag))
@@ -542,17 +582,17 @@ with tab6:
         babel_bumpy = bc1.slider("글자 진동 (높을수록 들쭉날쭉)", 0.0, 1.0, 0.3, key="babel_bumpy")
         babel_tilt = bc2.slider("글자 비틀림 (각도)", 0, 45, 15, key="babel_tilt")
 
-        styled_html = "<div style='padding: 30px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.5; word-wrap: break-word; white-space: pre-wrap;'>"
+        # 모바일 대응을 위해 폰트 베이스 사이즈를 약간 줄임
+        styled_html = "<div style='padding: 20px; border: 3px solid #000; background: #fff; color: #000; line-height: 2.2; word-wrap: break-word; white-space: pre-wrap;'>"
         
         for char in st.session_state.babel_raw_output:
             if char == ' ': 
                 styled_html += '&nbsp;'
             else:
-                fs = 1.4 + random.uniform(-babel_bumpy, babel_bumpy)
+                fs = 1.3 + random.uniform(-babel_bumpy, babel_bumpy)
                 rot = random.uniform(-babel_tilt, babel_tilt)
                 font_choice = random.choice(MIX_FONTS) if random.random() > 0.65 else MIX_FONTS[0]
                 
-                # 강제로 인라인 스타일 부여
                 styled_html += f'<span style="font-family: \'{font_choice}\', sans-serif !important; font-size:{fs}rem; display:inline-block; transform:rotate({rot}deg); font-weight:bold; color: #000;">{char}</span>'
         
         styled_html += "</div>"
