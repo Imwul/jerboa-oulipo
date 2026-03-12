@@ -25,12 +25,17 @@ st.markdown(f"""
     :root {{ color-scheme: light !important; }}
     [data-testid="stAppViewContainer"], .stApp {{ background-color: #FFFFFF !important; }}
 
-    /* 기본 텍스트는 모두 을유명조 (h1은 제외하여 Trattatello 보호) */
-    html, body, [class*="st-"], p, span, div, h2, h3, h4, h5, h6, textarea, input, button {{ 
+    /* 기본 텍스트는 모두 을유명조 */
+    html, body, [class*="st-"], p, span, div, h2, h3, h4, h5, h6, textarea, input, button, label {{ 
         font-family: 'Eulyoo1945-Regular', serif !important; 
     }}
 
-    /* ❗ 제목 폰트 Trattatello 복구 */
+    /* ❗ 모든 소제목, 슬라이더 라벨, 텍스트를 검은색으로 강제 고정 (다크모드 간섭 완벽 차단) */
+    h2, h3, h4, h5, h6, p, label, .stMarkdown, .stText, [data-testid="stWidgetLabel"] p, [data-testid="stMarkdownContainer"] p {{
+        color: #000000 !important;
+    }}
+
+    /* ❗ 제목 폰트 Trattatello 복구 및 보호 */
     h1, [data-testid="stHeadingWithActionElements"] h1, h1 * {{
         font-family: 'Trattatello', 'Apple Chancery', fantasy, cursive !important;
         font-size: 3.8rem !important; color: #000000 !important;
@@ -70,7 +75,7 @@ st.markdown(f"""
         font-weight: bold; cursor: default; color: #000000 !important;
     }}
 
-    /* 일반 동작 버튼 스타일 */
+    /* 버튼 스타일 */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
