@@ -75,7 +75,7 @@ st.markdown(f"""
         font-weight: bold; cursor: default; color: #000000 !important;
     }}
 
-    /* 글로벌 버튼 스타일 (이것이 탭 7을 검게 만들었던 주범!) */
+    /* 글로벌 버튼 스타일 */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
@@ -668,53 +668,20 @@ def get_all_matched_words(target_rhyme, dictionary_data):
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
-    # --- 전역 CSS 독재를 깨부수고, 5x5 표에만 CSS를 적용하는 가장 확실한 코드 ---
+    # --- 💡 순수 HTML URL 통신: Streamlit 버튼(st.button)을 안 씁니다! ---
+    if "t7_sel" in st.query_params:
+        try:
+            sel_idx = int(st.query_params["t7_sel"])
+            if 't7_generated_words' in st.session_state and 0 <= sel_idx < len(st.session_state.t7_generated_words):
+                st.session_state.t7_selected_word = st.session_state.t7_generated_words[sel_idx]
+                st.session_state.t7_step = 3
+        except:
+            pass
+        finally:
+            del st.query_params["t7_sel"]
+
     st.markdown("""
     <style>
-    @keyframes gentle-wobble {
-        0%, 100% { transform: rotate(-2deg); }
-        50% { transform: rotate(2deg); }
-    }
-
-    /* 5열 레이아웃(Grid) 안의 버튼만! 타겟팅하여 까만 관짝을 찢어버림 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) ~ div[data-testid="column"] div.stButton > button {
-        height: 75px !important;
-        width: 100% !important;
-        border: 2px solid #000 !important;
-        border-radius: 4px !important;
-        box-shadow: 2px 2px 0px rgba(0,0,0,1) !important;
-        padding: 5px !important;
-        animation: gentle-wobble 3s infinite ease-in-out !important;
-        transition: all 0.2s ease-in-out !important;
-        background-color: #fff !important; /* 기본 흰색으로 덮어씀 */
-    }
-
-    /* 글씨를 무조건 까맣고 선명하게 덮어쓰기 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) ~ div[data-testid="column"] div.stButton > button p {
-        color: #000000 !important;
-        font-weight: 900 !important;
-        font-size: 1.15rem !important;
-    }
-
-    /* 마우스 호버 효과 (붉은 테두리, 위로 떠오름) */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button:hover,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) ~ div[data-testid="column"] div.stButton > button:hover {
-        animation: none !important;
-        transform: translateY(-4px) !important;
-        border-color: #d32f2f !important;
-        box-shadow: 4px 4px 0px rgba(211,47,47,1) !important;
-        z-index: 99 !important;
-    }
-
-    /* 5개의 열(Column)에 맞춰 다채로운 5가지 파스텔 컬러 강제 배정! */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button { background-color: #ffc9c9 !important; }
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) + div[data-testid="column"] div.stButton > button { background-color: #ffe3b3 !important; }
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) + div + div div.stButton > button { background-color: #fff3b5 !important; }
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) + div + div + div div.stButton > button { background-color: #d4f0d4 !important; }
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) + div + div + div + div div.stButton > button { background-color: #c9ebff !important; }
-
     .torn-sentence {
         text-align: center;
         font-family: 'Eulyoo1945-Regular', serif;
@@ -764,16 +731,15 @@ with tab7:
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (초밀집 Grid & 환영 툴팁)
+    # Step 2: 사전의 파편들 선택 (완전 무결한 순수 HTML 그리드)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
-        # 원본 어구에서 마지막 라임 단어만 붉게 강조 (상단 나침반)
         words_list = st.session_state.t7_initial_phrase.strip().split()
         base_phrase = " ".join(words_list[:-1]) if len(words_list) > 1 else ""
         rhyme_word = words_list[-1] if words_list else ""
         
         st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 20px; font-size: 1.4em;'>
+        <div style='text-align: center; margin-bottom: 30px; font-size: 1.4em;'>
             <span style='color: #888;'>원본 어구:</span> 
             <b>{base_phrase} <span style='color: #d32f2f;'>{rhyme_word}</span></b>
         </div>
@@ -781,24 +747,65 @@ with tab7:
         
         words = st.session_state.t7_generated_words
         
-        # 태평양 간격을 없애기 위해 화면 중앙의 좁은 공간으로 5x5 그리드를 강제로 밀어넣습니다.
-        _, grid_col, _ = st.columns([1, 4, 1])
+        # ❗ 여기서부터는 Streamlit 버튼을 안 쓰고 완벽하게 커스텀 된 HTML 링크로 대체합니다 ❗
+        html_grid = """
+        <style>
+        .oulipo-grid-container {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 15px; /* 빽빽한 간격 조절 */
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .oulipo-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 90px; /* 쫀득한 포스트잇 비율 */
+            border: 2px solid #000;
+            border-radius: 4px;
+            box-shadow: 4px 4px 0px rgba(0,0,0,1);
+            color: #000 !important; /* 글로벌 CSS 무시하고 까만 글씨 강제! */
+            font-family: 'Eulyoo1945-Regular', serif;
+            font-weight: 900;
+            font-size: 1.25rem;
+            text-decoration: none !important;
+            animation: oulipo-wobble 3s infinite ease-in-out;
+            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+        .oulipo-btn:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 6px 6px 0px rgba(211,47,47,1);
+            border-color: #d32f2f;
+            animation: none;
+            z-index: 10;
+            color: #000 !important;
+        }
+        /* 5가지 파스텔 컬러 지정 */
+        .oulipo-color-0 { background-color: #ffc9c9; }
+        .oulipo-color-1 { background-color: #ffe3b3; }
+        .oulipo-color-2 { background-color: #fff3b5; }
+        .oulipo-color-3 { background-color: #d4f0d4; }
+        .oulipo-color-4 { background-color: #c9ebff; }
         
-        with grid_col:
-            for i in range(0, len(words), 5):
-                cols = st.columns(5, gap="small")
-                for j in range(5):
-                    if i + j < len(words):
-                        word = words[i + j]
-                        # 마우스 호버 시 띄울 말풍선 문장
-                        replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-                        
-                        with cols[j]:
-                            # help 파라미터가 바로 툴팁(말풍선)을 띄워줍니다.
-                            if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence):
-                                st.session_state.t7_selected_word = word
-                                st.session_state.t7_step = 3
-                                st.rerun()
+        @keyframes oulipo-wobble {
+            0%, 100% { transform: rotate(-2deg); }
+            50% { transform: rotate(2deg); }
+        }
+        </style>
+        <div class="oulipo-grid-container">
+        """
+        
+        for i, word in enumerate(words):
+            replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+            color_class = f"oulipo-color-{i % 5}"
+            # a 태그로 렌더링. 클릭하면 ?t7_sel=숫자 파라미터와 함께 스스로 새로고침 됨 (위의 파이썬 코드가 잡아냄)
+            html_grid += f'<a href="?t7_sel={i}" target="_self" class="oulipo-btn {color_class}" title="{replaced_sentence}">{word}</a>'
+        
+        html_grid += "</div><br><br>"
+        st.markdown(html_grid, unsafe_allow_html=True)
 
         st.markdown("---")
         col1, col2 = st.columns(2)
