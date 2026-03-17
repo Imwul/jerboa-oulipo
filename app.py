@@ -668,25 +668,418 @@ def render_circular_words(center_text, words):
 # ==========================================
 # TAB 7: The Roussel Bridge (레몽 루셀의 두 문장 & 울리포 엔진 UI)
 # ==========================================
+Python
+import streamlit as st
+import math
+import re
+import random
+
+# ==========================================
+# [함수 정의 구역] 
+# ==========================================
+
+def get_rhyme_target(sentence):
+    clean_sentence = re.sub(r'[^\w\s]', '', sentence)
+    words = clean_sentence.strip().split()
+    if not words: return ""
+    last_word = words[-1]
+    
+    if len(words) == 1:
+        return last_word[-3:] if len(last_word) >= 3 else last_word
+    second_last_word = words[-2]
+    
+    if len(last_word) + len(second_last_word) <= 3:
+        return second_last_word + last_word
+    if len(last_word) >= 3:
+        return last_word[-3:]
+    elif len(last_word) == 2:
+        return last_word[-2:]
+    return last_word 
+
+def decompose_hangul(char):
+    if not ('가' <= char <= '힣'): return None
+    char_code = ord(char) - 44032
+    jong = char_code % 28
+    jung = ((char_code - jong) // 28) % 21
+    cho = ((char_code - jong) // 28) // 21
+    return cho, jung, jong
+
+def get_loose_vowel(jung):
+    # 0:ㅏ, 1:ㅐ, 2:ㅑ, 3:ㅒ, 4:ㅓ, 5:ㅔ, 6:ㅕ, 7:ㅖ, 8:ㅗ, 12:ㅛ, 13:ㅜ, 17:ㅠ
+    mapping = {2: 0, 6: 4, 12: 8, 17: 13, 3: 1, 7: 5}
+    return mapping.get(jung, jung)
+
+def is_loose_rhyme(target_char, word_char):
+    t_decomp = decompose_hangul(target_char)
+    w_decomp = decompose_hangul(word_char)
+    if not t_decomp or not w_decomp:
+        return target_char == word_char 
+    
+    _, t_jung, t_jong = t_decomp
+    _, w_jung, w_jong = w_decomp
+    return get_loose_vowel(t_jung) == get_loose_vowel(w_jung) and t_jong == w_jong
+
+def match_rhyme(target_str, word_str):
+    if len(word_str) < len(target_str): return False
+    for i in range(1, len(target_str) + 1):
+        if not is_loose_rhyme(target_str[-i], word_str[-i]):
+            return False
+    return True
+
+@st.cache_data
+def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
+    if not target_rhyme: return []
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            dictionary_data = [line.strip() for line in f.readlines() if line.strip()]
+            
+        matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
+        matched_words.sort(key=len)
+        unique_words = []
+        
+        for word in matched_words:
+            if not any(word.endswith(u_word) for u_word in unique_words):
+                unique_words.append(word)
+        return unique_words
+    except Exception as e:
+        return []
+
+def render_circular_phrases(center_text, phrases):
+    if not phrases:
+        st.warning("조건을 완화했는데도 일치하는 단어가 부족해. 다른 문장을 던져봐!")
+        return
+
+    radius = 180 
+    html_content = f"""
+    <style>
+        @keyframes spin {{ 100% {{ transform: translate(-50%, -50%) rotate(360deg); }} }}
+        @keyframes counter-spin {{ 100% {{ transform: translate(-50%, -50%) rotate(-360deg); }} }}
+        @keyframes wobble {{
+            0%, 100% {{ transform: rotate(-5deg); }}
+            50% {{ transform: rotate(5deg); }}
+        }}
+        .wobble-link {{
+            display: inline-block;
+            animation: wobble 2.5s ease-in-out infinite;
+            text-decoration: none;
+            color: #888;
+            font-size: 1.0em;
+            white-space: nowrap;
+            transition: color 0.2s, transform 0.2s;
+        }}
+        .wobble-link:hover {{ color: #d32f2f; transform: scale(1.15); font-weight: bold; }}
+    </style>
+    <div style='position: relative; width: 450px; height: 450px; margin: 0 auto; overflow: hidden; font-family: "serif";'>
+        <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; font-weight: bold; font-size: 1.2em; color: #d32f2f;'>
+            {center_text}
+        </div>
+        <div style='position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); animation: spin 45s linear infinite;'>
+    """
+    
+    angle_step = 360 / len(phrases)
+    for i, phrase in enumerate(phrases):
+        angle = i * angle_step
+        rad = math.radians(angle - 90)
+        x = radius * math.cos(rad)
+        y = radius * math.sin(rad)
+        
+        html_content += f"""
+            <div style='position: absolute; left: calc(50% + {x}px); top: calc(50% + {y}px); transform-origin: center; animation: counter-spin 45s linear infinite;'>
+                <a href='?sel={i}' target='_self' class='wobble-link'>{phrase}</a>
+            </div>
+        """
+        
+    html_content += "</div></div>"
+    st.markdown(html_content, unsafe_allow_html=True)
+
+
+# ==========================================
+# TAB 7: The Roussel Bridge 
+# ==========================================
+import streamlit as st
+import math
+import re
+import random
+
+# ==========================================
+# [함수 정의 구역] 
+# ==========================================
+
+def get_rhyme_target(sentence):
+    clean_sentence = re.sub(r'[^\w\s]', '', sentence)
+    words = clean_sentence.strip().split()
+    if not words: return ""
+    last_word = words[-1]
+    
+    if len(words) == 1:
+        return last_word[-3:] if len(last_word) >= 3 else last_word
+    second_last_word = words[-2]
+    
+    if len(last_word) + len(second_last_word) <= 3:
+        return second_last_word + last_word
+    if len(last_word) >= 3:
+        return last_word[-3:]
+    elif len(last_word) == 2:
+        return last_word[-2:]
+    return last_word 
+
+def decompose_hangul(char):
+    if not ('가' <= char <= '힣'): return None
+    char_code = ord(char) - 44032
+    jong = char_code % 28
+    jung = ((char_code - jong) // 28) % 21
+    cho = ((char_code - jong) // 28) // 21
+    return cho, jung, jong
+
+def get_loose_vowel(jung):
+    # 0:ㅏ, 1:ㅐ, 2:ㅑ, 3:ㅒ, 4:ㅓ, 5:ㅔ, 6:ㅕ, 7:ㅖ, 8:ㅗ, 12:ㅛ, 13:ㅜ, 17:ㅠ
+    mapping = {2: 0, 6: 4, 12: 8, 17: 13, 3: 1, 7: 5}
+    return mapping.get(jung, jung)
+
+def is_loose_rhyme(target_char, word_char):
+    t_decomp = decompose_hangul(target_char)
+    w_decomp = decompose_hangul(word_char)
+    if not t_decomp or not w_decomp:
+        return target_char == word_char 
+    
+    _, t_jung, t_jong = t_decomp
+    _, w_jung, w_jong = w_decomp
+    return get_loose_vowel(t_jung) == get_loose_vowel(w_jung) and t_jong == w_jong
+
+def match_rhyme(target_str, word_str):
+    if len(word_str) < len(target_str): return False
+    for i in range(1, len(target_str) + 1):
+        if not is_loose_rhyme(target_str[-i], word_str[-i]):
+            return False
+    return True
+
+@st.cache_data
+def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
+    if not target_rhyme: return []
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            dictionary_data = [line.strip() for line in f.readlines() if line.strip()]
+            
+        matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
+        matched_words.sort(key=len)
+        unique_words = []
+        
+        for word in matched_words:
+            if not any(word.endswith(u_word) for u_word in unique_words):
+                unique_words.append(word)
+        return unique_words
+    except Exception as e:
+        return []
+
+def render_circular_phrases(center_text, phrases):
+    if not phrases:
+        st.warning("이물, 조건을 완화했는데도 일치하는 단어가 부족해. 다른 문장을 던져봐!")
+        return
+
+    radius = 180 
+    html_content = f"""
+    <style>
+        @keyframes spin {{ 100% {{ transform: translate(-50%, -50%) rotate(360deg); }} }}
+        @keyframes counter-spin {{ 100% {{ transform: translate(-50%, -50%) rotate(-360deg); }} }}
+        @keyframes wobble {{
+            0%, 100% {{ transform: rotate(-5deg); }}
+            50% {{ transform: rotate(5deg); }}
+        }}
+        .wobble-link {{
+            display: inline-block;
+            animation: wobble 2.5s ease-in-out infinite;
+            text-decoration: none;
+            color: #888;
+            font-size: 1.0em;
+            white-space: nowrap;
+            transition: color 0.2s, transform 0.2s;
+        }}
+        .wobble-link:hover {{ color: #d32f2f; transform: scale(1.15); font-weight: bold; }}
+    </style>
+    <div style='position: relative; width: 450px; height: 450px; margin: 0 auto; overflow: hidden; font-family: "serif";'>
+        <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; font-weight: bold; font-size: 1.2em; color: #d32f2f;'>
+            {center_text}
+        </div>
+        <div style='position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); animation: spin 45s linear infinite;'>
+    """
+    
+    angle_step = 360 / len(phrases)
+    for i, phrase in enumerate(phrases):
+        angle = i * angle_step
+        rad = math.radians(angle - 90)
+        x = radius * math.cos(rad)
+        y = radius * math.sin(rad)
+        
+        html_content += f"""
+            <div style='position: absolute; left: calc(50% + {x}px); top: calc(50% + {y}px); transform-origin: center; animation: counter-spin 45s linear infinite;'>
+                <a href='?sel={i}' target='_self' class='wobble-link'>{phrase}</a>
+            </div>
+        """
+        
+    html_content += "</div></div>"
+    st.markdown(html_content, unsafe_allow_html=True)
+
+
+import streamlit as st
+import math
+import re
+import random
+
+# ==========================================
+# [함수 정의 구역] 
+# ==========================================
+
+def get_rhyme_target(sentence):
+    clean_sentence = re.sub(r'[^\w\s]', '', sentence)
+    words = clean_sentence.strip().split()
+    if not words: return ""
+    last_word = words[-1]
+    
+    if len(words) == 1:
+        return last_word[-3:] if len(last_word) >= 3 else last_word
+    second_last_word = words[-2]
+    
+    if len(last_word) + len(second_last_word) <= 3:
+        return second_last_word + last_word
+    if len(last_word) >= 3:
+        return last_word[-3:]
+    elif len(last_word) == 2:
+        return last_word[-2:]
+    return last_word 
+
+def decompose_hangul(char):
+    if not ('가' <= char <= '힣'): return None
+    char_code = ord(char) - 44032
+    jong = char_code % 28
+    jung = ((char_code - jong) // 28) % 21
+    cho = ((char_code - jong) // 28) // 21
+    return cho, jung, jong
+
+def get_loose_vowel(jung):
+    # 0:ㅏ, 1:ㅐ, 2:ㅑ, 3:ㅒ, 4:ㅓ, 5:ㅔ, 6:ㅕ, 7:ㅖ, 8:ㅗ, 12:ㅛ, 13:ㅜ, 17:ㅠ
+    mapping = {2: 0, 6: 4, 12: 8, 17: 13, 3: 1, 7: 5}
+    return mapping.get(jung, jung)
+
+def is_loose_rhyme(target_char, word_char):
+    t_decomp = decompose_hangul(target_char)
+    w_decomp = decompose_hangul(word_char)
+    if not t_decomp or not w_decomp:
+        return target_char == word_char 
+    
+    _, t_jung, t_jong = t_decomp
+    _, w_jung, w_jong = w_decomp
+    return get_loose_vowel(t_jung) == get_loose_vowel(w_jung) and t_jong == w_jong
+
+def match_rhyme(target_str, word_str):
+    if len(word_str) < len(target_str): return False
+    for i in range(1, len(target_str) + 1):
+        if not is_loose_rhyme(target_str[-i], word_str[-i]):
+            return False
+    return True
+
+@st.cache_data
+def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
+    if not target_rhyme: return []
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            dictionary_data = [line.strip() for line in f.readlines() if line.strip()]
+            
+        matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
+        matched_words.sort(key=len)
+        unique_words = []
+        
+        for word in matched_words:
+            if not any(word.endswith(u_word) for u_word in unique_words):
+                unique_words.append(word)
+        return unique_words
+    except Exception as e:
+        return []
+
+def render_circular_phrases(center_text, phrases):
+    if not phrases:
+        st.warning("이물, 조건을 완화했는데도 일치하는 단어가 부족해. 다른 문장을 던져봐!")
+        return
+
+    radius = 180 
+    html_content = f"""
+    <style>
+        @keyframes spin {{ 100% {{ transform: translate(-50%, -50%) rotate(360deg); }} }}
+        @keyframes counter-spin {{ 100% {{ transform: translate(-50%, -50%) rotate(-360deg); }} }}
+        @keyframes wobble {{
+            0%, 100% {{ transform: rotate(-5deg); }}
+            50% {{ transform: rotate(5deg); }}
+        }}
+        .wobble-link {{
+            display: inline-block;
+            animation: wobble 2.5s ease-in-out infinite;
+            text-decoration: none;
+            color: #888;
+            font-size: 1.0em;
+            white-space: nowrap;
+            transition: color 0.2s, transform 0.2s;
+        }}
+        .wobble-link:hover {{ color: #d32f2f; transform: scale(1.15); font-weight: bold; }}
+    </style>
+    <div style='position: relative; width: 450px; height: 450px; margin: 0 auto; overflow: hidden; font-family: "serif";'>
+        <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; font-weight: bold; font-size: 1.2em; color: #d32f2f;'>
+            {center_text}
+        </div>
+        <div style='position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); animation: spin 45s linear infinite;'>
+    """
+    
+    angle_step = 360 / len(phrases)
+    for i, phrase in enumerate(phrases):
+        angle = i * angle_step
+        rad = math.radians(angle - 90)
+        x = radius * math.cos(rad)
+        y = radius * math.sin(rad)
+        
+        html_content += f"""
+            <div style='position: absolute; left: calc(50% + {x}px); top: calc(50% + {y}px); transform-origin: center; animation: counter-spin 45s linear infinite;'>
+                <a href='?sel={i}' target='_self' class='wobble-link'>{phrase}</a>
+            </div>
+        """
+        
+    html_content += "</div></div>"
+    st.markdown(html_content, unsafe_allow_html=True)
+
+
+# ==========================================
+# TAB 7: The Roussel Bridge 
+# ==========================================
 with tab7:
+    # 1. 최상단 설명 박스
     st.markdown("""
     <div class="instruction-box">
         <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
         - <b>균열의 시작:</b> 문장을 입력하면 마지막 단어의 모음과 받침(라임)을 분해하여 추출합니다.<br>
-        - <b>언어의 변이:</b> 초성만 변형되거나 기괴한 수식어가 붙은, 발음만 유사한 낯선 단어 20개가 파생됩니다.<br>
-        - <b>심연의 다리:</b> 단어를 선택하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
+        - <b>언어의 변이:</b> 초성만 변형되거나 기괴한 수식어가 붙은, 발음만 유사한 낯선 단어들이 파생됩니다.<br>
+        - <b>심연의 다리:</b> 회전하는 파편 중 하나를 클릭하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
     </div>
     """, unsafe_allow_html=True)
 
     st.subheader("Jerboa Oulipo Engine 🕰️")
 
-    # 상태 관리 초기화
+    # 2. 상태 관리 변수 초기화 (최신 버전에 맞게 수정)
     if 't7_step' not in st.session_state: st.session_state.t7_step = 1
     if 't7_pinned_sentences' not in st.session_state: st.session_state.t7_pinned_sentences = []
-    if 't7_generated_words' not in st.session_state: st.session_state.t7_generated_words = []
+    if 't7_all_matched_words' not in st.session_state: st.session_state.t7_all_matched_words = []
+    if 't7_generated_phrases' not in st.session_state: st.session_state.t7_generated_phrases = []
     if 't7_initial_phrase' not in st.session_state: st.session_state.t7_initial_phrase = ""
+    if 't7_base_phrase' not in st.session_state: st.session_state.t7_base_phrase = ""
+    if 't7_selected_phrase' not in st.session_state: st.session_state.t7_selected_phrase = ""
 
-    # Step 1
+    # 3. URL 클릭 이벤트 감지 (빙글빙글 도는 단어를 클릭했을 때 처리)
+    if "sel" in st.query_params:
+        sel_idx = int(st.query_params["sel"])
+        if 't7_generated_phrases' in st.session_state and 0 <= sel_idx < len(st.session_state.t7_generated_phrases):
+            st.session_state.t7_selected_phrase = st.session_state.t7_generated_phrases[sel_idx]
+            st.session_state.t7_step = 3 # 단어 선택 완료, 글쓰기 단계로 즉시 이동!
+        del st.query_params["sel"] # 찌꺼기 청소
+
+    # ----------------------------------------
+    # Step 1: 시간의 파편 던지기 (입력)
+    # ----------------------------------------
     if st.session_state.t7_step == 1:
         st.markdown("##### 시간의 파편 던지기")
         initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
@@ -694,39 +1087,71 @@ with tab7:
         if st.button("라임 톱니바퀴 돌리기", key="t7_btn1"):
             if initial_phrase:
                 st.session_state.t7_initial_phrase = initial_phrase
+                words = initial_phrase.strip().split()
+                st.session_state.t7_base_phrase = " ".join(words[:-1]) if len(words) > 1 else ""
+                
                 rhyme_target = get_rhyme_target(initial_phrase)
+                all_words = get_all_matched_words(rhyme_target)
                 
-                st.session_state.t7_generated_words = load_and_filter_dictionary(rhyme_target)
-                
-                if st.session_state.t7_generated_words:
+                if all_words:
+                    st.session_state.t7_all_matched_words = all_words
+                    selected_words = random.sample(all_words, min(15, len(all_words)))
+                    st.session_state.t7_generated_phrases = [
+                        f"{st.session_state.t7_base_phrase} {w}".strip() for w in selected_words
+                    ]
                     st.session_state.t7_step = 2
                 st.rerun()
 
-    # Step 2
-    elif st.session_state.t7_step >= 2:
-        st.markdown("##### 톱니바퀴 선택 및 세계 연결하기")
+    # ----------------------------------------
+    # Step 2: 톱니바퀴 선택 (빙글빙글 UI)
+    # ----------------------------------------
+    elif st.session_state.t7_step == 2:
+        st.markdown("##### 허공을 떠도는 파편 중 하나를 클릭하세요")
         
-        render_circular_words(st.session_state.t7_initial_phrase, st.session_state.t7_generated_words)
+        # 여기서 클릭하면 위의 URL 감지 로직으로 인해 Step 3로 바로 넘어감
+        render_circular_phrases(st.session_state.t7_initial_phrase, st.session_state.t7_generated_phrases)
         
-        selected_word = st.selectbox("원형으로 배치된 단어 중 하나를 선택하세요:", st.session_state.t7_generated_words, key="t7_select")
-        
-        if selected_word:
-            st.markdown("---")
-            st.write(f"**[{st.session_state.t7_initial_phrase}]** ... (여기를 채우세요) ... **[{selected_word}]**")
-            body_text = st.text_area("사이를 이을 본문을 작성하세요:", height=100, key="t7_body")
-            
-            col1, col2 = st.columns(2)
-            with col1:
-                if st.button("문장 확정 및 기록", key="t7_confirm"):
-                    final_sentence = f"{st.session_state.t7_initial_phrase} {body_text} {selected_word}"
-                    st.session_state.t7_pinned_sentences.append(final_sentence)
-                    st.session_state.t7_step = 1
-                    st.rerun()
-            with col2:
-                if st.button("처음부터 다시", key="t7_reset"):
-                    st.session_state.t7_step = 1
-                    st.rerun()
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔄 새로고침 (다른 파편 불러오기)", key="t7_refresh"):
+                all_words = st.session_state.t7_all_matched_words
+                selected_words = random.sample(all_words, min(15, len(all_words)))
+                st.session_state.t7_generated_phrases = [
+                    f"{st.session_state.t7_base_phrase} {w}".strip() for w in selected_words
+                ]
+                st.rerun()
+        with col2:
+            if st.button("처음부터 다시", key="t7_reset_step2"):
+                st.session_state.t7_step = 1
+                st.rerun()
 
+    # ----------------------------------------
+    # Step 3: 두 문장 찢어지고 텍스트창 등장
+    # ----------------------------------------
+    elif st.session_state.t7_step == 3:
+        st.markdown("##### 두 문장의 심연 잇기")
+        
+        st.markdown(f"<h4 style='text-align: center; color: #555;'>{st.session_state.t7_initial_phrase}</h4>", unsafe_allow_html=True)
+        body_text = st.text_area("사이를 이을 불가능한 간극의 본문을 작성하세요:", height=150, key="t7_body")
+        st.markdown(f"<h4 style='text-align: center; color: #d32f2f;'>{st.session_state.t7_selected_phrase}</h4>", unsafe_allow_html=True)
+        
+        st.markdown("---")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("문장 확정 및 심연에 기록", key="t7_confirm"):
+                final_sentence = f"{st.session_state.t7_initial_phrase} {body_text} {st.session_state.t7_selected_phrase}"
+                st.session_state.t7_pinned_sentences.append(final_sentence)
+                st.session_state.t7_step = 1
+                st.rerun()
+        with col2:
+            if st.button("⬅️ 뒤로가기 (파편 다시 고르기)", key="t7_back"):
+                st.session_state.t7_step = 2
+                st.rerun()
+
+    # ----------------------------------------
+    # 하단: 기록된 텍스트 고정
+    # ----------------------------------------
     st.markdown("<br><br>", unsafe_allow_html=True)
     st.markdown("---")
     st.markdown("📜 **기록된 잠재적 텍스트들**")
