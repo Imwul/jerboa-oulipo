@@ -590,6 +590,24 @@ with tab6:
 # ==========================================
 # TAB 7: The Roussel Bridge (레몽 루셀의 두 문장)
 # ==========================================
+with tab7:
+    st.markdown("""
+    <div class="instruction-box">
+        <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
+        - <b>균열의 시작:</b> 문장을 입력하면 마지막 단어의 모음과 받침(라임)을 분해하여 추출합니다.<br>
+        - <b>언어의 변이:</b> 초성만 변형되거나 기괴한 수식어가 붙은, 발음만 유사한 낯선 단어 20개가 파생됩니다.<br>
+        - <b>심연의 다리:</b> 단어를 선택하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
+    </div>
+    """, unsafe_allow_html=True)
+
+    # 상태 관리 초기화
+    if 'r_step' not in st.session_state: st.session_state.r_step = 1
+    if 'r_orig_sentence' not in st.session_state: st.session_state.r_orig_sentence = ""
+    if 'r_new_sentence' not in st.session_state: st.session_state.r_new_sentence = ""
+    if 'r_rhymes' not in st.session_state: st.session_state.r_rhymes = []
+
+    # [STEP 1] 발단의 문장 입력
+
 import streamlit as st
 import math
 import re
