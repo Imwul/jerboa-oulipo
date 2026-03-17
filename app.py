@@ -668,6 +668,7 @@ def get_all_matched_words(target_rhyme, dictionary_data):
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
+    # 탭 7 전용 고정 CSS (애니메이션 제거, 파스텔 형식 고정)
     st.markdown("""
     <style>
     .torn-sentence {
@@ -679,6 +680,43 @@ with tab7:
     }
     .torn-sentence.top { color: #555; }
     .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; }
+
+    /* 마커가 있는 컬럼의 버튼을 포스트잇 형식으로 덮어씌움 */
+    div[data-testid="column"]:has([class^="pastel-c-"]) div.stButton > button {
+        height: 55px !important;
+        width: 100% !important;
+        border: 1px solid #000 !important;
+        border-radius: 2px !important;
+        box-shadow: 2px 2px 0px rgba(0,0,0,1) !important;
+        animation: none !important; /* 멈춤! */
+        transform: none !important; /* 움직임 완전 제거 */
+        padding: 5px !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    div[data-testid="column"]:has([class^="pastel-c-"]) div.stButton > button p {
+        color: #000000 !important;
+        font-weight: bold !important;
+        font-size: 1.15rem !important;
+        margin: 0 !important;
+    }
+
+    div[data-testid="column"]:has([class^="pastel-c-"]) div.stButton > button:hover {
+        border-color: #d32f2f !important;
+        box-shadow: 3px 3px 0px rgba(211,47,47,0.5) !important;
+        transform: translateY(-2px) !important; /* 마우스 올릴 때만 살짝 반응 */
+    }
+
+    /* 각 마커 번호별 파스텔 색상 강제 배정 */
+    div[data-testid="column"]:has(.pastel-c-0) div.stButton > button { background-color: #ffc9c9 !important; }
+    div[data-testid="column"]:has(.pastel-c-1) div.stButton > button { background-color: #ffe3b3 !important; }
+    div[data-testid="column"]:has(.pastel-c-2) div.stButton > button { background-color: #fff3b5 !important; }
+    div[data-testid="column"]:has(.pastel-c-3) div.stButton > button { background-color: #d4f0d4 !important; }
+    div[data-testid="column"]:has(.pastel-c-4) div.stButton > button { background-color: #c9ebff !important; }
+    div[data-testid="column"]:has(.pastel-c-5) div.stButton > button { background-color: #d9cbf2 !important; }
+    div[data-testid="column"]:has(.pastel-c-6) div.stButton > button { background-color: #ffcbf2 !important; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -702,7 +740,6 @@ with tab7:
     # Step 1: 시간의 파편 던지기
     # ----------------------------------------
     if st.session_state.t7_step == 1:
-        st.subheader("Jerboa Oulipo Engine 🕰️")
         st.markdown("##### 시간의 파편 던지기")
         initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
         
@@ -718,10 +755,10 @@ with tab7:
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 자유롭게 부유하는 파편들 (격리된 공간)
+    # Step 2: 사전의 파편들 선택 (격자 & 정적인 뷰)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
-        # 원본 어구에서 라임이 되는 마지막 단어만 붉게 강조
+        # 원본 어구에서 마지막 라임 단어만 붉게 강조
         words_list = st.session_state.t7_initial_phrase.strip().split()
         base_phrase = " ".join(words_list[:-1]) if len(words_list) > 1 else ""
         rhyme_word = words_list[-1] if words_list else ""
@@ -735,81 +772,24 @@ with tab7:
         
         words = st.session_state.t7_generated_words
         
-        # 파편 버튼들만 타겟팅하는 정밀 CSS
-        st.markdown("""
-        <style>
-        /* 파편들을 감싸는 전용 컨테이너를 플렉스 박스로 변환 */
-        div[data-testid="stVerticalBlock"]:has(.word-fragment-marker) {
-            display: flex !important;
-            flex-direction: row !important;
-            flex-wrap: wrap !important;
-            justify-content: center !important;
-            gap: 15px !important;
-            padding: 20px 0 !important;
-        }
-        /* 스트림릿이 강제하는 버튼 너비 100% 해제 */
-        div[data-testid="stVerticalBlock"]:has(.word-fragment-marker) > div[data-testid="stElementContainer"] {
-            width: auto !important;
-            flex: 0 1 auto !important;
-        }
-        /* 파스텔 톤과 포스트잇 질감 부여 */
-        div[data-testid="stVerticalBlock"]:has(.word-fragment-marker) div.stButton > button {
-            color: #000 !important;
-            border: 1px solid #000 !important;
-            border-radius: 2px !important;
-            width: auto !important;
-            height: auto !important;
-            padding: 8px 18px !important;
-            font-size: 1.1rem !important;
-            box-shadow: 2px 2px 0px #000 !important;
-            animation: float 5s ease-in-out infinite !important;
-            transition: transform 0.2s, box-shadow 0.2s !important;
-        }
-        div[data-testid="stVerticalBlock"]:has(.word-fragment-marker) div.stButton > button p {
-            color: #000 !important;
-            font-weight: bold !important;
-            margin: 0 !important;
-        }
-        div[data-testid="stVerticalBlock"]:has(.word-fragment-marker) div.stButton > button:hover {
-            transform: scale(1.1) translateY(-5px) !important;
-            border-color: #d32f2f !important;
-            box-shadow: 4px 4px 0px rgba(211,47,47,0.6) !important;
-            z-index: 99 !important;
-            animation: none !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # 파편들만 담아두는 '격리된 컨테이너'
-        with st.container():
-            # 이 마커가 포함된 컨테이너만 위의 CSS가 적용됨
-            st.markdown('<div class="word-fragment-marker" style="display:none;"></div>', unsafe_allow_html=True)
-            
-            css_rules = ""
-            for i, word in enumerate(words):
-                color = random.choice(WASHED_COLORS)
-                delay = random.uniform(0, 4)
-                duration = random.uniform(5, 8)
-                replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-                
-                # 각 단어 버튼마다 고유한 색상과 애니메이션 주입 (nth-child 이용)
-                css_rules += f"""
-                div[data-testid="stVerticalBlock"]:has(.word-fragment-marker) > div[data-testid="stElementContainer"]:nth-child({i+2}) div.stButton > button {{
-                    background-color: {color} !important;
-                    animation-delay: {delay}s !important;
-                    animation-duration: {duration}s !important;
-                }}
-                """
-                
-                if st.button(word, key=f"t7_w_{i}", help=replaced_sentence):
-                    st.session_state.t7_selected_word = word
-                    st.session_state.t7_step = 3
-                    st.rerun()
+        # 격자 형태로 단어 뿌리기 (5열 구조 유지)
+        for i in range(0, len(words), 5):
+            cols = st.columns(5, gap="small")
+            for j in range(5):
+                if i + j < len(words):
+                    word = words[i + j]
+                    replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+                    color_idx = (i + j) % 7 # 7가지 색상 순환 적용
                     
-            st.markdown(f'<style>{css_rules}</style>', unsafe_allow_html=True)
+                    with cols[j]:
+                        # 이 은밀한 마커가 전역 CSS를 무시하고 색상을 입힘
+                        st.markdown(f'<div class="pastel-c-{color_idx}" style="display:none;"></div>', unsafe_allow_html=True)
+                        if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence):
+                            st.session_state.t7_selected_word = word
+                            st.session_state.t7_step = 3
+                            st.rerun()
 
         st.markdown("---")
-        # 격리된 컨테이너 바깥에 하단 제어 버튼 배치 (여기엔 전역의 검은 벽돌 CSS가 그대로 적용됨)
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🔄 파편 다시 부르기", key="t7_refresh"):
@@ -856,7 +836,6 @@ with tab7:
             st.info(f"**{idx+1}.** {sentence}")
     else:
         st.caption("아직 기록된 문장이 없습니다.")
-
 # ---------------------------------------------------------
 # 🏺 하단: 사전의 파편들 (Floating Animation)
 # ---------------------------------------------------------
