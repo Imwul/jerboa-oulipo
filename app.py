@@ -663,46 +663,81 @@ def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
     except Exception as e:
         return []
 
-# CSS를 통해 Streamlit 기본 버튼(secondary)을 비틀거리게 만듭니다.
-def inject_wobble_css():
+# CSS를 통해 격자 배열의 단어 파편들을 3D로 부유시키고, 비율과 색상을 조정합니다.
+def inject_floating_grid_css():
     st.markdown("""
     <style>
-        @keyframes wobble {
-            0%, 100% { transform: rotate(-3deg); }
-            50% { transform: rotate(3deg); }
+        /* 3D perspective for the whole app container, for better floating effect */
+        .block-container { perspective: 1000px; }
+
+        @keyframes float3d {
+            0% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
+            25% { transform: translateZ(30px) rotateX(-2deg) rotateY(2deg) scale(1.02); }
+            50% { transform: translateZ(-20px) rotateX(2deg) rotateY(-2deg) scale(0.98); }
+            75% { transform: translateZ(40px) rotateX(-3deg) rotateY(3deg) scale(1.03); }
+            100% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
         }
-        /* Grid용 기본 버튼(secondary)에만 애니메이션 적용 */
-        div.stButton > button[kind="secondary"] {
-            animation: wobble 2.5s ease-in-out infinite;
+
+        /* Styling for the floating fragments in the grid */
+        .fragment-floating-grid div.stButton > button {
+            transform-style: preserve-3d;
+            animation: float3d 10s ease-in-out infinite;
             font-family: 'serif';
-            color: #555;
-            background-color: transparent;
-            border: 1px dotted #888;
-            transition: transform 0.2s, color 0.2s, font-weight 0.2s;
-            height: 60px; /* 버튼 높이 통일 */
+            font-size: 1.1em;
+            color: #333 !important; /* Fixed dark text for visibility */
+            background-color: transparent !important; /* Allow custom color to show */
+            border-radius: 4px;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
+            height: auto; /* Allow content to dictate height, adjusting ratio */
+            width: auto;
+            max-width: 150px; /* Adjust width to make it less horizontal, closer to image 2 */
+            margin: 10px; /* Add margin for breathing space */
+            padding: 15px 10px; /* Add padding for a better look */
         }
-        div.stButton > button[kind="secondary"]:hover {
-            color: #d32f2f;
+
+        /* Hover effect: focus and slightly bigger */
+        .fragment-floating-grid div.stButton > button:hover {
+            transform: translateZ(50px) scale(1.1);
+            animation: none; /* Stop floating on hover */
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.4);
+            border-color: #333 !important;
+            color: #000 !important;
             font-weight: bold;
-            border-color: #d32f2f;
-            transform: scale(1.1);
-            animation: none; /* 마우스를 올리면 떨림을 멈추고 집중됨 */
         }
+
+        /* Override stButton border */
+        .fragment-floating-grid div.stButton > button:focus { border: 2px solid; }
+
+        /* Step 3: 찢어진 문장 연출 강화 */
+        .torn-sentence {
+            text-align: center;
+            font-family: 'serif';
+            font-size: 1.8em;
+            letter-spacing: 0.05em;
+            line-height: 1.2;
+            transition: all 0.5s ease;
+        }
+        .torn-sentence.top { color: #555; }
+        .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; } /* Add top margin for splitting effect */
+
     </style>
     """, unsafe_allow_html=True)
 
+# 포스트잇 색상 리스트 (이미지 5.png 참조)
+POSTIT_COLORS = ["#ADD8E6", "#90EE90", "#FFD700", "#FFB6C1", "#E6E6FA", "#FFA07A", "#AFEEEE", "#FFDEAD", "#F08080", "#FF69B4"]
 
 # ==========================================
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
-    inject_wobble_css()
+    inject_floating_grid_css()
 
     st.markdown("""
     <div class="instruction-box">
         <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
         - <b>균열의 시작:</b> 문장을 입력하면 마지막 단어의 모음과 받침(라임)을 분해하여 추출합니다.<br>
-        - <b>사전의 파편들:</b> 낯선 단어들이 4x4 격자 공간에서 부유하며 파생됩니다.<br>
+        - <b>사전의 파편들:</b> 낯선 단어들이 5x5 격자 공간에서 3D로 부유하며 파생됩니다.<br>
         - <b>심연의 다리:</b> 파편을 선택하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
     </div>
     """, unsafe_allow_html=True)
@@ -737,38 +772,44 @@ with tab7:
                 
                 if all_words:
                     st.session_state.t7_all_matched_words = all_words
-                    # 4x4 격자를 위해 정확히 16개(또는 그 이하) 추출
-                    st.session_state.t7_generated_words = random.sample(all_words, min(16, len(all_words)))
+                    # 5x5 격자를 위해 정확히 25개(또는 그 이하) 추출
+                    st.session_state.t7_generated_words = random.sample(all_words, min(25, len(all_words)))
                     st.session_state.t7_step = 2
                 else:
-                    st.warning("일치하는 파편이 사전에 없습니다. 다른 문장을 던져보세요.")
+                    st.warning("일치하는 파편이 사전에 없습니다. 조건을 완화해보세요.")
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (4x4 Grid)
+    # Step 2: 사전의 파편들 선택 (5x5 Floating Grid)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
         st.markdown("##### 허공을 부유하는 사전의 파편들")
         
         words = st.session_state.t7_generated_words
         
-        # 4x4 격자 버튼 렌더링
-        cols = st.columns(4)
-        for i, word in enumerate(words):
-            col = cols[i % 4]
-            with col:
-                # 단어 자체만 노출 (클릭 시 전체 문장으로 조립)
-                if st.button(word, key=f"t7_word_{i}", use_container_width=True):
-                    st.session_state.t7_selected_word = word
-                    st.session_state.t7_step = 3
-                    st.rerun()
+        # 격자 버튼에 3D 부유 CSS 클래스 적용
+        with st.container(css_class="fragment-floating-grid"):
+            # 5x5 격자 버튼 렌더링
+            cols = st.columns(5)
+            for i, word in enumerate(words):
+                col = cols[i % 5]
+                # 각 단어에 임의의 포스트잇 색상 적용
+                bg_color = random.choice(POSTIT_COLORS)
+                with col:
+                    # use_container_width=True를 제거하여 CSS width를 준수하게 합니다.
+                    if st.button(word, key=f"t7_word_{i}", css_class=f"custom-bg-{i}"):
+                        st.session_state.t7_selected_word = word
+                        st.session_state.t7_step = 3
+                        st.rerun()
+                    # HTML 렌더링을 통해 버튼 배경색 설정
+                    st.markdown(f"""<style>div.stButton > button.custom-bg-{i} {{ background-color: {bg_color} !important; border: 2px solid {bg_color} !important; }}</style>""", unsafe_allow_html=True)
         
         st.markdown("---")
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🔄 파편 다시 부르기", type="primary", key="t7_refresh"):
                 all_words = st.session_state.t7_all_matched_words
-                st.session_state.t7_generated_words = random.sample(all_words, min(16, len(all_words)))
+                st.session_state.t7_generated_words = random.sample(all_words, min(25, len(all_words)))
                 st.rerun()
         with col2:
             if st.button("처음부터 다시", type="primary", key="t7_reset_step2"):
@@ -781,14 +822,14 @@ with tab7:
     elif st.session_state.t7_step == 3:
         st.markdown("##### 두 문장의 심연 잇기")
         
-        # 원본 문장
-        st.markdown(f"<h4 style='text-align: center; color: #555;'>{st.session_state.t7_initial_phrase}</h4>", unsafe_allow_html=True)
+        # 원본 문장 (위)
+        st.markdown(f"<div class='torn-sentence top'>{st.session_state.t7_initial_phrase}</div>", unsafe_allow_html=True)
         
-        body_text = st.text_area("사이를 이을 불가능한 간극의 본문을 작성하세요:", height=150, key="t7_body")
+        body_text = st.text_area("사이를 이을 불가능한 간극의 본문을 작성하세요:", height=200, key="t7_body")
         
-        # 선택한 단어를 붙인 새로운 변형 문장
+        # 선택한 단어를 붙인 새로운 변형 문장 (아래)
         new_sentence = f"{st.session_state.t7_base_phrase} {st.session_state.t7_selected_word}".strip()
-        st.markdown(f"<h4 style='text-align: center; color: #d32f2f;'>{new_sentence}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<div class='torn-sentence bottom'>{new_sentence}</div>", unsafe_allow_html=True)
         
         st.markdown("---")
         col1, col2 = st.columns(2)
