@@ -586,7 +586,7 @@ with tab6:
         
         res_h += "</div></body></html>"
         components.html(res_h, height=500)
-
+        
 import streamlit as st
 import math
 import re
@@ -638,6 +638,7 @@ def is_loose_rhyme(target_char, word_char):
     return get_loose_vowel(t_jung) == get_loose_vowel(w_jung) and t_jong == w_jong
 
 def match_rhyme(target_str, word_str):
+    # 단어가 타겟보다 짧으면 안 되지만, 더 긴 것은 허용 (예: 전선 -> 봉건적)
     if len(word_str) < len(target_str): return False
     for i in range(1, len(target_str) + 1):
         if not is_loose_rhyme(target_str[-i], word_str[-i]):
@@ -662,55 +663,47 @@ def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
     except Exception as e:
         return []
 
-def render_circular_phrases(center_text, phrases):
-    if not phrases:
-        st.warning("이물, 조건을 완화했는데도 일치하는 단어가 부족해. 다른 문장을 던져봐!")
-        return
-
-    radius = 180 
-    
-    # 마크다운 파서를 완벽하게 속이기 위해 모든 HTML을 리스트에 담아 한 줄로 합칩니다.
-    html_parts = []
-    html_parts.append("<style>")
-    html_parts.append("@keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }")
-    html_parts.append("@keyframes counter-spin { 100% { transform: translate(-50%, -50%) rotate(-360deg); } }")
-    html_parts.append("@keyframes wobble { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }")
-    html_parts.append(".wobble-link { display: inline-block; animation: wobble 2.5s ease-in-out infinite; text-decoration: none; color: #888; font-size: 1.0em; white-space: nowrap; transition: color 0.2s, transform 0.2s; }")
-    html_parts.append(".wobble-link:hover { color: #d32f2f; transform: scale(1.15); font-weight: bold; }")
-    html_parts.append("</style>")
-    
-    html_parts.append(f"<div style='position: relative; width: 450px; height: 450px; margin: 0 auto; overflow: hidden; font-family: \"serif\";'>")
-    html_parts.append(f"<div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; font-weight: bold; font-size: 1.2em; color: #d32f2f;'>{center_text}</div>")
-    html_parts.append(f"<div style='position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); animation: spin 45s linear infinite;'>")
-    
-    angle_step = 360 / len(phrases)
-    for i, phrase in enumerate(phrases):
-        angle = i * angle_step
-        rad = math.radians(angle - 90)
-        x = radius * math.cos(rad)
-        y = radius * math.sin(rad)
-        
-        html_parts.append(f"<div style='position: absolute; left: calc(50% + {x}px); top: calc(50% + {y}px); transform-origin: center; animation: counter-spin 45s linear infinite;'>")
-        html_parts.append(f"<a href='?sel={i}' target='_self' class='wobble-link'>{phrase}</a>")
-        html_parts.append("</div>")
-        
-    html_parts.append("</div></div>")
-    
-    # 리스트에 모은 문자열을 공백 없이 하나의 긴 문자열로 결합
-    final_html = "".join(html_parts)
-    st.markdown(final_html, unsafe_allow_html=True)
+# CSS를 통해 Streamlit 기본 버튼(secondary)을 비틀거리게 만듭니다.
+def inject_wobble_css():
+    st.markdown("""
+    <style>
+        @keyframes wobble {
+            0%, 100% { transform: rotate(-3deg); }
+            50% { transform: rotate(3deg); }
+        }
+        /* Grid용 기본 버튼(secondary)에만 애니메이션 적용 */
+        div.stButton > button[kind="secondary"] {
+            animation: wobble 2.5s ease-in-out infinite;
+            font-family: 'serif';
+            color: #555;
+            background-color: transparent;
+            border: 1px dotted #888;
+            transition: transform 0.2s, color 0.2s, font-weight 0.2s;
+            height: 60px; /* 버튼 높이 통일 */
+        }
+        div.stButton > button[kind="secondary"]:hover {
+            color: #d32f2f;
+            font-weight: bold;
+            border-color: #d32f2f;
+            transform: scale(1.1);
+            animation: none; /* 마우스를 올리면 떨림을 멈추고 집중됨 */
+        }
+    </style>
+    """, unsafe_allow_html=True)
 
 
 # ==========================================
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
+    inject_wobble_css()
+
     st.markdown("""
     <div class="instruction-box">
         <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
         - <b>균열의 시작:</b> 문장을 입력하면 마지막 단어의 모음과 받침(라임)을 분해하여 추출합니다.<br>
-        - <b>언어의 변이:</b> 초성만 변형되거나 기괴한 수식어가 붙은, 발음만 유사한 낯선 문장들이 파생됩니다.<br>
-        - <b>심연의 다리:</b> 회전하는 파편 중 하나를 클릭하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
+        - <b>사전의 파편들:</b> 낯선 단어들이 4x4 격자 공간에서 부유하며 파생됩니다.<br>
+        - <b>심연의 다리:</b> 파편을 선택하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
     </div>
     """, unsafe_allow_html=True)
 
@@ -720,18 +713,10 @@ with tab7:
     if 't7_step' not in st.session_state: st.session_state.t7_step = 1
     if 't7_pinned_sentences' not in st.session_state: st.session_state.t7_pinned_sentences = []
     if 't7_all_matched_words' not in st.session_state: st.session_state.t7_all_matched_words = []
-    if 't7_generated_phrases' not in st.session_state: st.session_state.t7_generated_phrases = []
+    if 't7_generated_words' not in st.session_state: st.session_state.t7_generated_words = []
     if 't7_initial_phrase' not in st.session_state: st.session_state.t7_initial_phrase = ""
     if 't7_base_phrase' not in st.session_state: st.session_state.t7_base_phrase = ""
-    if 't7_selected_phrase' not in st.session_state: st.session_state.t7_selected_phrase = ""
-
-    # URL 클릭 이벤트 감지
-    if "sel" in st.query_params:
-        sel_idx = int(st.query_params["sel"])
-        if 't7_generated_phrases' in st.session_state and 0 <= sel_idx < len(st.session_state.t7_generated_phrases):
-            st.session_state.t7_selected_phrase = st.session_state.t7_generated_phrases[sel_idx]
-            st.session_state.t7_step = 3 
-        del st.query_params["sel"] 
+    if 't7_selected_word' not in st.session_state: st.session_state.t7_selected_word = ""
 
     # ----------------------------------------
     # Step 1: 시간의 파편 던지기
@@ -740,7 +725,8 @@ with tab7:
         st.markdown("##### 시간의 파편 던지기")
         initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
         
-        if st.button("라임 톱니바퀴 돌리기", key="t7_btn1"):
+        # 컨트롤 버튼은 흔들리지 않도록 type="primary" 적용
+        if st.button("라임 톱니바퀴 돌리기", type="primary", key="t7_btn1"):
             if initial_phrase:
                 st.session_state.t7_initial_phrase = initial_phrase
                 words = initial_phrase.strip().split()
@@ -751,33 +737,41 @@ with tab7:
                 
                 if all_words:
                     st.session_state.t7_all_matched_words = all_words
-                    selected_words = random.sample(all_words, min(15, len(all_words)))
-                    st.session_state.t7_generated_phrases = [
-                        f"{st.session_state.t7_base_phrase} {w}".strip() for w in selected_words
-                    ]
+                    # 4x4 격자를 위해 정확히 16개(또는 그 이하) 추출
+                    st.session_state.t7_generated_words = random.sample(all_words, min(16, len(all_words)))
                     st.session_state.t7_step = 2
+                else:
+                    st.warning("일치하는 파편이 사전에 없습니다. 다른 문장을 던져보세요.")
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 톱니바퀴 선택 
+    # Step 2: 사전의 파편들 선택 (4x4 Grid)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
-        st.markdown("##### 허공을 떠도는 파편 중 하나를 클릭하세요")
+        st.markdown("##### 허공을 부유하는 사전의 파편들")
         
-        render_circular_phrases(st.session_state.t7_initial_phrase, st.session_state.t7_generated_phrases)
+        words = st.session_state.t7_generated_words
+        
+        # 4x4 격자 버튼 렌더링
+        cols = st.columns(4)
+        for i, word in enumerate(words):
+            col = cols[i % 4]
+            with col:
+                # 단어 자체만 노출 (클릭 시 전체 문장으로 조립)
+                if st.button(word, key=f"t7_word_{i}", use_container_width=True):
+                    st.session_state.t7_selected_word = word
+                    st.session_state.t7_step = 3
+                    st.rerun()
         
         st.markdown("---")
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🔄 새로고침 (다른 파편 불러오기)", key="t7_refresh"):
+            if st.button("🔄 파편 다시 부르기", type="primary", key="t7_refresh"):
                 all_words = st.session_state.t7_all_matched_words
-                selected_words = random.sample(all_words, min(15, len(all_words)))
-                st.session_state.t7_generated_phrases = [
-                    f"{st.session_state.t7_base_phrase} {w}".strip() for w in selected_words
-                ]
+                st.session_state.t7_generated_words = random.sample(all_words, min(16, len(all_words)))
                 st.rerun()
         with col2:
-            if st.button("처음부터 다시", key="t7_reset_step2"):
+            if st.button("처음부터 다시", type="primary", key="t7_reset_step2"):
                 st.session_state.t7_step = 1
                 st.rerun()
 
@@ -787,20 +781,25 @@ with tab7:
     elif st.session_state.t7_step == 3:
         st.markdown("##### 두 문장의 심연 잇기")
         
+        # 원본 문장
         st.markdown(f"<h4 style='text-align: center; color: #555;'>{st.session_state.t7_initial_phrase}</h4>", unsafe_allow_html=True)
+        
         body_text = st.text_area("사이를 이을 불가능한 간극의 본문을 작성하세요:", height=150, key="t7_body")
-        st.markdown(f"<h4 style='text-align: center; color: #d32f2f;'>{st.session_state.t7_selected_phrase}</h4>", unsafe_allow_html=True)
+        
+        # 선택한 단어를 붙인 새로운 변형 문장
+        new_sentence = f"{st.session_state.t7_base_phrase} {st.session_state.t7_selected_word}".strip()
+        st.markdown(f"<h4 style='text-align: center; color: #d32f2f;'>{new_sentence}</h4>", unsafe_allow_html=True)
         
         st.markdown("---")
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("문장 확정 및 심연에 기록", key="t7_confirm"):
-                final_sentence = f"{st.session_state.t7_initial_phrase} {body_text} {st.session_state.t7_selected_phrase}"
+            if st.button("문장 확정 및 심연에 기록", type="primary", key="t7_confirm"):
+                final_sentence = f"{st.session_state.t7_initial_phrase} {body_text} {new_sentence}"
                 st.session_state.t7_pinned_sentences.append(final_sentence)
                 st.session_state.t7_step = 1
                 st.rerun()
         with col2:
-            if st.button("⬅️ 뒤로가기 (파편 다시 고르기)", key="t7_back"):
+            if st.button("⬅️ 뒤로가기 (파편 다시 고르기)", type="primary", key="t7_back"):
                 st.session_state.t7_step = 2
                 st.rerun()
 
