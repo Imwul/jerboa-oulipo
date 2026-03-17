@@ -30,7 +30,7 @@ st.markdown(f"""
         font-family: 'Eulyoo1945-Regular', serif !important; 
     }}
 
-    /* ❗ 모든 소제목, 슬라이더 라벨, 텍스트를 검은색으로 강제 고정 (다크모드 간섭 완벽 차단) */
+    /* ❗ 모든 소제목, 슬라이더 라벨, 텍스트를 검은색으로 강제 고정 */
     h2, h3, h4, h5, h6, p, label, .stMarkdown, .stText, [data-testid="stWidgetLabel"] p, [data-testid="stMarkdownContainer"] p {{
         color: #000000 !important;
     }}
@@ -42,7 +42,7 @@ st.markdown(f"""
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
     }}
 
-    /* ❗ 탭(Tab) 글씨가 하얗게 변하는 현상 픽스 (무조건 검은색) */
+    /* ❗ 탭(Tab) 글씨가 하얗게 변하는 현상 픽스 */
     button[data-baseweb="tab"] *, div[data-testid="stTabs"] button * {{
         color: #000000 !important;
         font-weight: bold !important;
@@ -75,7 +75,7 @@ st.markdown(f"""
         font-weight: bold; cursor: default; color: #000000 !important;
     }}
 
-    /* 버튼 스타일 */
+    /* 글로벌 버튼 스타일 (이것이 탭 7을 검게 만들었던 주범!) */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
@@ -107,7 +107,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7 = st.tabs([
 ])
 
 # ==========================================
-# TAB 1: Oulipo Engine (S+N 치환 + 격리 렌더링)
+# TAB 1: Oulipo Engine
 # ==========================================
 with tab1:
     st.markdown("""
@@ -167,7 +167,7 @@ with tab1:
             components.html(html_res, height=400)
 
 # ==========================================
-# TAB 2: The Dissector (모바일 터치 대응 마그넷)
+# TAB 2: The Dissector
 # ==========================================
 with tab2:
     st.markdown("""
@@ -303,7 +303,7 @@ with tab2:
             components.html(custom_html, height=700)
 
 # ==========================================
-# TAB 3: The Automaton (오버레이 및 불타는 로직)
+# TAB 3: The Automaton
 # ==========================================
 with tab3:
     st.markdown("""
@@ -401,7 +401,7 @@ with tab3:
     components.html(automaton_html, height=550)
 
 # ==========================================
-# TAB 4: The Erasure (모바일 터치 소거 대응)
+# TAB 4: The Erasure
 # ==========================================
 with tab4:
     st.markdown("""
@@ -457,7 +457,7 @@ with tab4:
         components.html(erasure_html, height=450)
 
 # ==========================================
-# TAB 5: Cadavre Exquis (우아한 시체)
+# TAB 5: Cadavre Exquis
 # ==========================================
 with tab5:
     st.markdown("""
@@ -502,7 +502,7 @@ with tab5:
         st.rerun()
 
 # ==========================================
-# TAB 6: The Babel Glitch (격리 렌더링을 통한 폰트 강제 적용)
+# TAB 6: The Babel Glitch
 # ==========================================
 with tab6:
     st.markdown("""
@@ -521,7 +521,6 @@ with tab6:
     WEIRD_ENDINGS = ["었도다", "리라", "느냐", "거늘", "ㄹ지언정", "나이다", "겠지", "련만"]
     GLITCH_MARKS = ["... ", " [데이터 누락] ", " / ", " (침묵) ", " ░▒▓ ", " // "]
     
-    # 폰트 이름 (CSS @font-face에 정의된 이름과 정확히 일치)
     MIX_FONTS = ["'Eulyoo1945-Regular'", "'GmarketSansMedium'", "'KyoboHandwriting2019'", "'DungGeunMo'"]
 
     if 'babel_raw_output' not in st.session_state:
@@ -560,7 +559,6 @@ with tab6:
         babel_bumpy = bc1.slider("글자 진동 (높을수록 들쭉날쭉)", 0.0, 1.0, 0.3, key="babel_bumpy")
         babel_tilt = bc2.slider("글자 비틀림 (각도)", 0, 45, 15, key="babel_tilt")
 
-        # Streamlit의 간섭을 100% 차단하기 위해 Iframe(components.html)으로 렌더링
         res_h = f"""
         <!DOCTYPE html>
         <html>
@@ -586,32 +584,21 @@ with tab6:
         
         res_h += "</div></body></html>"
         components.html(res_h, height=500)
-        
-import streamlit as st
-import math
-import re
-import random
+
 
 # ==========================================
-# [탭 7 전용 함수 구역]
+# [탭 7 전용 함수 & 로직]
 # ==========================================
-
 def get_rhyme_target(sentence):
     clean_sentence = re.sub(r'[^\w\s]', '', sentence)
     words = clean_sentence.strip().split()
     if not words: return ""
     last_word = words[-1]
-    
-    if len(words) == 1:
-        return last_word[-3:] if len(last_word) >= 3 else last_word
+    if len(words) == 1: return last_word[-3:] if len(last_word) >= 3 else last_word
     second_last_word = words[-2]
-    
-    if len(last_word) + len(second_last_word) <= 3:
-        return second_last_word + last_word
-    if len(last_word) >= 3:
-        return last_word[-3:]
-    elif len(last_word) == 2:
-        return last_word[-2:]
+    if len(last_word) + len(second_last_word) <= 3: return second_last_word + last_word
+    if len(last_word) >= 3: return last_word[-3:]
+    elif len(last_word) == 2: return last_word[-2:]
     return last_word 
 
 def decompose_hangul(char):
@@ -623,17 +610,13 @@ def decompose_hangul(char):
     return cho, jung, jong
 
 def get_loose_vowel(jung):
-    mapping = {
-        2: 0, 6: 4, 12: 8, 17: 13, 
-        5: 1, 3: 1, 7: 1, 11: 1, 10: 1, 15: 1
-    }
+    mapping = {2: 0, 6: 4, 12: 8, 17: 13, 5: 1, 3: 1, 7: 1, 11: 1, 10: 1, 15: 1}
     return mapping.get(jung, jung)
 
 def is_loose_rhyme(target_char, word_char):
     t_decomp = decompose_hangul(target_char)
     w_decomp = decompose_hangul(word_char)
-    if not t_decomp or not w_decomp:
-        return target_char == word_char 
+    if not t_decomp or not w_decomp: return target_char == word_char 
     _, t_jung, _ = t_decomp
     _, w_jung, _ = w_decomp
     return get_loose_vowel(t_jung) == get_loose_vowel(w_jung)
@@ -641,19 +624,16 @@ def is_loose_rhyme(target_char, word_char):
 def match_rhyme(target_str, word_str):
     if len(word_str) < len(target_str): return False
     for i in range(1, len(target_str) + 1):
-        if not is_loose_rhyme(target_str[-i], word_str[-i]):
-            return False
+        if not is_loose_rhyme(target_str[-i], word_str[-i]): return False
     return True
 
 def get_all_matched_words(target_rhyme, dictionary_data):
-    if not target_rhyme or not dictionary_data: 
-        return []
+    if not target_rhyme or not dictionary_data: return []
     def get_uniques(word_list):
         word_list.sort(key=len)
         uniques = []
         for w in word_list:
-            if not any(w.endswith(u) for u in uniques):
-                uniques.append(w)
+            if not any(w.endswith(u) for u in uniques): uniques.append(w)
         return uniques
 
     matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
@@ -661,14 +641,14 @@ def get_all_matched_words(target_rhyme, dictionary_data):
     
     if len(unique_words) < 25 and len(target_rhyme) >= 3:
         shorter_target = target_rhyme[-2:]
-        additional_words = [word for word in dictionary_data if match_rhyme(shorter_target, word) and word not in matched_words]
-        matched_words.extend(additional_words)
+        add_words = [word for word in dictionary_data if match_rhyme(shorter_target, word) and word not in matched_words]
+        matched_words.extend(add_words)
         unique_words = get_uniques(matched_words)
         
     if len(unique_words) < 25 and len(target_rhyme) >= 2:
         last_char_target = target_rhyme[-1:]
-        additional_words = [word for word in dictionary_data if match_rhyme(last_char_target, word) and word not in matched_words]
-        matched_words.extend(additional_words)
+        add_words = [word for word in dictionary_data if match_rhyme(last_char_target, word) and word not in matched_words]
+        matched_words.extend(add_words)
         unique_words = get_uniques(matched_words)
         
     if len(unique_words) < 25:
@@ -678,72 +658,63 @@ def get_all_matched_words(target_rhyme, dictionary_data):
             fillers = random.sample(remainders, min(needed, len(remainders)))
             unique_words.extend(fillers)
             
+    if len(unique_words) > 25:
+        unique_words = random.sample(unique_words, 25)
+    else:
+        random.shuffle(unique_words)
     return unique_words
 
-# 전역 CSS의 독재를 완벽히 찢어버리는 최강의 Flexbox CSS
-def inject_flex_grid_css():
-    css = """
+# ==========================================
+# TAB 7: The Roussel Bridge 
+# ==========================================
+with tab7:
+    # --- 전역 CSS의 독재를 완벽히 차단하고 탭7의 파편들만 저격하는 정밀 CSS ---
+    st.markdown("""
     <style>
-    @keyframes gentle-wobble {
-        0%, 100% { transform: rotate(-3deg); }
-        50% { transform: rotate(3deg); }
+    @keyframes fragment-wobble {
+        0%, 100% { transform: rotate(-2deg); }
+        50% { transform: rotate(2deg); }
     }
 
-    /* 1. Flexbox Container - st.columns를 버리고 단어들을 다닥다닥 붙이는 핵심 마법 */
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) {
-        display: flex !important;
-        flex-direction: row !important;
-        flex-wrap: wrap !important;
-        justify-content: center !important;
-        gap: 15px !important; /* 이 수치가 파편 사이의 빽빽한 간격을 결정합니다 */
-        padding: 20px !important;
-    }
-
-    /* 2. 각 파편을 감싸는 박스의 가로 확장(100%)을 강제 차단 */
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:has(button) {
-        width: 90px !important; 
-        flex: 0 0 90px !important;
-    }
-
-    /* 3. 버튼 본체: 글로벌 CSS의 검은색과 가로 100%를 무력화하고 세로형 포스트잇 강제 적용 */
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) div.stButton > button {
-        width: 90px !important;
-        min-width: 90px !important;
-        height: 110px !important; /* 세로로 긴 직사각형 비율 */
-        border-radius: 2px !important;
-        border: 2px solid #000 !important; /* 진한 테두리로 종이 느낌 강조 */
-        box-shadow: 4px 4px 0px rgba(0,0,0,1) !important; 
-        animation: gentle-wobble 3s infinite ease-in-out !important;
-        transition: transform 0.2s, box-shadow 0.2s, border 0.2s !important;
+    /* 마커가 숨어있는 특정 컬럼 안의 버튼만! 타겟팅하여 전역 설정을 짓밟습니다 */
+    div[data-testid="column"]:has([class^="pastel-col-marker-"]) div.stButton > button {
+        height: 100px !important;
+        width: 100% !important;
+        border: 2px solid #000 !important;
+        border-radius: 4px !important;
+        animation: fragment-wobble 3s infinite ease-in-out !important;
+        white-space: normal !important;
         padding: 5px !important;
+        box-shadow: 3px 3px 0px rgba(0,0,0,1) !important;
+        transition: transform 0.2s, box-shadow 0.2s !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }
-
-    /* 4. 글씨 까맣고 선명하게 복구 (글로벌 흰색 무력화) */
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) div.stButton > button p {
+    
+    div[data-testid="column"]:has([class^="pastel-col-marker-"]) div.stButton > button p {
         color: #000000 !important;
         font-weight: 900 !important;
         font-size: 1.15rem !important;
-        white-space: normal !important;
-        word-break: keep-all !important;
         line-height: 1.2 !important;
     }
 
-    /* 5. 파스텔 5색 포스트잇 색상 복구 */
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+1) div.stButton > button { background-color: #ffc9c9 !important; }
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+2) div.stButton > button { background-color: #ffe3b3 !important; }
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+3) div.stButton > button { background-color: #fff3b5 !important; }
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+4) div.stButton > button { background-color: #d4f0d4 !important; }
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+5) div.stButton > button { background-color: #c9ebff !important; }
+    /* 컬럼 마커에 따른 다채로운 파스텔 5색 부여 */
+    div[data-testid="column"]:has(.pastel-col-marker-0) div.stButton > button { background-color: #ffc9c9 !important; }
+    div[data-testid="column"]:has(.pastel-col-marker-1) div.stButton > button { background-color: #ffe3b3 !important; }
+    div[data-testid="column"]:has(.pastel-col-marker-2) div.stButton > button { background-color: #fff3b5 !important; }
+    div[data-testid="column"]:has(.pastel-col-marker-3) div.stButton > button { background-color: #d4f0d4 !important; }
+    div[data-testid="column"]:has(.pastel-col-marker-4) div.stButton > button { background-color: #c9ebff !important; }
 
-    /* 6. 호버 시 붉은 테두리와 함께 튀어나오며 흔들림 멈춤 */
-    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) div.stButton > button:hover {
+    /* 마우스 호버 효과 (붉은 테두리와 돌출) */
+    div[data-testid="column"]:has([class^="pastel-col-marker-"]) div.stButton > button:hover {
+        transform: scale(1.1) translateY(-5px) !important;
         animation: none !important;
-        transform: scale(1.15) translateY(-5px) !important;
-        border: 2px solid #d32f2f !important;
-        box-shadow: 5px 5px 15px rgba(211,47,47,0.5) !important;
-        z-index: 999 !important;
+        border-color: #d32f2f !important;
+        box-shadow: 5px 5px 10px rgba(211,47,47,0.5) !important;
+        z-index: 99 !important;
     }
-    
+
     .torn-sentence {
         text-align: center;
         font-family: 'Eulyoo1945-Regular', serif;
@@ -754,14 +725,8 @@ def inject_flex_grid_css():
     .torn-sentence.top { color: #555; }
     .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; }
     </style>
-    """
-    st.markdown(css, unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
-
-# ==========================================
-# TAB 7: The Roussel Bridge 
-# ==========================================
-with tab7:
     st.markdown("""
     <div class="instruction-box">
         <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
@@ -775,7 +740,6 @@ with tab7:
 
     if 't7_step' not in st.session_state: st.session_state.t7_step = 1
     if 't7_pinned_sentences' not in st.session_state: st.session_state.t7_pinned_sentences = []
-    if 't7_all_matched_words' not in st.session_state: st.session_state.t7_all_matched_words = []
     if 't7_generated_words' not in st.session_state: st.session_state.t7_generated_words = []
     if 't7_initial_phrase' not in st.session_state: st.session_state.t7_initial_phrase = ""
     if 't7_base_phrase' not in st.session_state: st.session_state.t7_base_phrase = ""
@@ -788,58 +752,48 @@ with tab7:
         st.markdown("##### 시간의 파편 던지기")
         initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
         
-        if st.button("✨ 언어의 파편 흩뿌리기", type="primary", key="t7_btn1"):
+        if st.button("✨ 언어의 파편 흩뿌리기", key="t7_btn1"):
             if initial_phrase:
                 st.session_state.t7_initial_phrase = initial_phrase
                 words = initial_phrase.strip().split()
                 st.session_state.t7_base_phrase = " ".join(words[:-1]) if len(words) > 1 else ""
                 
                 rhyme_target = get_rhyme_target(initial_phrase)
-                all_words = get_all_matched_words(rhyme_target, NOUN_DICT)
-                
-                if all_words:
-                    st.session_state.t7_all_matched_words = all_words
-                    st.session_state.t7_generated_words = random.sample(all_words, min(25, len(all_words)))
-                    st.session_state.t7_step = 2
-                    st.rerun()
-                else:
-                    st.error("사전에 일치하는 파편이 단 하나도 없습니다. 다른 어구를 던져보세요.")
+                st.session_state.t7_generated_words = get_all_matched_words(rhyme_target, NOUN_DICT)
+                st.session_state.t7_step = 2
+                st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (Flexbox 초밀집 & 툴팁)
+    # Step 2: 사전의 파편들 선택 (완벽 격자 & 환영 툴팁)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
-        inject_flex_grid_css()
-        
-        # 원본 어구 표시 (상단 나침반)
         st.markdown(f"<div style='text-align: center; margin-bottom: 25px; font-size: 1.2em;'><span style='color: #888;'>원본 어구:</span> <b>{st.session_state.t7_initial_phrase}</b></div>", unsafe_allow_html=True)
         
         words = st.session_state.t7_generated_words
         
-        # st.columns를 완전히 버리고 단일 컨테이너 안에서 연속 렌더링!
-        with st.container():
-            # 이 숨겨진 마커를 기준으로 위의 Flexbox CSS가 작동합니다.
-            st.markdown('<div class="pastel-grid-marker"></div>', unsafe_allow_html=True)
-            
-            for i, word in enumerate(words):
-                # 마우스 호버 시 툴팁으로 보여줄 완성된 대체 문장
-                replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-                
-                # 버튼 렌더링 (st.columns의 간격 제약 없이 다닥다닥 붙게 됩니다)
-                if st.button(word, key=f"t7_w_{i}", help=replaced_sentence):
-                    st.session_state.t7_selected_word = word
-                    st.session_state.t7_step = 3
-                    st.rerun()
+        # gap="small"로 컬럼 간격을 빽빽하게 좁힘
+        for i in range(0, len(words), 5):
+            cols = st.columns(5, gap="small")
+            for j in range(5):
+                if i + j < len(words):
+                    word = words[i + j]
+                    replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+                    with cols[j]:
+                        # 이 눈에 보이지 않는 마커가 전역 CSS를 무시하는 핵심 열쇠입니다!
+                        st.markdown(f'<div class="pastel-col-marker-{j}" style="display:none;"></div>', unsafe_allow_html=True)
+                        if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence):
+                            st.session_state.t7_selected_word = word
+                            st.session_state.t7_step = 3
+                            st.rerun()
         
         st.markdown("---")
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("🔄 파편 다시 부르기", type="primary", key="t7_refresh"):
-                all_words = st.session_state.t7_all_matched_words
-                st.session_state.t7_generated_words = random.sample(all_words, min(25, len(all_words)))
+            if st.button("🔄 파편 다시 부르기", key="t7_refresh"):
+                random.shuffle(st.session_state.t7_generated_words)
                 st.rerun()
         with col2:
-            if st.button("처음부터 다시", type="primary", key="t7_reset_step2"):
+            if st.button("처음부터 다시", key="t7_reset_step2"):
                 st.session_state.t7_step = 1
                 st.rerun()
 
@@ -858,13 +812,13 @@ with tab7:
         st.markdown("---")
         col1, col2 = st.columns(2)
         with col1:
-            if st.button("문장 확정 및 심연에 기록", type="primary", key="t7_confirm"):
+            if st.button("문장 확정 및 심연에 기록", key="t7_confirm"):
                 final_sentence = f"{st.session_state.t7_initial_phrase} {body_text} {new_sentence}"
                 st.session_state.t7_pinned_sentences.append(final_sentence)
                 st.session_state.t7_step = 1
                 st.rerun()
         with col2:
-            if st.button("⬅️ 뒤로가기 (파편 다시 고르기)", type="primary", key="t7_back"):
+            if st.button("⬅️ 뒤로가기 (파편 다시 고르기)", key="t7_back"):
                 st.session_state.t7_step = 2
                 st.rerun()
 
@@ -879,6 +833,7 @@ with tab7:
             st.info(f"**{idx+1}.** {sentence}")
     else:
         st.caption("아직 기록된 문장이 없습니다.")
+
 # ---------------------------------------------------------
 # 🏺 하단: 사전의 파편들 (Floating Animation)
 # ---------------------------------------------------------
