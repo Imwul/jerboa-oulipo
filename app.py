@@ -593,7 +593,7 @@ import re
 import random
 
 # ==========================================
-# [함수 정의 구역] 
+# [탭 7 전용 함수 구역]
 # ==========================================
 
 def get_rhyme_target(sentence):
@@ -623,8 +623,7 @@ def decompose_hangul(char):
     return cho, jung, jong
 
 def get_loose_vowel(jung):
-    # 0:ㅏ, 1:ㅐ, 2:ㅑ, 3:ㅒ, 4:ㅓ, 5:ㅔ, 6:ㅕ, 7:ㅖ, 8:ㅗ, 9:ㅘ, 10:ㅙ, 11:ㅚ, 12:ㅛ, 13:ㅜ, 14:ㅝ, 15:ㅞ, 16:ㅟ, 17:ㅠ, 18:ㅡ, 19:ㅢ, 20:ㅣ
-    # 발음이 유사한 모음들을 파격적으로 통합합니다. (까만색-말할게 라임 가능!)
+    # 발음이 유사한 모음들을 파격적으로 통합합니다. ('까만색-말할게' 엇박자 라임 허용)
     mapping = {
         2: 0,           # ㅑ -> ㅏ
         6: 4,           # ㅕ -> ㅓ
@@ -646,40 +645,14 @@ def is_loose_rhyme(target_char, word_char):
     
     return get_loose_vowel(t_jung) == get_loose_vowel(w_jung)
 
-@st.cache_data
-def get_all_matched_words(target_rhyme, dictionary_data):
-    if not target_rhyme: return []
-    try:
-        def get_uniques(word_list):
-            word_list.sort(key=len)
-            uniques = []
-            for w in word_list:
-                if not any(w.endswith(u) for u in uniques):
-                    uniques.append(w)
-            return uniques
+def match_rhyme(target_str, word_str):
+    if len(word_str) < len(target_str): return False
+    for i in range(1, len(target_str) + 1):
+        if not is_loose_rhyme(target_str[-i], word_str[-i]):
+            return False
+    return True
 
-        # 1차: 원래 타겟(2~3글자)으로 모음 검색
-        matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
-        unique_words = get_uniques(matched_words)
-        
-        # 2차: 파편이 25개 미만일 때, 타겟이 3글자 이상이었다면 마지막 2글자로 타협
-        if len(unique_words) < 25 and len(target_rhyme) >= 3:
-            shorter_target = target_rhyme[-2:]
-            additional_words = [word for word in dictionary_data if match_rhyme(shorter_target, word) and word not in matched_words]
-            matched_words.extend(additional_words)
-            unique_words = get_uniques(matched_words)
-            
-        # 3차: 그래도 25개 미만이면, 마지막 1글자의 모음만으로 극단적 타협
-        if len(unique_words) < 25 and len(target_rhyme) >= 2:
-            last_char_target = target_rhyme[-1:]
-            additional_words = [word for word in dictionary_data if match_rhyme(last_char_target, word) and word not in matched_words]
-            matched_words.extend(additional_words)
-            unique_words = get_uniques(matched_words)
-            
-        return unique_words
-    except Exception as e:
-        return []
-# @st.cache_data 삭제! try-except 삭제! 무조건 값을 반환하는 안전한 로직
+# 캐싱 해제! 무조건 25개를 꽉 채워서 반환하는 안전한 탐색 로직
 def get_all_matched_words(target_rhyme, dictionary_data):
     if not target_rhyme or not dictionary_data: 
         return []
@@ -712,7 +685,6 @@ def get_all_matched_words(target_rhyme, dictionary_data):
         
     # 4차: 초현실적 우연의 개입 (사전에서 랜덤 추출하여 빈 공간 무조건 채우기)
     if len(unique_words) < 25:
-        import random
         needed = 25 - len(unique_words)
         remainders = list(set(dictionary_data) - set(unique_words))
         if remainders:
@@ -720,78 +692,9 @@ def get_all_matched_words(target_rhyme, dictionary_data):
             unique_words.extend(fillers)
             
     return unique_words
-# CSS를 통해 격자 배열의 단어 파편들을 3D로 부유시키고, 비율과 색상을 조정합니다.
-def inject_floating_grid_css():
-    st.markdown("""
-    <style>
-        /* 3D perspective for the whole app container, for better floating effect */
-        .block-container { perspective: 1000px; }
 
-        @keyframes float3d {
-            0% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
-            25% { transform: translateZ(30px) rotateX(-2deg) rotateY(2deg) scale(1.02); }
-            50% { transform: translateZ(-20px) rotateX(2deg) rotateY(-2deg) scale(0.98); }
-            75% { transform: translateZ(40px) rotateX(-3deg) rotateY(3deg) scale(1.03); }
-            100% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
-        }
-
-        /* Styling for the floating fragments in the grid */
-        .fragment-floating-grid div.stButton > button {
-            transform-style: preserve-3d;
-            animation: float3d 10s ease-in-out infinite;
-            font-family: 'serif';
-            font-size: 1.1em;
-            color: #333 !important; /* Fixed dark text for visibility */
-            background-color: transparent !important; /* Allow custom color to show */
-            border-radius: 4px;
-            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-            transition: transform 0.3s ease, border 0.3s ease, box-shadow 0.3s ease;
-            height: auto; /* Allow content to dictate height, adjusting ratio */
-            width: auto;
-            max-width: 150px; /* Adjust width to make it less horizontal, closer to image 2 */
-            margin: 10px; /* Add margin for breathing space */
-            padding: 15px 10px; /* Add padding for a better look */
-        }
-
-        /* Hover effect: focus and slightly bigger */
-        .fragment-floating-grid div.stButton > button:hover {
-            transform: translateZ(50px) scale(1.1);
-            animation: none; /* Stop floating on hover */
-            box-shadow: 5px 5px 15px rgba(0,0,0,0.4);
-            border-color: #333 !important;
-            color: #000 !important;
-            font-weight: bold;
-        }
-
-        /* Override stButton border */
-        .fragment-floating-grid div.stButton > button:focus { border: 2px solid; }
-
-        /* Step 3: 찢어진 문장 연출 강화 */
-        .torn-sentence {
-            text-align: center;
-            font-family: 'serif';
-            font-size: 1.8em;
-            letter-spacing: 0.05em;
-            line-height: 1.2;
-            transition: all 0.5s ease;
-        }
-        .torn-sentence.top { color: #555; }
-        .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; } /* Add top margin for splitting effect */
-
-    </style>
-    """, unsafe_allow_html=True)
-
-# 포스트잇 색상 리스트 (이미지 5.png 참조)
-POSTIT_COLORS = ["#ADD8E6", "#90EE90", "#FFD700", "#FFB6C1", "#E6E6FA", "#FFA07A", "#AFEEEE", "#FFDEAD", "#F08080", "#FF69B4"]
-
-# ==========================================
-# TAB 7: The Roussel Bridge 
-# ==========================================
-# ==========================================
-# [탭 7 전용 동적 CSS 생성기]
-# ==========================================
+# 동적 CSS 주입 함수
 def inject_floating_grid_css(words_length):
-    # 전역 변수에 있는 이물의 파스텔 색상 리스트 활용
     WASHED_COLORS = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
     
     css = """
@@ -806,14 +709,13 @@ def inject_floating_grid_css(words_length):
         100% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
     }
 
-    /* 1. 컬럼 대신 inline-block을 사용하여 단어들을 다닥다닥 빽빽하게 밀집시킵니다. */
+    /* 단어들을 다닥다닥 빽빽하게 밀집 */
     div[data-testid="stVerticalBlock"]:has(.grid-start) > div.element-container:has(button[kind="secondary"]) {
         display: inline-block !important;
         width: auto !important;
-        margin: 6px !important; /* 단어 사이의 간격 (빽빽하게) */
+        margin: 6px !important; 
     }
 
-    /* 2. 파편(버튼) 기본 스타일 - 세로가 긴 직사각형 모양 */
     div[data-testid="stVerticalBlock"]:has(.grid-start) button[kind="secondary"] {
         transform-style: preserve-3d;
         animation: float3d 6s ease-in-out infinite;
@@ -821,19 +723,18 @@ def inject_floating_grid_css(words_length):
         border-radius: 2px !important;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
         transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
-        height: 80px !important; /* 세로가 긴 형태 */
-        min-width: 85px !important; /* 최소 너비 */
+        height: 80px !important; 
+        min-width: 85px !important; 
         padding: 10px 15px !important;
     }
 
-    /* 3. 흰색 글씨 강제 덮어쓰기 (무조건 검은색으로 또렷하게) */
+    /* 흰색 글씨 강제 덮어쓰기 (무조건 검은색) */
     div[data-testid="stVerticalBlock"]:has(.grid-start) button[kind="secondary"] p {
         color: #000000 !important;
         font-weight: bold !important;
         font-size: 1.15em !important;
     }
 
-    /* 4. 마우스 호버 시 붉은 핏빛 테두리와 함께 튀어나옴 */
     div[data-testid="stVerticalBlock"]:has(.grid-start) button[kind="secondary"]:hover {
         transform: translateZ(50px) scale(1.15) !important;
         animation: none !important;
@@ -853,11 +754,9 @@ def inject_floating_grid_css(words_length):
     .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; }
     """
 
-    # 5. 생성된 각 단어마다 무작위 색상과 서로 다른 애니메이션 딜레이를 부여 (동적 CSS)
     for i in range(words_length):
         bg_color = random.choice(WASHED_COLORS)
         delay = random.uniform(0, 5)
-        # .grid-start 마크다운이 첫 번째 자식이므로, 버튼들은 i+2 번째 자식이 됩니다.
         css += f"""
         div[data-testid="stVerticalBlock"]:has(.grid-start) > div.element-container:nth-of-type({i+2}) button[kind="secondary"] {{
             background-color: {bg_color} !important;
@@ -884,7 +783,6 @@ with tab7:
 
     st.subheader("Jerboa Oulipo Engine 🕰️")
 
-    # 상태 관리 변수 초기화
     if 't7_step' not in st.session_state: st.session_state.t7_step = 1
     if 't7_pinned_sentences' not in st.session_state: st.session_state.t7_pinned_sentences = []
     if 't7_all_matched_words' not in st.session_state: st.session_state.t7_all_matched_words = []
@@ -900,7 +798,6 @@ with tab7:
         st.markdown("##### 시간의 파편 던지기")
         initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
         
-        # 신비로운 이름으로 교체 완료
         if st.button("✨ 언어의 파편 흩뿌리기", type="primary", key="t7_btn1"):
             if initial_phrase:
                 st.session_state.t7_initial_phrase = initial_phrase
@@ -908,17 +805,15 @@ with tab7:
                 st.session_state.t7_base_phrase = " ".join(words[:-1]) if len(words) > 1 else ""
                 
                 rhyme_target = get_rhyme_target(initial_phrase)
-                
-                # 파일 대신 글로벌 변수인 NOUN_DICT를 직접 집어넣어 안정성을 극대화!
+                # NOUN_DICT 연동 & 에러 유발 함수 완벽 분리
                 all_words = get_all_matched_words(rhyme_target, NOUN_DICT)
                 
                 if all_words:
                     st.session_state.t7_all_matched_words = all_words
                     st.session_state.t7_generated_words = random.sample(all_words, min(25, len(all_words)))
                     st.session_state.t7_step = 2
-                    st.rerun() # 단어를 성공적으로 찾았을 때만 화면을 넘깁니다.
+                    st.rerun()
                 else:
-                    # 실패 시 rerun()을 하지 않아 에러 메시지가 화면에 고정됩니다.
                     st.error("사전에 모음이 일치하는 파편이 단 하나도 없습니다. 다른 어구를 던져보세요.")
 
     # ----------------------------------------
@@ -928,16 +823,10 @@ with tab7:
         st.markdown("##### 허공을 부유하는 사전의 파편들")
         
         words = st.session_state.t7_generated_words
-        
-        # 단어 개수에 맞춰 동적 CSS를 먼저 주입
         inject_floating_grid_css(len(words))
         
-        # st.columns()의 넓은 간격을 버리고, 하나의 컨테이너 안에 몰아넣음
         with st.container():
-            # CSS 인식을 위한 숨겨진 마커 (무조건 첫 번째 요소여야 함)
             st.markdown('<div class="grid-start"></div>', unsafe_allow_html=True)
-            
-            # 단어들이 inline-block으로 다닥다닥 배치됨
             for i, word in enumerate(words):
                 if st.button(word, key=f"t7_word_{i}"):
                     st.session_state.t7_selected_word = word
@@ -963,7 +852,6 @@ with tab7:
         st.markdown("##### 두 문장의 심연 잇기")
         
         st.markdown(f"<div class='torn-sentence top'>{st.session_state.t7_initial_phrase}</div>", unsafe_allow_html=True)
-        
         body_text = st.text_area("사이를 이을 불가능한 간극의 본문을 작성하세요:", height=200, key="t7_body")
         
         new_sentence = f"{st.session_state.t7_base_phrase} {st.session_state.t7_selected_word}".strip()
