@@ -75,13 +75,59 @@ st.markdown(f"""
         font-weight: bold; cursor: default; color: #000000 !important;
     }}
 
-    /* 글로벌 버튼 스타일 (이것이 탭 7을 검게 만들었던 주범!) */
-    div.stButton > button, div[data-testid="stFormSubmitButton"] > button {{ 
+    /* -------------------------------------------------------------
+       글로벌 버튼 스타일 (secondary 타입은 앱 전체에서 까만색 고정) 
+       ------------------------------------------------------------- */
+    div.stButton > button[kind="secondary"], div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
         height: 3.5rem; font-size: 1.2rem !important;
     }}
-    div.stButton > button p, div[data-testid="stFormSubmitButton"] > button p {{ color: #FFFFFF !important; }}
+    div.stButton > button[kind="secondary"] p, div[data-testid="stFormSubmitButton"] > button p {{ color: #FFFFFF !important; }}
+
+    /* -------------------------------------------------------------
+       💡 탭 7 전용 파스텔 그리드 (primary 타입으로 분리하여 독재 완벽 회피!) 
+       ------------------------------------------------------------- */
+    div.stButton > button[kind="primary"] {{
+        border: 1px solid #000 !important;
+        border-radius: 2px !important;
+        height: auto !important;
+        padding: 8px 10px !important;
+        width: 100% !important;
+        animation: float 5s ease-in-out infinite !important;
+        transition: transform 0.2s !important;
+        box-shadow: none !important;
+    }}
+    div.stButton > button[kind="primary"] p {{
+        color: #000000 !important;
+        font-weight: bold !important;
+        font-size: 1.15rem !important;
+        margin: 0 !important;
+    }}
+    div.stButton > button[kind="primary"]:hover {{
+        transform: translateY(-3px) scale(1.05) !important;
+        border: 2px solid #d32f2f !important;
+    }}
+    div.stButton > button[kind="primary"]:hover p {{
+        color: #d32f2f !important;
+    }}
+
+    /* 5가지 파스텔 컬러 배정 (하단의 사전 파편과 완벽하게 동일한 색상) */
+    div[data-testid="column"]:nth-child(1) div.stButton > button[kind="primary"] {{ background-color: #ffc9c9 !important; animation-delay: 0s !important; animation-duration: 4.5s !important; }}
+    div[data-testid="column"]:nth-child(2) div.stButton > button[kind="primary"] {{ background-color: #ffe3b3 !important; animation-delay: 1s !important; animation-duration: 6s !important; }}
+    div[data-testid="column"]:nth-child(3) div.stButton > button[kind="primary"] {{ background-color: #fff3b5 !important; animation-delay: 2s !important; animation-duration: 4.5s !important; }}
+    div[data-testid="column"]:nth-child(4) div.stButton > button[kind="primary"] {{ background-color: #d4f0d4 !important; animation-delay: 0.5s !important; animation-duration: 7s !important; }}
+    div[data-testid="column"]:nth-child(5) div.stButton > button[kind="primary"] {{ background-color: #c9ebff !important; animation-delay: 1.5s !important; animation-duration: 5.5s !important; }}
+    
+    .torn-sentence {{
+        text-align: center;
+        font-family: 'Eulyoo1945-Regular', serif;
+        font-size: 1.8em;
+        letter-spacing: 0.05em;
+        line-height: 1.2;
+    }}
+    .torn-sentence.top {{ color: #555; }}
+    .torn-sentence.bottom {{ color: #d32f2f; margin-top: 1em; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -668,73 +714,6 @@ def get_all_matched_words(target_rhyme, dictionary_data):
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
-    # ❗ 5칸짜리 Grid 안에 있는 버튼들만 정확히 타겟팅하는 절대 실패 없는 구식 CSS 마법 ❗
-    st.markdown("""
-    <style>
-    /* 1열 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button {
-        background-color: #ffc9c9 !important; border: 1px solid #000 !important; color: #000 !important; height: auto !important; padding: 10px 10px !important; border-radius: 2px !important; animation: float 5s ease-in-out infinite !important; animation-delay: 0s !important; box-shadow: none !important; width: 100% !important; font-family: 'Eulyoo1945-Regular', serif !important;
-    }
-    /* 2열 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button {
-        background-color: #ffe3b3 !important; border: 1px solid #000 !important; color: #000 !important; height: auto !important; padding: 10px 10px !important; border-radius: 2px !important; animation: float 6s ease-in-out infinite !important; animation-delay: 0.5s !important; box-shadow: none !important; width: 100% !important; font-family: 'Eulyoo1945-Regular', serif !important;
-    }
-    /* 3열 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button {
-        background-color: #fff3b5 !important; border: 1px solid #000 !important; color: #000 !important; height: auto !important; padding: 10px 10px !important; border-radius: 2px !important; animation: float 4.5s ease-in-out infinite !important; animation-delay: 1s !important; box-shadow: none !important; width: 100% !important; font-family: 'Eulyoo1945-Regular', serif !important;
-    }
-    /* 4열 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button {
-        background-color: #d4f0d4 !important; border: 1px solid #000 !important; color: #000 !important; height: auto !important; padding: 10px 10px !important; border-radius: 2px !important; animation: float 5.5s ease-in-out infinite !important; animation-delay: 0.2s !important; box-shadow: none !important; width: 100% !important; font-family: 'Eulyoo1945-Regular', serif !important;
-    }
-    /* 5열 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button {
-        background-color: #c9ebff !important; border: 1px solid #000 !important; color: #000 !important; height: auto !important; padding: 10px 10px !important; border-radius: 2px !important; animation: float 5.2s ease-in-out infinite !important; animation-delay: 0.8s !important; box-shadow: none !important; width: 100% !important; font-family: 'Eulyoo1945-Regular', serif !important;
-    }
-
-    /* 5개 열 모두에 글자색 까맣게 덮어쓰기 (전역 CSS 무력화) */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button p {
-        color: #000000 !important;
-        font-weight: bold !important;
-        font-size: 1.15rem !important;
-        margin: 0 !important;
-    }
-
-    /* 호버 시 살짝 튀어나오고 붉은 테두리 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button:hover,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button:hover,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button:hover,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button:hover,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button:hover {
-        transform: translateY(-3px) scale(1.05) !important;
-        border: 2px solid #d32f2f !important;
-        animation: none !important;
-    }
-    
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button:hover p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button:hover p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button:hover p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button:hover p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button:hover p {
-        color: #d32f2f !important;
-    }
-
-    .torn-sentence {
-        text-align: center;
-        font-family: 'Eulyoo1945-Regular', serif;
-        font-size: 1.8em;
-        letter-spacing: 0.05em;
-        line-height: 1.2;
-    }
-    .torn-sentence.top { color: #555; }
-    .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; }
-    </style>
-    """, unsafe_allow_html=True)
-
     st.markdown("""
     <div class="instruction-box">
         <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
@@ -772,7 +751,7 @@ with tab7:
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (순정 버튼 & 툴팁 복구)
+    # Step 2: 사전의 파편들 선택
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
         words_list = st.session_state.t7_initial_phrase.strip().split()
@@ -788,23 +767,26 @@ with tab7:
         
         words = st.session_state.t7_generated_words
         
-        # 순정 st.columns(5) 사용 (오류 없는 그리드 정렬)
-        for i in range(0, len(words), 5):
-            cols = st.columns(5)
-            for j in range(5):
-                if i + j < len(words):
-                    word = words[i + j]
-                    # 툴팁을 위한 대체 문장
-                    replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-                    with cols[j]:
-                        # help 파라미터가 네가 원했던 '마우스 올렸을 때 뜨는 말풍선'을 만들어줍니다.
-                        if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence):
-                            st.session_state.t7_selected_word = word
-                            st.session_state.t7_step = 3
-                            st.rerun()
+        # 태평양 같은 틈을 없애기 위해 중앙으로 꽉 쥐어짭니다.
+        _, center_col, _ = st.columns([1, 3, 1])
+        
+        with center_col:
+            for i in range(0, len(words), 5):
+                cols = st.columns(5, gap="small")
+                for j in range(5):
+                    if i + j < len(words):
+                        word = words[i + j]
+                        replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+                        with cols[j]:
+                            # help 파라미터가 네가 원했던 '마우스 올렸을 때 뜨는 말풍선'을 만들어줍니다.
+                            # type="primary"를 줌으로써 글로벌 CSS(#000000)를 완벽하게 회피합니다.
+                            if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence, type="primary"):
+                                st.session_state.t7_selected_word = word
+                                st.session_state.t7_step = 3
+                                st.rerun()
 
         st.markdown("---")
-        # ❗ 이 아래의 버튼들은 st.columns(2)에 있기 때문에 위의 파스텔 5색 CSS에 절대 감염되지 않습니다 ❗
+        # ❗ 이 아래의 버튼들은 st.columns(2)에 있고, type="secondary"이므로 안전하게 까만색으로 남아 있습니다.
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🔄 파편 다시 부르기", key="t7_refresh"):
