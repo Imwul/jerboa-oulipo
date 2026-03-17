@@ -750,31 +750,30 @@ def render_circular_phrases(center_text, phrases):
         return
 
     radius = 180 
-    html_content = f"""
-    <style>
-        @keyframes spin {{ 100% {{ transform: translate(-50%, -50%) rotate(360deg); }} }}
-        @keyframes counter-spin {{ 100% {{ transform: translate(-50%, -50%) rotate(-360deg); }} }}
-        @keyframes wobble {{
-            0%, 100% {{ transform: rotate(-5deg); }}
-            50% {{ transform: rotate(5deg); }}
-        }}
-        .wobble-link {{
-            display: inline-block;
-            animation: wobble 2.5s ease-in-out infinite;
-            text-decoration: none;
-            color: #888;
-            font-size: 1.0em;
-            white-space: nowrap;
-            transition: color 0.2s, transform 0.2s;
-        }}
-        .wobble-link:hover {{ color: #d32f2f; transform: scale(1.15); font-weight: bold; }}
-    </style>
-    <div style='position: relative; width: 450px; height: 450px; margin: 0 auto; overflow: hidden; font-family: "serif";'>
-        <div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; font-weight: bold; font-size: 1.2em; color: #d32f2f;'>
-            {center_text}
-        </div>
-        <div style='position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); animation: spin 45s linear infinite;'>
-    """
+    
+    # 마크다운 코드블록 버그를 원천 차단하기 위해 들여쓰기(공백)를 완전히 제거!
+    html_content = "<style>\n"
+    html_content += "@keyframes spin { 100% { transform: translate(-50%, -50%) rotate(360deg); } }\n"
+    html_content += "@keyframes counter-spin { 100% { transform: translate(-50%, -50%) rotate(-360deg); } }\n"
+    html_content += "@keyframes wobble {\n"
+    html_content += "0%, 100% { transform: rotate(-5deg); }\n"
+    html_content += "50% { transform: rotate(5deg); }\n"
+    html_content += "}\n"
+    html_content += ".wobble-link {\n"
+    html_content += "display: inline-block;\n"
+    html_content += "animation: wobble 2.5s ease-in-out infinite;\n"
+    html_content += "text-decoration: none;\n"
+    html_content += "color: #888;\n"
+    html_content += "font-size: 1.0em;\n"
+    html_content += "white-space: nowrap;\n"
+    html_content += "transition: color 0.2s, transform 0.2s;\n"
+    html_content += "}\n"
+    html_content += ".wobble-link:hover { color: #d32f2f; transform: scale(1.15); font-weight: bold; }\n"
+    html_content += "</style>\n"
+    
+    html_content += "<div style='position: relative; width: 450px; height: 450px; margin: 0 auto; overflow: hidden; font-family: \"serif\";'>\n"
+    html_content += f"<div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; font-weight: bold; font-size: 1.2em; color: #d32f2f;'>{center_text}</div>\n"
+    html_content += "<div style='position: absolute; top: 50%; left: 50%; width: 100%; height: 100%; transform: translate(-50%, -50%); animation: spin 45s linear infinite;'>\n"
     
     angle_step = 360 / len(phrases)
     for i, phrase in enumerate(phrases):
@@ -783,15 +782,13 @@ def render_circular_phrases(center_text, phrases):
         x = radius * math.cos(rad)
         y = radius * math.sin(rad)
         
-        html_content += f"""
-            <div style='position: absolute; left: calc(50% + {x}px); top: calc(50% + {y}px); transform-origin: center; animation: counter-spin 45s linear infinite;'>
-                <a href='?sel={i}' target='_self' class='wobble-link'>{phrase}</a>
-            </div>
-        """
+        html_content += f"<div style='position: absolute; left: calc(50% + {x}px); top: calc(50% + {y}px); transform-origin: center; animation: counter-spin 45s linear infinite;'>\n"
+        html_content += f"<a href='?sel={i}' target='_self' class='wobble-link'>{phrase}</a>\n"
+        html_content += "</div>\n"
         
     html_content += "</div></div>"
+    
     st.markdown(html_content, unsafe_allow_html=True)
-
 
 # ==========================================
 # TAB 7: The Roussel Bridge 
