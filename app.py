@@ -679,24 +679,47 @@ def get_all_matched_words(target_rhyme, dictionary_data):
         return unique_words
     except Exception as e:
         return []
-@st.cache_data
-def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
-    if not target_rhyme: return []
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            dictionary_data = [line.strip() for line in f.readlines() if line.strip()]
-            
-        matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
-        matched_words.sort(key=len)
-        unique_words = []
-        
-        for word in matched_words:
-            if not any(word.endswith(u_word) for u_word in unique_words):
-                unique_words.append(word)
-        return unique_words
-    except Exception as e:
+# @st.cache_data 삭제! try-except 삭제! 무조건 값을 반환하는 안전한 로직
+def get_all_matched_words(target_rhyme, dictionary_data):
+    if not target_rhyme or not dictionary_data: 
         return []
+        
+    def get_uniques(word_list):
+        word_list.sort(key=len)
+        uniques = []
+        for w in word_list:
+            if not any(w.endswith(u) for u in uniques):
+                uniques.append(w)
+        return uniques
 
+    # 1차: 원래 타겟(2~3글자)으로 모음 검색
+    matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
+    unique_words = get_uniques(matched_words)
+    
+    # 2차: 파편이 25개 미만일 때, 타겟이 3글자 이상이었다면 마지막 2글자로 타협
+    if len(unique_words) < 25 and len(target_rhyme) >= 3:
+        shorter_target = target_rhyme[-2:]
+        additional_words = [word for word in dictionary_data if match_rhyme(shorter_target, word) and word not in matched_words]
+        matched_words.extend(additional_words)
+        unique_words = get_uniques(matched_words)
+        
+    # 3차: 그래도 25개 미만이면, 마지막 1글자의 모음만으로 극단적 타협
+    if len(unique_words) < 25 and len(target_rhyme) >= 2:
+        last_char_target = target_rhyme[-1:]
+        additional_words = [word for word in dictionary_data if match_rhyme(last_char_target, word) and word not in matched_words]
+        matched_words.extend(additional_words)
+        unique_words = get_uniques(matched_words)
+        
+    # 4차: 초현실적 우연의 개입 (사전에서 랜덤 추출하여 빈 공간 무조건 채우기)
+    if len(unique_words) < 25:
+        import random
+        needed = 25 - len(unique_words)
+        remainders = list(set(dictionary_data) - set(unique_words))
+        if remainders:
+            fillers = random.sample(remainders, min(needed, len(remainders)))
+            unique_words.extend(fillers)
+            
+    return unique_words
 # CSS를 통해 격자 배열의 단어 파편들을 3D로 부유시키고, 비율과 색상을 조정합니다.
 def inject_floating_grid_css():
     st.markdown("""
