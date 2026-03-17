@@ -623,13 +623,9 @@ def decompose_hangul(char):
     return cho, jung, jong
 
 def get_loose_vowel(jung):
-    # 발음이 유사한 모음들을 파격적으로 통합합니다. ('까만색-말할게' 엇박자 라임 허용)
     mapping = {
-        2: 0,           # ㅑ -> ㅏ
-        6: 4,           # ㅕ -> ㅓ
-        12: 8,          # ㅛ -> ㅗ
-        17: 13,         # ㅠ -> ㅜ
-        5: 1, 3: 1, 7: 1, 11: 1, 10: 1, 15: 1 # ㅔ, ㅒ, ㅖ, ㅚ, ㅙ, ㅞ -> ㅐ 
+        2: 0, 6: 4, 12: 8, 17: 13, 
+        5: 1, 3: 1, 7: 1, 11: 1, 10: 1, 15: 1
     }
     return mapping.get(jung, jung)
 
@@ -638,11 +634,8 @@ def is_loose_rhyme(target_char, word_char):
     w_decomp = decompose_hangul(word_char)
     if not t_decomp or not w_decomp:
         return target_char == word_char 
-    
-    # 초성(cho)과 종성(jong/받침)은 완전히 무시! 오직 중성(jung/모음)만 비교합니다.
     _, t_jung, _ = t_decomp
     _, w_jung, _ = w_decomp
-    
     return get_loose_vowel(t_jung) == get_loose_vowel(w_jung)
 
 def match_rhyme(target_str, word_str):
@@ -652,11 +645,9 @@ def match_rhyme(target_str, word_str):
             return False
     return True
 
-# 캐싱 해제! 무조건 25개를 꽉 채워서 반환하는 안전한 탐색 로직
 def get_all_matched_words(target_rhyme, dictionary_data):
     if not target_rhyme or not dictionary_data: 
         return []
-        
     def get_uniques(word_list):
         word_list.sort(key=len)
         uniques = []
@@ -665,25 +656,21 @@ def get_all_matched_words(target_rhyme, dictionary_data):
                 uniques.append(w)
         return uniques
 
-    # 1차: 원래 타겟(2~3글자)으로 모음 검색
     matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
     unique_words = get_uniques(matched_words)
     
-    # 2차: 파편이 25개 미만일 때, 타겟이 3글자 이상이었다면 마지막 2글자로 타협
     if len(unique_words) < 25 and len(target_rhyme) >= 3:
         shorter_target = target_rhyme[-2:]
         additional_words = [word for word in dictionary_data if match_rhyme(shorter_target, word) and word not in matched_words]
         matched_words.extend(additional_words)
         unique_words = get_uniques(matched_words)
         
-    # 3차: 그래도 25개 미만이면, 마지막 1글자의 모음만으로 극단적 타협
     if len(unique_words) < 25 and len(target_rhyme) >= 2:
         last_char_target = target_rhyme[-1:]
         additional_words = [word for word in dictionary_data if match_rhyme(last_char_target, word) and word not in matched_words]
         matched_words.extend(additional_words)
         unique_words = get_uniques(matched_words)
         
-    # 4차: 초현실적 우연의 개입 (사전에서 랜덤 추출하여 빈 공간 무조건 채우기)
     if len(unique_words) < 25:
         needed = 25 - len(unique_words)
         remainders = list(set(dictionary_data) - set(unique_words))
@@ -693,56 +680,39 @@ def get_all_matched_words(target_rhyme, dictionary_data):
             
     return unique_words
 
-# 동적 CSS 주입 함수
-def inject_floating_grid_css(words_length):
-    WASHED_COLORS = ["#ffc9c9", "#ffe3b3", "#fff3b5", "#d4f0d4", "#c9ebff", "#d9cbf2", "#ffcbf2"]
-    
+# 안정적인 격자 디자인 및 색상 주입
+def inject_grid_css():
     css = """
     <style>
-    .block-container { perspective: 1000px; }
-    
-    @keyframes float3d {
-        0% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
-        25% { transform: translateZ(25px) rotateX(-2deg) rotateY(2deg) scale(1.02); }
-        50% { transform: translateZ(-15px) rotateX(2deg) rotateY(-2deg) scale(0.98); }
-        75% { transform: translateZ(35px) rotateX(-3deg) rotateY(3deg) scale(1.03); }
-        100% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
+    /* 기본 버튼(파편) 스타일링 */
+    div.stButton > button[kind="secondary"] {
+        height: 70px;
+        border-radius: 4px !important;
+        border: 1px solid #aaa !important;
+        box-shadow: 2px 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.2s ease-in-out;
     }
-
-    /* 단어들을 다닥다닥 빽빽하게 밀집 */
-    div[data-testid="stVerticalBlock"]:has(.grid-start) > div.element-container:has(button[kind="secondary"]) {
-        display: inline-block !important;
-        width: auto !important;
-        margin: 6px !important; 
-    }
-
-    div[data-testid="stVerticalBlock"]:has(.grid-start) button[kind="secondary"] {
-        transform-style: preserve-3d;
-        animation: float3d 6s ease-in-out infinite;
-        font-family: 'Eulyoo1945-Regular', serif;
-        border-radius: 2px !important;
-        box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
-        transition: transform 0.2s ease, box-shadow 0.2s ease, border 0.2s ease;
-        height: 80px !important; 
-        min-width: 85px !important; 
-        padding: 10px 15px !important;
-    }
-
-    /* 흰색 글씨 강제 덮어쓰기 (무조건 검은색) */
-    div[data-testid="stVerticalBlock"]:has(.grid-start) button[kind="secondary"] p {
-        color: #000000 !important;
+    /* 글씨 까맣고 또렷하게 강제 고정 */
+    div.stButton > button[kind="secondary"] p {
+        color: #000 !important;
         font-weight: bold !important;
-        font-size: 1.15em !important;
+        font-size: 1.1rem !important;
     }
-
-    div[data-testid="stVerticalBlock"]:has(.grid-start) button[kind="secondary"]:hover {
-        transform: translateZ(50px) scale(1.15) !important;
-        animation: none !important;
-        box-shadow: 4px 4px 12px rgba(0,0,0,0.4) !important;
+    /* 마우스 호버 시 기괴하게 튀어나오는 효과 */
+    div.stButton > button[kind="secondary"]:hover {
+        transform: scale(1.08);
         border: 2px solid #d32f2f !important;
-        z-index: 999;
+        box-shadow: 4px 4px 10px rgba(0,0,0,0.2);
+        z-index: 10;
     }
-
+    
+    /* 5개의 열(Column)에 각각 고정된 다채로운 파스텔 색상 부여 */
+    div[data-testid="column"]:nth-child(1) button[kind="secondary"] { background-color: #ffc9c9 !important; }
+    div[data-testid="column"]:nth-child(2) button[kind="secondary"] { background-color: #ffe3b3 !important; }
+    div[data-testid="column"]:nth-child(3) button[kind="secondary"] { background-color: #fff3b5 !important; }
+    div[data-testid="column"]:nth-child(4) button[kind="secondary"] { background-color: #d4f0d4 !important; }
+    div[data-testid="column"]:nth-child(5) button[kind="secondary"] { background-color: #c9ebff !important; }
+    
     .torn-sentence {
         text-align: center;
         font-family: 'Eulyoo1945-Regular', serif;
@@ -752,19 +722,8 @@ def inject_floating_grid_css(words_length):
     }
     .torn-sentence.top { color: #555; }
     .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; }
+    </style>
     """
-
-    for i in range(words_length):
-        bg_color = random.choice(WASHED_COLORS)
-        delay = random.uniform(0, 5)
-        css += f"""
-        div[data-testid="stVerticalBlock"]:has(.grid-start) > div.element-container:nth-of-type({i+2}) button[kind="secondary"] {{
-            background-color: {bg_color} !important;
-            border: 1px solid {bg_color} !important;
-            animation-delay: {delay}s !important;
-        }}
-        """
-    css += "</style>"
     st.markdown(css, unsafe_allow_html=True)
 
 
@@ -776,7 +735,7 @@ with tab7:
     <div class="instruction-box">
         <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
         - <b>균열의 시작:</b> 문장을 입력하면 마지막 단어의 모음과 받침(라임)을 분해하여 추출합니다.<br>
-        - <b>사전의 파편들:</b> 낯선 단어들이 허공에 밀집되어 3D로 부유하며 파생됩니다.<br>
+        - <b>사전의 파편들:</b> 다채로운 단어들이 배열됩니다. 마우스를 올리면 대체된 문장의 환영(幻影)이 나타납니다.<br>
         - <b>심연의 다리:</b> 파편을 선택하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
     </div>
     """, unsafe_allow_html=True)
@@ -805,7 +764,6 @@ with tab7:
                 st.session_state.t7_base_phrase = " ".join(words[:-1]) if len(words) > 1 else ""
                 
                 rhyme_target = get_rhyme_target(initial_phrase)
-                # NOUN_DICT 연동 & 에러 유발 함수 완벽 분리
                 all_words = get_all_matched_words(rhyme_target, NOUN_DICT)
                 
                 if all_words:
@@ -814,24 +772,34 @@ with tab7:
                     st.session_state.t7_step = 2
                     st.rerun()
                 else:
-                    st.error("사전에 모음이 일치하는 파편이 단 하나도 없습니다. 다른 어구를 던져보세요.")
+                    st.error("사전에 일치하는 파편이 단 하나도 없습니다. 다른 어구를 던져보세요.")
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (초밀집 Floating Layout)
+    # Step 2: 사전의 파편들 선택 (완벽한 Grid & Tooltip)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
-        st.markdown("##### 허공을 부유하는 사전의 파편들")
+        inject_grid_css()
+        
+        # 1. 원본 어구 표시 (상단 나침반 역할)
+        st.markdown(f"<div style='text-align: center; margin-bottom: 25px; font-size: 1.2em;'><span style='color: #888;'>원본 어구:</span> <b>{st.session_state.t7_initial_phrase}</b></div>", unsafe_allow_html=True)
         
         words = st.session_state.t7_generated_words
-        inject_floating_grid_css(len(words))
         
-        with st.container():
-            st.markdown('<div class="grid-start"></div>', unsafe_allow_html=True)
-            for i, word in enumerate(words):
-                if st.button(word, key=f"t7_word_{i}"):
-                    st.session_state.t7_selected_word = word
-                    st.session_state.t7_step = 3
-                    st.rerun()
+        # 2. 안전하고 완벽한 5x5 Grid (행렬 반복문)
+        for i in range(0, len(words), 5):
+            cols = st.columns(5)
+            for j in range(5):
+                if i + j < len(words):
+                    word = words[i + j]
+                    # 호버 시 보여줄 완성된 문장 조립
+                    replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+                    
+                    with cols[j]:
+                        # help 파라미터가 바로 마우스 호버 시 뜨는 툴팁(말풍선)을 만들어줍니다!
+                        if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence, use_container_width=True):
+                            st.session_state.t7_selected_word = word
+                            st.session_state.t7_step = 3
+                            st.rerun()
         
         st.markdown("---")
         col1, col2 = st.columns(2)
