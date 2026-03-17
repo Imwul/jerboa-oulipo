@@ -763,28 +763,89 @@ with tab7:
                 st.session_state.t7_step = 2
                 st.rerun()
 
-    # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (완벽 격자 & 환영 툴팁)
+  # ----------------------------------------
+    # Step 2: 자유롭게 부유하는 파편들 (격자 해체)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
         st.markdown(f"<div style='text-align: center; margin-bottom: 25px; font-size: 1.2em;'><span style='color: #888;'>원본 어구:</span> <b>{st.session_state.t7_initial_phrase}</b></div>", unsafe_allow_html=True)
         
         words = st.session_state.t7_generated_words
         
-        # gap="small"로 컬럼 간격을 빽빽하게 좁힘
-        for i in range(0, len(words), 5):
-            cols = st.columns(5, gap="small")
-            for j in range(5):
-                if i + j < len(words):
-                    word = words[i + j]
-                    replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-                    with cols[j]:
-                        # 이 눈에 보이지 않는 마커가 전역 CSS를 무시하는 핵심 열쇠입니다!
-                        st.markdown(f'<div class="pastel-col-marker-{j}" style="display:none;"></div>', unsafe_allow_html=True)
-                        if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence):
-                            st.session_state.t7_selected_word = word
-                            st.session_state.t7_step = 3
-                            st.rerun()
+        # 1. 격자를 부수고 파편들을 자유롭게 부유하게 만드는 CSS 주입
+        st.markdown("""
+        <style>
+        /* 버튼들을 감싸는 수직 블록을 가로 배열(Flex)로 비틀기 */
+        div[data-testid="stVerticalBlock"]:has(.t7-word-container) {
+            display: flex !important;
+            flex-direction: row !important;
+            flex-wrap: wrap !important;
+            justify-content: center !important;
+            gap: 15px !important;
+            padding: 20px 0 !important;
+        }
+        /* 버튼을 감싸는 개별 컨테이너 너비 제한 해제 */
+        div[data-testid="stVerticalBlock"]:has(.t7-word-container) > div[data-testid="stElementContainer"] {
+            width: auto !important;
+        }
+        /* 파편(버튼) 스타일: 하단 '사전의 파편들'과 동일한 감각으로 */
+        div[data-testid="stVerticalBlock"]:has(.t7-word-container) div.stButton > button {
+            width: auto !important;
+            height: auto !important;
+            padding: 8px 18px !important;
+            border: 1px solid #000000 !important;
+            border-radius: 2px !important;
+            box-shadow: none !important;
+            font-weight: bold !important;
+            font-size: 1.05rem !important;
+            animation: float 5s ease-in-out infinite !important;
+            transition: transform 0.2s, box-shadow 0.2s !important;
+        }
+        /* 강제로 덧씌워진 하얀 글씨 구출 */
+        div[data-testid="stVerticalBlock"]:has(.t7-word-container) div.stButton > button p {
+            color: #000000 !important;
+            margin: 0 !important;
+        }
+        /* 마우스 호버 시 이성의 간섭(붉은 테두리 및 돌출) */
+        div[data-testid="stVerticalBlock"]:has(.t7-word-container) div.stButton > button:hover {
+            transform: scale(1.1) translateY(-5px) !important;
+            animation: none !important;
+            border-color: #d32f2f !important;
+            box-shadow: 4px 4px 0px rgba(211,47,47,0.8) !important;
+            z-index: 99 !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # 2. 파편들을 쏟아낼 심연(컨테이너) 생성
+        with st.container():
+            # CSS가 이 공간을 정확히 식별할 수 있도록 은밀한 마커 삽입
+            st.markdown('<div class="t7-word-container" style="display:none;"></div>', unsafe_allow_html=True)
+            
+            # 각 파편마다 고유의 색상과 진동수(애니메이션 딜레이)를 부여
+            css_rules = ""
+            for i, word in enumerate(words):
+                color = random.choice(WASHED_COLORS)
+                delay = random.uniform(0, 4)
+                duration = random.uniform(5, 8)
+                replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+                
+                # nth-child(i+2) 인 이유: 1번째 자식은 위의 은밀한 마커 역할인 div이기 때문
+                css_rules += f"""
+                div[data-testid="stVerticalBlock"]:has(.t7-word-container) > div[data-testid="stElementContainer"]:nth-child({i+2}) div.stButton > button {{
+                    background-color: {color} !important;
+                    animation-delay: {delay}s !important;
+                    animation-duration: {duration}s !important;
+                }}
+                """
+                
+                # 버튼을 생성하면 flexbox에 의해 자연스럽게 흩뿌려짐
+                if st.button(word, key=f"t7_w_{i}", help=replaced_sentence):
+                    st.session_state.t7_selected_word = word
+                    st.session_state.t7_step = 3
+                    st.rerun()
+            
+            # 조합된 동적 CSS를 한 번에 쏟아냄
+            st.markdown(f'<style>{css_rules}</style>', unsafe_allow_html=True)
         
         st.markdown("---")
         col1, col2 = st.columns(2)
