@@ -647,12 +647,9 @@ def is_loose_rhyme(target_char, word_char):
     return get_loose_vowel(t_jung) == get_loose_vowel(w_jung)
 
 @st.cache_data
-def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
+def get_all_matched_words(target_rhyme, dictionary_data):
     if not target_rhyme: return []
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            dictionary_data = [line.strip() for line in f.readlines() if line.strip()]
-            
         def get_uniques(word_list):
             word_list.sort(key=len)
             uniques = []
@@ -682,7 +679,6 @@ def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
         return unique_words
     except Exception as e:
         return []
-
 @st.cache_data
 def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
     if not target_rhyme: return []
@@ -881,23 +877,26 @@ with tab7:
         st.markdown("##### 시간의 파편 던지기")
         initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
         
-        if st.button("라임 톱니바퀴 돌리기", type="primary", key="t7_btn1"):
+        # 신비로운 이름으로 교체 완료
+        if st.button("✨ 언어의 파편 흩뿌리기", type="primary", key="t7_btn1"):
             if initial_phrase:
                 st.session_state.t7_initial_phrase = initial_phrase
                 words = initial_phrase.strip().split()
                 st.session_state.t7_base_phrase = " ".join(words[:-1]) if len(words) > 1 else ""
                 
                 rhyme_target = get_rhyme_target(initial_phrase)
-                all_words = get_all_matched_words(rhyme_target)
+                
+                # 파일 대신 글로벌 변수인 NOUN_DICT를 직접 집어넣어 안정성을 극대화!
+                all_words = get_all_matched_words(rhyme_target, NOUN_DICT)
                 
                 if all_words:
                     st.session_state.t7_all_matched_words = all_words
-                    # 최대 25개의 파편을 추출
                     st.session_state.t7_generated_words = random.sample(all_words, min(25, len(all_words)))
                     st.session_state.t7_step = 2
+                    st.rerun() # 단어를 성공적으로 찾았을 때만 화면을 넘깁니다.
                 else:
-                    st.warning("일치하는 파편이 사전에 없습니다. 조건을 완화해보세요.")
-                st.rerun()
+                    # 실패 시 rerun()을 하지 않아 에러 메시지가 화면에 고정됩니다.
+                    st.error("사전에 모음이 일치하는 파편이 단 하나도 없습니다. 다른 어구를 던져보세요.")
 
     # ----------------------------------------
     # Step 2: 사전의 파편들 선택 (초밀집 Floating Layout)
