@@ -606,14 +606,12 @@ with tab7:
     if 'r_new_sentence' not in st.session_state: st.session_state.r_new_sentence = ""
     if 'r_rhymes' not in st.session_state: st.session_state.r_rhymes = []
 
-    # [STEP 1] 발단의 문장 입력
-
-import streamlit as st
+ import streamlit as st
 import math
 import re
-import random # 초현실주의적 우연성을 위한 무작위 추출
+import random
 
-# --- [1] 라임 타겟 추출 함수 (이물의 엄격한 규칙) ---
+# --- [1] 라임 타겟 추출 함수 ---
 def get_rhyme_target(sentence):
     clean_sentence = re.sub(r'[^\w\s]', '', sentence)
     words = clean_sentence.strip().split()
@@ -634,48 +632,51 @@ def get_rhyme_target(sentence):
     else:
         return last_word 
 
-# --- [2] nouns.txt 사전 로드 및 필터링 함수 ---
+# --- [2] nouns.txt 사전 로드 및 중복 어근 필터링 ---
 @st.cache_data
 def load_and_filter_dictionary(target_rhyme, file_path="nouns.txt"):
-    """
-    nouns.txt 파일에서 타겟 라임으로 끝나는 단어를 찾아옵니다.
-    """
     if not target_rhyme:
         return []
         
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
-            # 줄바꿈 기준으로 텍스트 파일을 읽어와 리스트로 만듦 (공백 제거)
             dictionary_data = [line.strip() for line in f.readlines() if line.strip()]
             
-        # 라임 타겟으로 끝나는 단어들만 필터링
+        # 1차 필터: 라임 타겟으로 끝나는 단어들만 추출
         matched_words = [word for word in dictionary_data if word.endswith(target_rhyme)]
         
-        # 일치하는 단어가 20개보다 많으면, 매번 다른 영감을 주기 위해 무작위 추출
-        if len(matched_words) > 20:
-            return random.sample(matched_words, 20)
-        return matched_words
+        # 2차 필터: 파생어 중복 제거 (예: 편지, 연애편지, 위문편지 -> 편지만 남김)
+        # 짧은 단어부터 확인하기 위해 길이순 정렬
+        matched_words.sort(key=len)
+        unique_words = []
+        for word in matched_words:
+            # 현재 단어가 unique_words에 있는 어떤 단어로 끝나는지(파생어인지) 확인
+            is_redundant = any(word.endswith(u_word) for u_word in unique_words)
+            if not is_redundant:
+                unique_words.append(word)
+        
+        if len(unique_words) > 20:
+            return random.sample(unique_words, 20)
+        return unique_words
         
     except FileNotFoundError:
-        st.error(f"'{file_path}' 파일을 찾을 수 없어. 파일이 app.py와 같은 경로에 있는지 확인해 줘.")
+        st.error(f"'{file_path}' 파일을 찾을 수 없어. 깃허브 경로를 확인해 줘.")
         return []
     except Exception as e:
         st.error(f"사전 데이터를 불러오는 중 오류가 발생했어: {e}")
         return []
 
-# --- [3] 시계형 원형 UI 생성 (HTML/CSS) ---
+# --- [3] 시계형 원형 UI 생성 (HTML 들여쓰기 버그 수정) ---
 def render_circular_words(center_text, words):
     if not words:
-        st.warning("이물, 입력한 어구의 라임과 일치하는 단어가 'nouns.txt'에 없어. 다른 문장을 던지거나 사전을 살찌워야겠어!")
+        st.warning("이물, 입력한 어구의 라임과 일치하는 단어가 사전에 부족해. 다른 문장을 던져봐!")
         return
 
     radius = 120 
-    html_content = f"""
-    <div style="position: relative; width: 300px; height: 300px; margin: 0 auto; border-radius: 50%; font-family: 'serif';">
-        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; font-size: 1.2em; text-align: center; color: #d32f2f;">
-            {center_text}
-        </div>
-    """
+    # 주의: HTML 렌더링 버그를 막기 위해 마크다운 안에서 들여쓰기를 제거함
+    html_content = f"<div style='position: relative; width: 300px; height: 300px; margin: 0 auto; border-radius: 50%; font-family: \"serif\";'>\n"
+    html_content += f"<div style='position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-weight: bold; font-size: 1.2em; text-align: center; color: #d32f2f;'>{center_text}</div>\n"
+    
     angle_step = 360 / len(words)
     for i, word in enumerate(words):
         angle = i * angle_step
@@ -683,18 +684,14 @@ def render_circular_words(center_text, words):
         x = radius * math.cos(rad)
         y = radius * math.sin(rad)
         
-        html_content += f"""
-        <div style="position: absolute; top: calc(50% + {y}px); left: calc(50% + {x}px); transform: translate(-50%, -50%); font-size: 0.9em; color: #555; white-space: nowrap;">
-            {word}
-        </div>
-        """
+        html_content += f"<div style='position: absolute; top: calc(50% + {y}px); left: calc(50% + {x}px); transform: translate(-50%, -50%); font-size: 0.9em; color: #bbb; white-space: nowrap;'>{word}</div>\n"
+        
     html_content += "</div>"
     st.markdown(html_content, unsafe_allow_html=True)
 
-# --- [4] 탭 7 메인 로직 ---
+# --- [4] 탭 7 메인 로직 (숫자 제거) ---
 st.subheader("Jerboa Oulipo Engine 🕰️")
 
-# 탭 전용 세션 상태 초기화
 if 't7_step' not in st.session_state:
     st.session_state.t7_step = 1
 if 't7_pinned_sentences' not in st.session_state:
@@ -704,9 +701,9 @@ if 't7_generated_words' not in st.session_state:
 if 't7_initial_phrase' not in st.session_state:
     st.session_state.t7_initial_phrase = ""
 
-# Step 1: 시간의 파편 던지기
+# Step 1
 if st.session_state.t7_step == 1:
-    st.markdown("##### 1. 시간의 파편 던지기")
+    st.markdown("##### 시간의 파편 던지기")
     initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
     
     if st.button("라임 톱니바퀴 돌리기", key="t7_btn1"):
@@ -714,21 +711,18 @@ if st.session_state.t7_step == 1:
             st.session_state.t7_initial_phrase = initial_phrase
             rhyme_target = get_rhyme_target(initial_phrase)
             
-            # nouns.txt에서 실제 데이터 로드
             st.session_state.t7_generated_words = load_and_filter_dictionary(rhyme_target)
             
             if st.session_state.t7_generated_words:
                 st.session_state.t7_step = 2
             st.rerun()
 
-# Step 2: 톱니바퀴 선택 및 세계 연결하기
+# Step 2
 elif st.session_state.t7_step >= 2:
-    st.markdown("##### 2. 톱니바퀴 선택 및 세계 연결하기")
+    st.markdown("##### 톱니바퀴 선택 및 세계 연결하기")
     
-    # 원형 UI 렌더링
     render_circular_words(st.session_state.t7_initial_phrase, st.session_state.t7_generated_words)
     
-    # 단어 선택
     selected_word = st.selectbox("원형으로 배치된 단어 중 하나를 선택하세요:", st.session_state.t7_generated_words, key="t7_select")
     
     if selected_word:
@@ -748,7 +742,6 @@ elif st.session_state.t7_step >= 2:
                 st.session_state.t7_step = 1
                 st.rerun()
 
-# 생성된 텍스트 맨 아래 고정
 st.markdown("<br><br>", unsafe_allow_html=True)
 st.markdown("---")
 st.markdown("📜 **기록된 잠재적 텍스트들**")
@@ -757,7 +750,6 @@ if st.session_state.t7_pinned_sentences:
         st.info(f"**{idx+1}.** {sentence}")
 else:
     st.caption("아직 기록된 문장이 없습니다.")
-
 # ---------------------------------------------------------
 # 🏺 하단: 사전의 파편들 (Floating Animation)
 # ---------------------------------------------------------
