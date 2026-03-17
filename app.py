@@ -601,9 +601,11 @@ def get_rhyme_target(sentence):
     words = clean_sentence.strip().split()
     if not words: return ""
     last_word = words[-1]
+    
     if len(words) == 1:
         return last_word[-3:] if len(last_word) >= 3 else last_word
     second_last_word = words[-2]
+    
     if len(last_word) + len(second_last_word) <= 3:
         return second_last_word + last_word
     if len(last_word) >= 3:
@@ -621,7 +623,10 @@ def decompose_hangul(char):
     return cho, jung, jong
 
 def get_loose_vowel(jung):
-    mapping = {2: 0, 6: 4, 12: 8, 17: 13, 5: 1, 3: 1, 7: 1, 11: 1, 10: 1, 15: 1}
+    mapping = {
+        2: 0, 6: 4, 12: 8, 17: 13, 
+        5: 1, 3: 1, 7: 1, 11: 1, 10: 1, 15: 1
+    }
     return mapping.get(jung, jung)
 
 def is_loose_rhyme(target_char, word_char):
@@ -641,7 +646,8 @@ def match_rhyme(target_str, word_str):
     return True
 
 def get_all_matched_words(target_rhyme, dictionary_data):
-    if not target_rhyme or not dictionary_data: return []
+    if not target_rhyme or not dictionary_data: 
+        return []
     def get_uniques(word_list):
         word_list.sort(key=len)
         uniques = []
@@ -674,8 +680,8 @@ def get_all_matched_words(target_rhyme, dictionary_data):
             
     return unique_words
 
-# 전역 CSS의 독재를 박살내는 초강력 그리드 CSS
-def inject_grid_css():
+# 전역 CSS의 독재를 완벽히 찢어버리는 최강의 Flexbox CSS
+def inject_flex_grid_css():
     css = """
     <style>
     @keyframes gentle-wobble {
@@ -683,44 +689,60 @@ def inject_grid_css():
         50% { transform: rotate(3deg); }
     }
 
-    /* 가로 100% 꽉 차는 현상 제거 및 세로형 직사각형(포스트잇 비율) 강제 적용 */
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"] div.stButton > button[kind="secondary"] {
-        width: 85px !important;         
-        min-width: 85px !important;
-        max-width: 85px !important;
-        height: 110px !important;       
-        margin: 0 auto !important;      
-        border-radius: 4px !important;
-        box-shadow: 3px 3px 6px rgba(0,0,0,0.3) !important;
-        animation: gentle-wobble 3s infinite ease-in-out !important; /* 흔들흔들 애니메이션 부활 */
-        transition: transform 0.2s, box-shadow 0.2s, border 0.2s !important;
+    /* 1. Flexbox Container - st.columns를 버리고 단어들을 다닥다닥 붙이는 핵심 마법 */
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) {
         display: flex !important;
+        flex-direction: row !important;
+        flex-wrap: wrap !important;
         justify-content: center !important;
-        align-items: center !important;
+        gap: 15px !important; /* 이 수치가 파편 사이의 빽빽한 간격을 결정합니다 */
+        padding: 20px !important;
     }
 
-    /* 글씨 까맣고 또렷하게 (전역 설정 흰색 덮어쓰기) */
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"] div.stButton > button[kind="secondary"] p {
+    /* 2. 각 파편을 감싸는 박스의 가로 확장(100%)을 강제 차단 */
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:has(button) {
+        width: 90px !important; 
+        flex: 0 0 90px !important;
+    }
+
+    /* 3. 버튼 본체: 글로벌 CSS의 검은색과 가로 100%를 무력화하고 세로형 포스트잇 강제 적용 */
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) div.stButton > button {
+        width: 90px !important;
+        min-width: 90px !important;
+        height: 110px !important; /* 세로로 긴 직사각형 비율 */
+        border-radius: 2px !important;
+        border: 2px solid #000 !important; /* 진한 테두리로 종이 느낌 강조 */
+        box-shadow: 4px 4px 0px rgba(0,0,0,1) !important; 
+        animation: gentle-wobble 3s infinite ease-in-out !important;
+        transition: transform 0.2s, box-shadow 0.2s, border 0.2s !important;
+        padding: 5px !important;
+    }
+
+    /* 4. 글씨 까맣고 선명하게 복구 (글로벌 흰색 무력화) */
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) div.stButton > button p {
         color: #000000 !important;
         font-weight: 900 !important;
-        font-size: 1.25rem !important;
+        font-size: 1.15rem !important;
+        white-space: normal !important;
+        word-break: keep-all !important;
+        line-height: 1.2 !important;
     }
 
-    /* 마우스 호버 시 붉게 강조되며 흔들림 멈춤 */
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"] div.stButton > button[kind="secondary"]:hover {
+    /* 5. 파스텔 5색 포스트잇 색상 복구 */
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+1) div.stButton > button { background-color: #ffc9c9 !important; }
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+2) div.stButton > button { background-color: #ffe3b3 !important; }
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+3) div.stButton > button { background-color: #fff3b5 !important; }
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+4) div.stButton > button { background-color: #d4f0d4 !important; }
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) > div[data-testid="stElementContainer"]:nth-child(5n+5) div.stButton > button { background-color: #c9ebff !important; }
+
+    /* 6. 호버 시 붉은 테두리와 함께 튀어나오며 흔들림 멈춤 */
+    div[data-testid="stVerticalBlock"]:has(.pastel-grid-marker) div.stButton > button:hover {
         animation: none !important;
-        transform: scale(1.15) !important;
-        border: 3px solid #d32f2f !important;
-        box-shadow: 5px 5px 15px rgba(0,0,0,0.5) !important;
+        transform: scale(1.15) translateY(-5px) !important;
+        border: 2px solid #d32f2f !important;
+        box-shadow: 5px 5px 15px rgba(211,47,47,0.5) !important;
         z-index: 999 !important;
     }
-    
-    /* 5가지 파스텔 포스트잇 색상 복구 (전역 설정 검은색 덮어쓰기) */
-    div[data-testid="column"]:nth-child(1) div.stButton > button[kind="secondary"] { background-color: #ffc9c9 !important; border: 1px solid #ffc9c9 !important; }
-    div[data-testid="column"]:nth-child(2) div.stButton > button[kind="secondary"] { background-color: #ffe3b3 !important; border: 1px solid #ffe3b3 !important; }
-    div[data-testid="column"]:nth-child(3) div.stButton > button[kind="secondary"] { background-color: #fff3b5 !important; border: 1px solid #fff3b5 !important; }
-    div[data-testid="column"]:nth-child(4) div.stButton > button[kind="secondary"] { background-color: #d4f0d4 !important; border: 1px solid #d4f0d4 !important; }
-    div[data-testid="column"]:nth-child(5) div.stButton > button[kind="secondary"] { background-color: #c9ebff !important; border: 1px solid #c9ebff !important; }
     
     .torn-sentence {
         text-align: center;
@@ -744,7 +766,7 @@ with tab7:
     <div class="instruction-box">
         <b>[두 문장의 심연: 레몽 루셀 기법]</b><br>
         - <b>균열의 시작:</b> 문장을 입력하면 마지막 단어의 모음과 받침(라임)을 분해하여 추출합니다.<br>
-        - <b>사전의 파편들:</b> 다채로운 단어들이 부유합니다. 마우스를 올리면 대체된 문장의 환영(幻影)이 나타납니다.<br>
+        - <b>사전의 파편들:</b> 다채로운 단어들이 밀집되어 부유합니다. 마우스를 올리면 대체된 문장의 환영(幻影)이 나타납니다.<br>
         - <b>심연의 다리:</b> 파편을 선택하면 두 문장이 위아래로 찢어지며 고정됩니다. 당신은 그 사이의 불가능한 간극을 이야기로 이어 붙여야 합니다.
     </div>
     """, unsafe_allow_html=True)
@@ -784,30 +806,30 @@ with tab7:
                     st.error("사전에 일치하는 파편이 단 하나도 없습니다. 다른 어구를 던져보세요.")
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (완벽한 Grid & Tooltip)
+    # Step 2: 사전의 파편들 선택 (Flexbox 초밀집 & 툴팁)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
-        inject_grid_css()
+        inject_flex_grid_css()
         
-        # 원본 어구 표시 나침반
+        # 원본 어구 표시 (상단 나침반)
         st.markdown(f"<div style='text-align: center; margin-bottom: 25px; font-size: 1.2em;'><span style='color: #888;'>원본 어구:</span> <b>{st.session_state.t7_initial_phrase}</b></div>", unsafe_allow_html=True)
         
         words = st.session_state.t7_generated_words
         
-        # 5x5 Grid
-        for i in range(0, len(words), 5):
-            cols = st.columns(5)
-            for j in range(5):
-                if i + j < len(words):
-                    word = words[i + j]
-                    replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-                    
-                    with cols[j]:
-                        # use_container_width=True 제거! (이게 가로로 길어지게 만든 주범이었음)
-                        if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence):
-                            st.session_state.t7_selected_word = word
-                            st.session_state.t7_step = 3
-                            st.rerun()
+        # st.columns를 완전히 버리고 단일 컨테이너 안에서 연속 렌더링!
+        with st.container():
+            # 이 숨겨진 마커를 기준으로 위의 Flexbox CSS가 작동합니다.
+            st.markdown('<div class="pastel-grid-marker"></div>', unsafe_allow_html=True)
+            
+            for i, word in enumerate(words):
+                # 마우스 호버 시 툴팁으로 보여줄 완성된 대체 문장
+                replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+                
+                # 버튼 렌더링 (st.columns의 간격 제약 없이 다닥다닥 붙게 됩니다)
+                if st.button(word, key=f"t7_w_{i}", help=replaced_sentence):
+                    st.session_state.t7_selected_word = word
+                    st.session_state.t7_step = 3
+                    st.rerun()
         
         st.markdown("---")
         col1, col2 = st.columns(2)
