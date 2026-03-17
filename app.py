@@ -75,7 +75,7 @@ st.markdown(f"""
         font-weight: bold; cursor: default; color: #000000 !important;
     }}
 
-    /* 글로벌 버튼 스타일 */
+    /* 글로벌 버튼 스타일 (이것이 탭 7을 검게 만들었던 주범!) */
     div.stButton > button, div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
@@ -668,20 +668,50 @@ def get_all_matched_words(target_rhyme, dictionary_data):
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
-    # --- 💡 순수 HTML URL 통신: Streamlit 버튼(st.button)을 안 씁니다! ---
-    if "t7_sel" in st.query_params:
-        try:
-            sel_idx = int(st.query_params["t7_sel"])
-            if 't7_generated_words' in st.session_state and 0 <= sel_idx < len(st.session_state.t7_generated_words):
-                st.session_state.t7_selected_word = st.session_state.t7_generated_words[sel_idx]
-                st.session_state.t7_step = 3
-        except:
-            pass
-        finally:
-            del st.query_params["t7_sel"]
-
+    # --- 전역 CSS 독재를 깨부수고, 5x5 표에만 완벽한 디자인(툴팁/모양/색상)을 씌우는 최강의 마법 ---
     st.markdown("""
     <style>
+    /* 하단의 '사전의 파편들'과 완벽하게 똑같은 모양 & 애니메이션 복구! */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button,
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) ~ div[data-testid="column"] div.stButton > button {
+        height: auto !important;
+        padding: 8px 16px !important;
+        margin: 5px 0px !important;
+        border-radius: 2px !important;
+        border: 1px solid #000000 !important;
+        box-shadow: none !important;
+        animation: float 5s ease-in-out infinite !important;
+        transition: transform 0.2s, background-color 0.2s !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+    }
+    
+    /* 글로벌 CSS의 흰색 글씨를 덮어쓰고 까맣게 고정 */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button p,
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) ~ div[data-testid="column"] div.stButton > button p {
+        color: #000000 !important;
+        font-weight: bold !important;
+        font-size: 1.15rem !important;
+        margin: 0 !important;
+    }
+
+    /* 마우스를 올렸을 때의 쫀득한 반응 */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button:hover,
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) ~ div[data-testid="column"] div.stButton > button:hover {
+        transform: translateY(-3px) scale(1.05) !important;
+        border: 2px solid #d32f2f !important;
+        color: #d32f2f !important;
+        animation: none !important;
+    }
+    
+    /* 열(Column) 번호에 따라 파스텔 5색 강제 배정 & 애니메이션 엇박자로 둥둥 떠다니게 연출 */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:first-child:nth-last-child(5) div.stButton > button { background-color: #ffc9c9 !important; animation-delay: 0s !important; animation-duration: 4.5s !important;}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2) div.stButton > button { background-color: #ffe3b3 !important; animation-delay: 1s !important; animation-duration: 6s !important;}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3) div.stButton > button { background-color: #fff3b5 !important; animation-delay: 2s !important; animation-duration: 4.5s !important;}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4) div.stButton > button { background-color: #d4f0d4 !important; animation-delay: 0.5s !important; animation-duration: 7s !important;}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5) div.stButton > button { background-color: #c9ebff !important; animation-delay: 1.5s !important; animation-duration: 5.5s !important;}
+
     .torn-sentence {
         text-align: center;
         font-family: 'Eulyoo1945-Regular', serif;
@@ -731,7 +761,7 @@ with tab7:
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (완전 무결한 순수 HTML 그리드)
+    # Step 2: 사전의 파편들 선택 (Streamlit 순정 버튼 & 툴팁 복구)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
         words_list = st.session_state.t7_initial_phrase.strip().split()
@@ -739,7 +769,7 @@ with tab7:
         rhyme_word = words_list[-1] if words_list else ""
         
         st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 30px; font-size: 1.4em;'>
+        <div style='text-align: center; margin-bottom: 20px; font-size: 1.4em;'>
             <span style='color: #888;'>원본 어구:</span> 
             <b>{base_phrase} <span style='color: #d32f2f;'>{rhyme_word}</span></b>
         </div>
@@ -747,65 +777,22 @@ with tab7:
         
         words = st.session_state.t7_generated_words
         
-        # ❗ 여기서부터는 Streamlit 버튼을 안 쓰고 완벽하게 커스텀 된 HTML 링크로 대체합니다 ❗
-        html_grid = """
-        <style>
-        .oulipo-grid-container {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 15px; /* 빽빽한 간격 조절 */
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-        .oulipo-btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 90px; /* 쫀득한 포스트잇 비율 */
-            border: 2px solid #000;
-            border-radius: 4px;
-            box-shadow: 4px 4px 0px rgba(0,0,0,1);
-            color: #000 !important; /* 글로벌 CSS 무시하고 까만 글씨 강제! */
-            font-family: 'Eulyoo1945-Regular', serif;
-            font-weight: 900;
-            font-size: 1.25rem;
-            text-decoration: none !important;
-            animation: oulipo-wobble 3s infinite ease-in-out;
-            transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
-            cursor: pointer;
-        }
-        .oulipo-btn:hover {
-            transform: translateY(-5px) scale(1.1);
-            box-shadow: 6px 6px 0px rgba(211,47,47,1);
-            border-color: #d32f2f;
-            animation: none;
-            z-index: 10;
-            color: #000 !important;
-        }
-        /* 5가지 파스텔 컬러 지정 */
-        .oulipo-color-0 { background-color: #ffc9c9; }
-        .oulipo-color-1 { background-color: #ffe3b3; }
-        .oulipo-color-2 { background-color: #fff3b5; }
-        .oulipo-color-3 { background-color: #d4f0d4; }
-        .oulipo-color-4 { background-color: #c9ebff; }
-        
-        @keyframes oulipo-wobble {
-            0%, 100% { transform: rotate(-2deg); }
-            50% { transform: rotate(2deg); }
-        }
-        </style>
-        <div class="oulipo-grid-container">
-        """
-        
-        for i, word in enumerate(words):
-            replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-            color_class = f"oulipo-color-{i % 5}"
-            # a 태그로 렌더링. 클릭하면 ?t7_sel=숫자 파라미터와 함께 스스로 새로고침 됨 (위의 파이썬 코드가 잡아냄)
-            html_grid += f'<a href="?t7_sel={i}" target="_self" class="oulipo-btn {color_class}" title="{replaced_sentence}">{word}</a>'
-        
-        html_grid += "</div><br><br>"
-        st.markdown(html_grid, unsafe_allow_html=True)
+        # ❗ Streamlit 순정 버튼 사용 (새로고침 버그 완전 차단) ❗
+        # 5x5 표 안에 가둬서 위의 전용 CSS를 맞게 합니다.
+        for i in range(0, len(words), 5):
+            cols = st.columns(5, gap="small")
+            for j in range(5):
+                if i + j < len(words):
+                    word = words[i + j]
+                    # 마우스 호버(말풍선)로 보여줄 완성된 문장
+                    replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
+                    
+                    with cols[j]:
+                        # help 파라미터가 툴팁 역할을 수행합니다. 클릭 시 새로고침이 아니라 다음 창으로 자연스레 넘어갑니다.
+                        if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence):
+                            st.session_state.t7_selected_word = word
+                            st.session_state.t7_step = 3
+                            st.rerun()
 
         st.markdown("---")
         col1, col2 = st.columns(2)
