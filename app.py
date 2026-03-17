@@ -731,7 +731,55 @@ POSTIT_COLORS = ["#ADD8E6", "#90EE90", "#FFD700", "#FFB6C1", "#E6E6FA", "#FFA07A
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
-    inject_floating_grid_css()
+    # 1. 안전한 CSS 주입 (css_class 파라미터 완전 제거)
+    st.markdown("""
+    <style>
+        .block-container { perspective: 1000px; }
+
+        @keyframes float3d {
+            0% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
+            25% { transform: translateZ(30px) rotateX(-2deg) rotateY(2deg) scale(1.02); }
+            50% { transform: translateZ(-20px) rotateX(2deg) rotateY(-2deg) scale(0.98); }
+            75% { transform: translateZ(40px) rotateX(-3deg) rotateY(3deg) scale(1.03); }
+            100% { transform: translateZ(0) rotateX(0deg) rotateY(0deg) scale(1); }
+        }
+
+        /* 오직 'secondary' 타입의 버튼(단어 파편)에만 3D 부유 효과와 색상 적용 */
+        div.stButton > button[kind="secondary"] {
+            transform-style: preserve-3d;
+            animation: float3d 8s ease-in-out infinite;
+            font-family: 'Eulyoo1945-Regular', serif;
+            font-size: 1.1em;
+            color: #000 !important;
+            background-color: #fff3b5 !important; /* 빈티지 파스텔 옐로우 (기본 포스트잇) */
+            border: 1px solid #000 !important;
+            border-radius: 2px !important;
+            box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+            transition: transform 0.3s ease, border 0.3s ease, box-shadow 0.3s ease, background-color 0.3s ease;
+            margin: 5px 0px;
+        }
+
+        /* 마우스를 올렸을 때의 초현실적 반응 */
+        div.stButton > button[kind="secondary"]:hover {
+            transform: translateZ(50px) scale(1.1);
+            animation: none; 
+            background-color: #ffc9c9 !important; /* 파스텔 레드 (선택의 순간) */
+            box-shadow: 5px 5px 15px rgba(0,0,0,0.4);
+            font-weight: bold;
+            border: 2px solid #d32f2f !important;
+        }
+
+        .torn-sentence {
+            text-align: center;
+            font-family: 'Eulyoo1945-Regular', serif;
+            font-size: 1.8em;
+            letter-spacing: 0.05em;
+            line-height: 1.2;
+        }
+        .torn-sentence.top { color: #555; }
+        .torn-sentence.bottom { color: #d32f2f; margin-top: 1em; }
+    </style>
+    """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="instruction-box">
@@ -760,7 +808,7 @@ with tab7:
         st.markdown("##### 시간의 파편 던지기")
         initial_phrase = st.text_input("한 줄의 어구를 입력하세요:", key="t7_input")
         
-        # 컨트롤 버튼은 흔들리지 않도록 type="primary" 적용
+        # 컨트롤 버튼은 절대 흔들리지 않도록 type="primary" 엄격 적용
         if st.button("라임 톱니바퀴 돌리기", type="primary", key="t7_btn1"):
             if initial_phrase:
                 st.session_state.t7_initial_phrase = initial_phrase
@@ -772,7 +820,6 @@ with tab7:
                 
                 if all_words:
                     st.session_state.t7_all_matched_words = all_words
-                    # 5x5 격자를 위해 정확히 25개(또는 그 이하) 추출
                     st.session_state.t7_generated_words = random.sample(all_words, min(25, len(all_words)))
                     st.session_state.t7_step = 2
                 else:
@@ -780,29 +827,23 @@ with tab7:
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (5x5 Floating Grid)
+    # Step 2: 사전의 파편들 선택 (안전한 5x5 Grid)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
         st.markdown("##### 허공을 부유하는 사전의 파편들")
         
         words = st.session_state.t7_generated_words
         
-        # 격자 버튼에 3D 부유 CSS 클래스 적용
-        with st.container(css_class="fragment-floating-grid"):
-            # 5x5 격자 버튼 렌더링
-            cols = st.columns(5)
-            for i, word in enumerate(words):
-                col = cols[i % 5]
-                # 각 단어에 임의의 포스트잇 색상 적용
-                bg_color = random.choice(POSTIT_COLORS)
-                with col:
-                    # use_container_width=True를 제거하여 CSS width를 준수하게 합니다.
-                    if st.button(word, key=f"t7_word_{i}", css_class=f"custom-bg-{i}"):
-                        st.session_state.t7_selected_word = word
-                        st.session_state.t7_step = 3
-                        st.rerun()
-                    # HTML 렌더링을 통해 버튼 배경색 설정
-                    st.markdown(f"""<style>div.stButton > button.custom-bg-{i} {{ background-color: {bg_color} !important; border: 2px solid {bg_color} !important; }}</style>""", unsafe_allow_html=True)
+        # css_class를 제거하고 순수 Streamlit 컬럼으로 렌더링
+        cols = st.columns(5)
+        for i, word in enumerate(words):
+            col = cols[i % 5]
+            with col:
+                # type="secondary" (기본값) 이므로 위의 CSS 애니메이션이 완벽하게 적용됨
+                if st.button(word, key=f"t7_word_{i}"):
+                    st.session_state.t7_selected_word = word
+                    st.session_state.t7_step = 3
+                    st.rerun()
         
         st.markdown("---")
         col1, col2 = st.columns(2)
@@ -822,12 +863,10 @@ with tab7:
     elif st.session_state.t7_step == 3:
         st.markdown("##### 두 문장의 심연 잇기")
         
-        # 원본 문장 (위)
         st.markdown(f"<div class='torn-sentence top'>{st.session_state.t7_initial_phrase}</div>", unsafe_allow_html=True)
         
         body_text = st.text_area("사이를 이을 불가능한 간극의 본문을 작성하세요:", height=200, key="t7_body")
         
-        # 선택한 단어를 붙인 새로운 변형 문장 (아래)
         new_sentence = f"{st.session_state.t7_base_phrase} {st.session_state.t7_selected_word}".strip()
         st.markdown(f"<div class='torn-sentence bottom'>{new_sentence}</div>", unsafe_allow_html=True)
         
