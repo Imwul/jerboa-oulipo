@@ -645,7 +645,7 @@ def load_and_filter_dictionary(target_rhyme, file_path="nouns.txt"):
 
 def render_circular_words(center_text, words):
     if not words:
-        st.warning("이물, 입력한 어구의 라임과 일치하는 단어가 사전에 부족해. 다른 문장을 던져봐!")
+        st.warning("입력한 어구의 라임과 일치하는 단어가 사전에 부족해. 다른 문장을 던져봐!")
         return
 
     radius = 120 
@@ -668,7 +668,7 @@ def render_circular_words(center_text, words):
 # ==========================================
 # TAB 7: The Roussel Bridge (레몽 루셀의 두 문장 & 울리포 엔진 UI)
 # ==========================================
-Python
+
 import streamlit as st
 import math
 import re
