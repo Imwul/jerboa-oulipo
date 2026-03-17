@@ -623,8 +623,15 @@ def decompose_hangul(char):
     return cho, jung, jong
 
 def get_loose_vowel(jung):
-    # 0:ㅏ, 1:ㅐ, 2:ㅑ, 3:ㅒ, 4:ㅓ, 5:ㅔ, 6:ㅕ, 7:ㅖ, 8:ㅗ, 12:ㅛ, 13:ㅜ, 17:ㅠ
-    mapping = {2: 0, 6: 4, 12: 8, 17: 13, 3: 1, 7: 5}
+    # 0:ㅏ, 1:ㅐ, 2:ㅑ, 3:ㅒ, 4:ㅓ, 5:ㅔ, 6:ㅕ, 7:ㅖ, 8:ㅗ, 9:ㅘ, 10:ㅙ, 11:ㅚ, 12:ㅛ, 13:ㅜ, 14:ㅝ, 15:ㅞ, 16:ㅟ, 17:ㅠ, 18:ㅡ, 19:ㅢ, 20:ㅣ
+    # 발음이 유사한 모음들을 파격적으로 통합합니다. (까만색-말할게 라임 가능!)
+    mapping = {
+        2: 0,           # ㅑ -> ㅏ
+        6: 4,           # ㅕ -> ㅓ
+        12: 8,          # ㅛ -> ㅗ
+        17: 13,         # ㅠ -> ㅜ
+        5: 1, 3: 1, 7: 1, 11: 1, 10: 1, 15: 1 # ㅔ, ㅒ, ㅖ, ㅚ, ㅙ, ㅞ -> ㅐ 
+    }
     return mapping.get(jung, jung)
 
 def is_loose_rhyme(target_char, word_char):
@@ -633,17 +640,48 @@ def is_loose_rhyme(target_char, word_char):
     if not t_decomp or not w_decomp:
         return target_char == word_char 
     
-    _, t_jung, t_jong = t_decomp
-    _, w_jung, w_jong = w_decomp
-    return get_loose_vowel(t_jung) == get_loose_vowel(w_jung) and t_jong == w_jong
+    # 초성(cho)과 종성(jong/받침)은 완전히 무시! 오직 중성(jung/모음)만 비교합니다.
+    _, t_jung, _ = t_decomp
+    _, w_jung, _ = w_decomp
+    
+    return get_loose_vowel(t_jung) == get_loose_vowel(w_jung)
 
-def match_rhyme(target_str, word_str):
-    # 단어가 타겟보다 짧으면 안 되지만, 더 긴 것은 허용 (예: 전선 -> 봉건적)
-    if len(word_str) < len(target_str): return False
-    for i in range(1, len(target_str) + 1):
-        if not is_loose_rhyme(target_str[-i], word_str[-i]):
-            return False
-    return True
+@st.cache_data
+def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
+    if not target_rhyme: return []
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            dictionary_data = [line.strip() for line in f.readlines() if line.strip()]
+            
+        def get_uniques(word_list):
+            word_list.sort(key=len)
+            uniques = []
+            for w in word_list:
+                if not any(w.endswith(u) for u in uniques):
+                    uniques.append(w)
+            return uniques
+
+        # 1차: 원래 타겟(2~3글자)으로 모음 검색
+        matched_words = [word for word in dictionary_data if match_rhyme(target_rhyme, word)]
+        unique_words = get_uniques(matched_words)
+        
+        # 2차: 파편이 25개 미만일 때, 타겟이 3글자 이상이었다면 마지막 2글자로 타협
+        if len(unique_words) < 25 and len(target_rhyme) >= 3:
+            shorter_target = target_rhyme[-2:]
+            additional_words = [word for word in dictionary_data if match_rhyme(shorter_target, word) and word not in matched_words]
+            matched_words.extend(additional_words)
+            unique_words = get_uniques(matched_words)
+            
+        # 3차: 그래도 25개 미만이면, 마지막 1글자의 모음만으로 극단적 타협
+        if len(unique_words) < 25 and len(target_rhyme) >= 2:
+            last_char_target = target_rhyme[-1:]
+            additional_words = [word for word in dictionary_data if match_rhyme(last_char_target, word) and word not in matched_words]
+            matched_words.extend(additional_words)
+            unique_words = get_uniques(matched_words)
+            
+        return unique_words
+    except Exception as e:
+        return []
 
 @st.cache_data
 def get_all_matched_words(target_rhyme, file_path="nouns.txt"):
