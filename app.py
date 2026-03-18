@@ -809,15 +809,16 @@ with tab7:
                 100% {{ transform: translateY(0px) rotate(0deg); }}
             }}
             #grid {{
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
                 gap: 10px;
                 padding: 10px 0;
             }}
             .frag-tag {{
-                display: inline-block;
-                padding: 8px 16px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 8px 12px;
                 border: 1px solid #000000;
                 border-radius: 2px;
                 font-family: 'Eulyoo1945-Regular', serif;
@@ -826,6 +827,7 @@ with tab7:
                 color: #000000;
                 cursor: pointer;
                 position: relative;
+                text-align: center;
                 white-space: nowrap;
                 animation: float ease-in-out infinite;
                 transition: border 0.15s ease, color 0.15s ease;
@@ -836,19 +838,20 @@ with tab7:
                 color: #d32f2f !important;
                 animation-play-state: paused !important;
                 z-index: 10;
-                transform: translateY(-4px) scale(1.06);
+                transform: translateY(-2px) scale(1.04);
             }}
+            /* 툴팁: 아래쪽으로 표시 (iframe 상단 잘림 방지) */
             .frag-tag::after {{
                 content: attr(data-tooltip);
                 position: absolute;
-                bottom: calc(100% + 8px);
+                top: calc(100% + 8px);
                 left: 50%;
                 transform: translateX(-50%);
                 background: #111;
                 color: #fff;
                 padding: 5px 10px;
                 border-radius: 2px;
-                font-size: 0.8rem;
+                font-size: 0.85rem;
                 white-space: nowrap;
                 pointer-events: none;
                 opacity: 0;
@@ -894,7 +897,7 @@ with tab7:
         </body>
         </html>
         """
-        components.html(fragment_html, height=360, scrolling=False)
+        components.html(fragment_html, height=480, scrolling=False)
 
         st.markdown("---")
         col1, col2 = st.columns(2)
