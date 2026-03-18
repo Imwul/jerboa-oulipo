@@ -769,55 +769,15 @@ with tab7:
         words = st.session_state.t7_generated_words
         base = st.session_state.t7_base_phrase
 
-        # ── fragment-tag 스타일의 순수 Streamlit 버튼 그리드 ──
-        # components.html 없이 st.button만으로 처리 (클릭 신뢰성 100%)
-        # 전역 CSS primary 버튼 스타일을 이 블록 전용으로 오버라이드
+        # ── 전역 float 애니메이션 + 공통 버튼 리셋 ──
         st.markdown(f"""
         <style>
-        @keyframes float {{
+        @keyframes t7float {{
             0%   {{ transform: translateY(0px) rotate(0deg); }}
             50%  {{ transform: translateY(-10px) rotate(1.5deg); }}
             100% {{ transform: translateY(0px) rotate(0deg); }}
         }}
-        /* Step2 전용 버튼 래퍼 식별용 */
-        .t7-grid-wrapper div.stButton > button {{
-            border: 1.5px solid #000 !important;
-            border-radius: 2px !important;
-            height: auto !important;
-            padding: 9px 14px !important;
-            width: auto !important;
-            min-width: unset !important;
-            background-color: transparent !important;
-            font-size: 1.05rem !important;
-            font-weight: bold !important;
-            font-family: 'Eulyoo1945-Regular', serif !important;
-            color: #000 !important;
-            animation: float ease-in-out infinite !important;
-            box-shadow: none !important;
-            transition: border 0.15s, color 0.15s !important;
-            cursor: pointer !important;
-        }}
-        .t7-grid-wrapper div.stButton > button p {{
-            color: #000 !important;
-            font-size: 1.05rem !important;
-            font-weight: bold !important;
-        }}
-        .t7-grid-wrapper div.stButton > button:hover {{
-            border: 2px solid #d32f2f !important;
-            color: #d32f2f !important;
-            transform: translateY(-3px) scale(1.05) !important;
-            animation-play-state: paused !important;
-        }}
-        .t7-grid-wrapper div.stButton > button:hover p {{
-            color: #d32f2f !important;
-        }}
-        /* 열 번호별 파스텔 색상 & 애니메이션 타이밍 */
-        {chr(10).join([
-            f'.t7-grid-wrapper div[data-testid="column"]:nth-child({(i%5)+1}) div.stButton > button {{ background-color: {WASHED_COLORS[i%5]} !important; animation-duration: {4.5+(i%7)*0.35:.2f}s !important; animation-delay: {(i*0.31)%4:.2f}s !important; }}'
-            for i in range(25)
-        ])}
         </style>
-        <div class="t7-grid-wrapper">
         """, unsafe_allow_html=True)
 
         word_items = []
@@ -833,13 +793,48 @@ with tab7:
             cols = st.columns(5, gap="medium")
             for col in range(5):
                 idx = row * 5 + col
-                if idx < len(word_items):
-                    item = word_items[idx]
-                    with cols[col]:
-                        if st.button(item["word"], key=f"t7_w_{idx}", help=item["tooltip"]):
-                            btn_clicked = item["word"]
-
-        st.markdown('</div>', unsafe_allow_html=True)
+                if idx >= len(word_items):
+                    continue
+                item = word_items[idx]
+                uid = f"t7btn{idx}"
+                with cols[col]:
+                    # 버튼 바로 위에 고유 ID 스타일 주입
+                    st.markdown(f"""
+                    <style>
+                    #{uid} + div div.stButton > button,
+                    #{uid} ~ div div.stButton > button {{
+                        background-color: {item['color']} !important;
+                        border: 1.5px solid #000 !important;
+                        border-radius: 2px !important;
+                        height: auto !important;
+                        padding: 9px 18px !important;
+                        width: auto !important;
+                        font-size: 1.05rem !important;
+                        font-weight: bold !important;
+                        color: #000 !important;
+                        animation: t7float {item['duration']}s ease-in-out {item['delay']}s infinite !important;
+                        box-shadow: none !important;
+                    }}
+                    #{uid} + div div.stButton > button p,
+                    #{uid} ~ div div.stButton > button p {{
+                        color: #000 !important;
+                        font-weight: bold !important;
+                    }}
+                    #{uid} + div div.stButton > button:hover,
+                    #{uid} ~ div div.stButton > button:hover {{
+                        border: 2px solid #d32f2f !important;
+                        color: #d32f2f !important;
+                        animation-play-state: paused !important;
+                    }}
+                    #{uid} + div div.stButton > button:hover p,
+                    #{uid} ~ div div.stButton > button:hover p {{
+                        color: #d32f2f !important;
+                    }}
+                    </style>
+                    <span id="{uid}"></span>
+                    """, unsafe_allow_html=True)
+                    if st.button(item["word"], key=f"t7_w_{idx}", help=item["tooltip"]):
+                        btn_clicked = item["word"]
 
         if btn_clicked:
             st.session_state.t7_selected_word = btn_clicked
