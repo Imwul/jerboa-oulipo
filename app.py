@@ -732,6 +732,14 @@ with tab7:
     if 't7_base_phrase' not in st.session_state: st.session_state.t7_base_phrase = ""
     if 't7_selected_word' not in st.session_state: st.session_state.t7_selected_word = ""
 
+    # ── query_params 감지: Step 2 그리드 클릭 → URL → 여기서 처리 ──
+    _qp = st.query_params
+    if _qp.get("t7_word") and st.session_state.t7_step == 2:
+        st.session_state.t7_selected_word = _qp["t7_word"]
+        st.session_state.t7_step = 3
+        st.query_params.clear()
+        st.rerun()
+
 
     # ----------------------------------------
     # Step 1: 시간의 파편 던지기
@@ -769,77 +777,104 @@ with tab7:
         words = st.session_state.t7_generated_words
         base = st.session_state.t7_base_phrase
 
-        # ── 전역 float 애니메이션 + 공통 버튼 리셋 ──
-        st.markdown(f"""
+        word_items = []
+        for i, w in enumerate(words):
+            word_items.append({
+                "word": w,
+                "color": WASHED_COLORS[i % len(WASHED_COLORS)],
+                "delay": round((i * 0.31) % 4, 2),
+                "duration": round(4.5 + (i % 7) * 0.35, 2),
+                "tooltip": f"{base} {w}".strip()
+            })
+        word_items_json = json.dumps(word_items, ensure_ascii=False)
+
+        fragment_html = f"""<!DOCTYPE html><html><head>{FONT_CSS}
         <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ font-family: 'Eulyoo1945-Regular', serif; background: transparent; padding: 16px 8px 40px 8px; }}
         @keyframes t7float {{
             0%   {{ transform: translateY(0px) rotate(0deg); }}
             50%  {{ transform: translateY(-10px) rotate(1.5deg); }}
             100% {{ transform: translateY(0px) rotate(0deg); }}
         }}
-        </style>
-        """, unsafe_allow_html=True)
+        #grid {{
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 14px;
+        }}
+        .tag {{
+            display: flex; align-items: center; justify-content: center;
+            padding: 10px 8px; min-height: 44px;
+            border: 1.5px solid #000; border-radius: 2px;
+            font-family: 'Eulyoo1945-Regular', serif;
+            font-size: 1.05rem; font-weight: bold; color: #000;
+            cursor: pointer; text-align: center; white-space: nowrap;
+            animation: t7float ease-in-out infinite;
+            transition: border 0.15s, color 0.15s;
+            user-select: none; position: relative;
+        }}
+        .tag:hover {{
+            border: 2px solid #d32f2f !important;
+            color: #d32f2f !important;
+            animation-play-state: paused !important;
+            transform: translateY(-3px) scale(1.05);
+        }}
+        .tag.clicked {{
+            background-color: #d32f2f !important;
+            color: #fff !important; border-color: #d32f2f !important;
+            animation: none !important; transform: scale(0.95) !important;
+        }}
+        #tip {{
+            position: fixed; display: none;
+            background: #111; color: #fff;
+            padding: 5px 10px; border-radius: 2px;
+            font-size: 0.85rem; white-space: nowrap;
+            pointer-events: none; z-index: 9999;
+            font-family: 'Eulyoo1945-Regular', serif;
+        }}
+        </style></head><body>
+        <div id="grid"></div>
+        <div id="tip"></div>
+        <script>
+        const items = {word_items_json};
+        const grid = document.getElementById('grid');
+        const tip  = document.getElementById('tip');
 
-        word_items = []
-        for i, w in enumerate(words):
-            color = WASHED_COLORS[i % len(WASHED_COLORS)]
-            delay = round((i * 0.31) % 4, 2)
-            duration = round(4.5 + (i % 7) * 0.35, 2)
-            tooltip = f"{base} {w}".strip()
-            word_items.append({"word": w, "color": color, "delay": delay, "duration": duration, "tooltip": tooltip})
+        items.forEach(item => {{
+            const tag = document.createElement('div');
+            tag.className = 'tag';
+            tag.textContent = item.word;
+            tag.style.backgroundColor = item.color;
+            tag.style.animationDuration  = item.duration + 's';
+            tag.style.animationDelay     = item.delay + 's';
 
-        btn_clicked = None
-        for row in range(5):
-            cols = st.columns(5, gap="medium")
-            for col in range(5):
-                idx = row * 5 + col
-                if idx >= len(word_items):
-                    continue
-                item = word_items[idx]
-                uid = f"t7btn{idx}"
-                with cols[col]:
-                    # 버튼 바로 위에 고유 ID 스타일 주입
-                    st.markdown(f"""
-                    <style>
-                    #{uid} + div div.stButton > button,
-                    #{uid} ~ div div.stButton > button {{
-                        background-color: {item['color']} !important;
-                        border: 1.5px solid #000 !important;
-                        border-radius: 2px !important;
-                        height: auto !important;
-                        padding: 9px 18px !important;
-                        width: auto !important;
-                        font-size: 1.05rem !important;
-                        font-weight: bold !important;
-                        color: #000 !important;
-                        animation: t7float {item['duration']}s ease-in-out {item['delay']}s infinite !important;
-                        box-shadow: none !important;
-                    }}
-                    #{uid} + div div.stButton > button p,
-                    #{uid} ~ div div.stButton > button p {{
-                        color: #000 !important;
-                        font-weight: bold !important;
-                    }}
-                    #{uid} + div div.stButton > button:hover,
-                    #{uid} ~ div div.stButton > button:hover {{
-                        border: 2px solid #d32f2f !important;
-                        color: #d32f2f !important;
-                        animation-play-state: paused !important;
-                    }}
-                    #{uid} + div div.stButton > button:hover p,
-                    #{uid} ~ div div.stButton > button:hover p {{
-                        color: #d32f2f !important;
-                    }}
-                    </style>
-                    <span id="{uid}"></span>
-                    """, unsafe_allow_html=True)
-                    if st.button(item["word"], key=f"t7_w_{idx}", help=item["tooltip"]):
-                        btn_clicked = item["word"]
+            tag.addEventListener('mouseenter', () => {{
+                tip.textContent = item.tooltip;
+                tip.style.display = 'block';
+            }});
+            tag.addEventListener('mousemove', e => {{
+                tip.style.left = (e.clientX + 14) + 'px';
+                tip.style.top  = (e.clientY + 18) + 'px';
+            }});
+            tag.addEventListener('mouseleave', () => {{
+                tip.style.display = 'none';
+            }});
+            tag.addEventListener('click', () => {{
+                tip.style.display = 'none';
+                tag.classList.add('clicked');
+                try {{
+                    const url = window.parent.location.pathname + '?t7_word=' + encodeURIComponent(item.word);
+                    window.parent.location.href = url;
+                }} catch(e) {{
+                    // same-origin fallback
+                    window.top.location.href = window.top.location.pathname + '?t7_word=' + encodeURIComponent(item.word);
+                }}
+            }});
+            grid.appendChild(tag);
+        }});
+        </script></body></html>"""
 
-        if btn_clicked:
-            st.session_state.t7_selected_word = btn_clicked
-            st.session_state.t7_step = 3
-            st.rerun()
+        components.html(fragment_html, height=430, scrolling=False)
 
         st.markdown("---")
         col1, col2 = st.columns(2)
