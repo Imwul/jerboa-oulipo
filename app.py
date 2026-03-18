@@ -808,17 +808,20 @@ with tab7:
                 50%  {{ transform: translateY(-10px) rotate(1.5deg); }}
                 100% {{ transform: translateY(0px) rotate(0deg); }}
             }}
+            body {{ overflow: visible !important; }}
             #grid {{
                 display: grid;
-                grid-template-columns: repeat(5, 1fr);
+                grid-template-columns: repeat(5, auto);
+                justify-content: center;
                 gap: 10px;
                 padding: 10px 0;
+                overflow: visible;
             }}
             .frag-tag {{
-                display: flex;
+                display: inline-flex;
                 align-items: center;
                 justify-content: center;
-                padding: 8px 12px;
+                padding: 8px 16px;
                 border: 1px solid #000000;
                 border-radius: 2px;
                 font-family: 'Eulyoo1945-Regular', serif;
@@ -827,11 +830,11 @@ with tab7:
                 color: #000000;
                 cursor: pointer;
                 position: relative;
-                text-align: center;
                 white-space: nowrap;
                 animation: float ease-in-out infinite;
                 transition: border 0.15s ease, color 0.15s ease;
                 user-select: none;
+                overflow: visible;
             }}
             .frag-tag:hover {{
                 border: 2px solid #d32f2f !important;
@@ -840,25 +843,13 @@ with tab7:
                 z-index: 10;
                 transform: translateY(-2px) scale(1.04);
             }}
-            /* 툴팁: 아래쪽으로 표시 (iframe 상단 잘림 방지) */
-            .frag-tag::after {{
-                content: attr(data-tooltip);
-                position: absolute;
-                top: calc(100% + 8px);
-                left: 50%;
-                transform: translateX(-50%);
-                background: #111;
-                color: #fff;
-                padding: 5px 10px;
-                border-radius: 2px;
-                font-size: 0.85rem;
-                white-space: nowrap;
-                pointer-events: none;
-                opacity: 0;
-                transition: opacity 0.2s;
-                z-index: 100;
+            .frag-tag.clicked {{
+                background-color: #d32f2f !important;
+                color: #fff !important;
+                border-color: #d32f2f !important;
+                animation: none !important;
+                transform: scale(0.95) !important;
             }}
-            .frag-tag:hover::after {{ opacity: 1; }}
             .frag-tag.clicked {{
                 background-color: #d32f2f !important;
                 color: #fff !important;
@@ -870,9 +861,18 @@ with tab7:
         </head>
         <body>
             <div id="grid"></div>
+            <div id="tooltip" style="
+                position: fixed; display: none;
+                background: #111; color: #fff;
+                padding: 5px 10px; border-radius: 2px;
+                font-size: 0.85rem; white-space: nowrap;
+                pointer-events: none; z-index: 9999;
+                font-family: 'Eulyoo1945-Regular', serif;
+            "></div>
             <script>
                 const items = {word_items_json};
                 const grid = document.getElementById('grid');
+                const tooltip = document.getElementById('tooltip');
 
                 items.forEach((item) => {{
                     const tag = document.createElement('span');
@@ -881,11 +881,21 @@ with tab7:
                     tag.style.backgroundColor = item.color;
                     tag.style.animationDuration = item.duration + 's';
                     tag.style.animationDelay = item.delay + 's';
-                    tag.setAttribute('data-tooltip', item.tooltip);
+
+                    tag.addEventListener('mouseenter', (e) => {{
+                        tooltip.innerText = item.tooltip;
+                        tooltip.style.display = 'block';
+                    }});
+                    tag.addEventListener('mousemove', (e) => {{
+                        tooltip.style.left = (e.clientX + 12) + 'px';
+                        tooltip.style.top = (e.clientY + 16) + 'px';
+                    }});
+                    tag.addEventListener('mouseleave', () => {{
+                        tooltip.style.display = 'none';
+                    }});
 
                     tag.addEventListener('click', () => {{
                         tag.classList.add('clicked');
-                        // 부모 창 URL에 query param 추가 → Streamlit이 감지하여 rerun
                         const encoded = encodeURIComponent(item.word);
                         window.parent.location.href =
                             window.parent.location.pathname + '?t7_word=' + encoded;
