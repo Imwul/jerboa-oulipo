@@ -769,145 +769,82 @@ with tab7:
         words = st.session_state.t7_generated_words
         base = st.session_state.t7_base_phrase
 
-        # ── query_params 방식: iframe 클릭 → URL 파라미터 → Streamlit 감지 ──
-        qp = st.query_params
-        if qp.get("t7_word"):
-            selected = qp["t7_word"]
-            st.query_params.clear()
-            st.session_state.t7_selected_word = selected
-            st.session_state.t7_step = 3
-            st.rerun()
+        # ── fragment-tag 스타일의 순수 Streamlit 버튼 그리드 ──
+        # components.html 없이 st.button만으로 처리 (클릭 신뢰성 100%)
+        # 전역 CSS primary 버튼 스타일을 이 블록 전용으로 오버라이드
+        st.markdown(f"""
+        <style>
+        @keyframes float {{
+            0%   {{ transform: translateY(0px) rotate(0deg); }}
+            50%  {{ transform: translateY(-10px) rotate(1.5deg); }}
+            100% {{ transform: translateY(0px) rotate(0deg); }}
+        }}
+        /* Step2 전용 버튼 래퍼 식별용 */
+        .t7-grid-wrapper div.stButton > button {{
+            border: 1.5px solid #000 !important;
+            border-radius: 2px !important;
+            height: auto !important;
+            padding: 9px 14px !important;
+            width: auto !important;
+            min-width: unset !important;
+            background-color: transparent !important;
+            font-size: 1.05rem !important;
+            font-weight: bold !important;
+            font-family: 'Eulyoo1945-Regular', serif !important;
+            color: #000 !important;
+            animation: float ease-in-out infinite !important;
+            box-shadow: none !important;
+            transition: border 0.15s, color 0.15s !important;
+            cursor: pointer !important;
+        }}
+        .t7-grid-wrapper div.stButton > button p {{
+            color: #000 !important;
+            font-size: 1.05rem !important;
+            font-weight: bold !important;
+        }}
+        .t7-grid-wrapper div.stButton > button:hover {{
+            border: 2px solid #d32f2f !important;
+            color: #d32f2f !important;
+            transform: translateY(-3px) scale(1.05) !important;
+            animation-play-state: paused !important;
+        }}
+        .t7-grid-wrapper div.stButton > button:hover p {{
+            color: #d32f2f !important;
+        }}
+        /* 열 번호별 파스텔 색상 & 애니메이션 타이밍 */
+        {chr(10).join([
+            f'.t7-grid-wrapper div[data-testid="column"]:nth-child({(i%5)+1}) div.stButton > button {{ background-color: {WASHED_COLORS[i%5]} !important; animation-duration: {4.5+(i%7)*0.35:.2f}s !important; animation-delay: {(i*0.31)%4:.2f}s !important; }}'
+            for i in range(25)
+        ])}
+        </style>
+        <div class="t7-grid-wrapper">
+        """, unsafe_allow_html=True)
 
-        # ── fragment-tag 시각 레이어 (flex-wrap, 단어 길이에 맞는 너비) ──
         word_items = []
         for i, w in enumerate(words):
             color = WASHED_COLORS[i % len(WASHED_COLORS)]
             delay = round((i * 0.31) % 4, 2)
             duration = round(4.5 + (i % 7) * 0.35, 2)
             tooltip = f"{base} {w}".strip()
-            word_items.append({
-                "word": w, "color": color,
-                "delay": delay, "duration": duration, "tooltip": tooltip
-            })
-        word_items_json = json.dumps(word_items, ensure_ascii=False)
+            word_items.append({"word": w, "color": color, "delay": delay, "duration": duration, "tooltip": tooltip})
 
-        fragment_html = f"""
-        <!DOCTYPE html>
-        <html>
-        <head>
-        {FONT_CSS}
-        <style>
-            * {{ box-sizing: border-box; margin: 0; padding: 0; }}
-            body {{
-                font-family: 'Eulyoo1945-Regular', serif;
-                background: transparent;
-                padding: 10px 10px 20px 10px;
-            }}
-            @keyframes float {{
-                0%   {{ transform: translateY(0px) rotate(0deg); }}
-                50%  {{ transform: translateY(-10px) rotate(1.5deg); }}
-                100% {{ transform: translateY(0px) rotate(0deg); }}
-            }}
-            body {{ overflow: visible !important; }}
-            #grid {{
-                display: grid;
-                grid-template-columns: repeat(5, auto);
-                justify-content: center;
-                gap: 10px;
-                padding: 10px 0;
-                overflow: visible;
-            }}
-            .frag-tag {{
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                padding: 8px 16px;
-                border: 1px solid #000000;
-                border-radius: 2px;
-                font-family: 'Eulyoo1945-Regular', serif;
-                font-size: 1.1rem;
-                font-weight: bold;
-                color: #000000;
-                cursor: pointer;
-                position: relative;
-                white-space: nowrap;
-                animation: float ease-in-out infinite;
-                transition: border 0.15s ease, color 0.15s ease;
-                user-select: none;
-                overflow: visible;
-            }}
-            .frag-tag:hover {{
-                border: 2px solid #d32f2f !important;
-                color: #d32f2f !important;
-                animation-play-state: paused !important;
-                z-index: 10;
-                transform: translateY(-2px) scale(1.04);
-            }}
-            .frag-tag.clicked {{
-                background-color: #d32f2f !important;
-                color: #fff !important;
-                border-color: #d32f2f !important;
-                animation: none !important;
-                transform: scale(0.95) !important;
-            }}
-            .frag-tag.clicked {{
-                background-color: #d32f2f !important;
-                color: #fff !important;
-                border-color: #d32f2f !important;
-                animation: none !important;
-                transform: scale(0.95) !important;
-            }}
-        </style>
-        </head>
-        <body>
-            <div id="grid"></div>
-            <div id="tooltip" style="
-                position: fixed; display: none;
-                background: #111; color: #fff;
-                padding: 5px 10px; border-radius: 2px;
-                font-size: 0.85rem; white-space: nowrap;
-                pointer-events: none; z-index: 9999;
-                font-family: 'Eulyoo1945-Regular', serif;
-            "></div>
-            <script>
-                const items = {word_items_json};
-                const grid = document.getElementById('grid');
-                const tooltip = document.getElementById('tooltip');
+        btn_clicked = None
+        for row in range(5):
+            cols = st.columns(5, gap="medium")
+            for col in range(5):
+                idx = row * 5 + col
+                if idx < len(word_items):
+                    item = word_items[idx]
+                    with cols[col]:
+                        if st.button(item["word"], key=f"t7_w_{idx}", help=item["tooltip"]):
+                            btn_clicked = item["word"]
 
-                items.forEach((item) => {{
-                    const tag = document.createElement('span');
-                    tag.className = 'frag-tag';
-                    tag.innerText = item.word;
-                    tag.style.backgroundColor = item.color;
-                    tag.style.animationDuration = item.duration + 's';
-                    tag.style.animationDelay = item.delay + 's';
+        st.markdown('</div>', unsafe_allow_html=True)
 
-                    tag.addEventListener('mouseenter', (e) => {{
-                        tooltip.innerText = item.tooltip;
-                        tooltip.style.display = 'block';
-                    }});
-                    tag.addEventListener('mousemove', (e) => {{
-                        tooltip.style.left = (e.clientX + 12) + 'px';
-                        tooltip.style.top = (e.clientY + 16) + 'px';
-                    }});
-                    tag.addEventListener('mouseleave', () => {{
-                        tooltip.style.display = 'none';
-                    }});
-
-                    tag.addEventListener('click', () => {{
-                        tag.classList.add('clicked');
-                        const encoded = encodeURIComponent(item.word);
-                        window.parent.location.href =
-                            window.parent.location.pathname + '?t7_word=' + encoded;
-                    }});
-
-                    grid.appendChild(tag);
-                }});
-            </script>
-        </body>
-        </html>
-        """
-        components.html(fragment_html, height=480, scrolling=False)
+        if btn_clicked:
+            st.session_state.t7_selected_word = btn_clicked
+            st.session_state.t7_step = 3
+            st.rerun()
 
         st.markdown("---")
         col1, col2 = st.columns(2)
