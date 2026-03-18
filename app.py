@@ -769,30 +769,12 @@ with tab7:
         words = st.session_state.t7_generated_words
         base = st.session_state.t7_base_phrase
 
-        # ── 숨겨진 Streamlit 버튼 25개 (실제 로직 담당) ──
-        # display:none으로 완전히 숨기고, JS iframe이 텍스트로 찾아 클릭
-        st.markdown("""
-        <style>
-        .t7-hidden-container {
-            display: none !important;
-            visibility: hidden !important;
-            height: 0 !important;
-            overflow: hidden !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        st.markdown('<div class="t7-hidden-container">', unsafe_allow_html=True)
-        hidden_cols = st.columns(25)
-        btn_clicked = None
-        for i, word in enumerate(words):
-            with hidden_cols[i]:
-                if st.button(word, key=f"t7_hw_{i}"):
-                    btn_clicked = word
-        st.markdown('</div>', unsafe_allow_html=True)
-
-        if btn_clicked:
-            st.session_state.t7_selected_word = btn_clicked
+        # ── query_params 방식: iframe 클릭 → URL 파라미터 → Streamlit 감지 ──
+        qp = st.query_params
+        if qp.get("t7_word"):
+            selected = qp["t7_word"]
+            st.query_params.clear()
+            st.session_state.t7_selected_word = selected
             st.session_state.t7_step = 3
             st.rerun()
 
@@ -889,22 +871,6 @@ with tab7:
                 const items = {word_items_json};
                 const grid = document.getElementById('grid');
 
-                function clickHiddenBtn(word) {{
-                    try {{
-                        const parentDoc = window.parent.document;
-                        const buttons = parentDoc.querySelectorAll('button');
-                        for (const btn of buttons) {{
-                            if (btn.innerText.trim() === word) {{
-                                btn.click();
-                                return true;
-                            }}
-                        }}
-                    }} catch(e) {{
-                        console.warn('parent access failed:', e);
-                    }}
-                    return false;
-                }}
-
                 items.forEach((item) => {{
                     const tag = document.createElement('span');
                     tag.className = 'frag-tag';
@@ -916,10 +882,10 @@ with tab7:
 
                     tag.addEventListener('click', () => {{
                         tag.classList.add('clicked');
-                        const found = clickHiddenBtn(item.word);
-                        if (!found) {{
-                            setTimeout(() => clickHiddenBtn(item.word), 300);
-                        }}
+                        // 부모 창 URL에 query param 추가 → Streamlit이 감지하여 rerun
+                        const encoded = encodeURIComponent(item.word);
+                        window.parent.location.href =
+                            window.parent.location.pathname + '?t7_word=' + encoded;
                     }});
 
                     grid.appendChild(tag);
