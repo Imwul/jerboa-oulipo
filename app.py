@@ -769,50 +769,6 @@ with tab7:
         words = st.session_state.t7_generated_words
         base = st.session_state.t7_base_phrase
 
-        # 선택된 단어를 session_state에서 직접 감지
-        # st.radio를 fragment 스타일로 숨기고, components.html 클릭 → radio 값 변경 트릭
-        # 가장 신뢰할 수 있는 방법: 25개 st.button을 fragment CSS로 스타일링
-        # Streamlit 최신버전에서 작동하는 CSS 셀렉터: [data-testid="stBaseButton-secondary"]
-
-        # 전체 버튼 스타일 오버라이드 - secondary 버튼 전체에 fragment 스타일 적용
-        # 각 버튼 고유 색상은 inline style attribute로 주입
-        st.markdown("""
-        <style>
-        @keyframes t7float {
-            0%   { transform: translateY(0px) rotate(0deg); }
-            50%  { transform: translateY(-10px) rotate(1.5deg); }
-            100% { transform: translateY(0px) rotate(0deg); }
-        }
-        /* 탭7 그리드 전용 버튼 스타일 */
-        .t7-frag-row { display: flex; justify-content: center; gap: 12px; margin-bottom: 12px; flex-wrap: nowrap; }
-        .t7-frag-row div.stButton { flex: 0 0 auto !important; width: auto !important; }
-        .t7-frag-row div.stButton > button {
-            border: 1.5px solid #000 !important;
-            border-radius: 2px !important;
-            height: auto !important;
-            padding: 9px 18px !important;
-            width: auto !important;
-            min-width: unset !important;
-            font-size: 1.05rem !important;
-            font-weight: bold !important;
-            animation: t7float ease-in-out infinite !important;
-            box-shadow: none !important;
-            white-space: nowrap !important;
-        }
-        .t7-frag-row div.stButton > button p {
-            font-weight: bold !important;
-            font-size: 1.05rem !important;
-        }
-        .t7-frag-row div.stButton > button:hover {
-            border: 2px solid #d32f2f !important;
-            color: #d32f2f !important;
-            animation-play-state: paused !important;
-            transform: translateY(-3px) scale(1.05) !important;
-        }
-        .t7-frag-row div.stButton > button:hover p { color: #d32f2f !important; }
-        </style>
-        """, unsafe_allow_html=True)
-
         word_items = []
         for i, w in enumerate(words):
             word_items.append({
@@ -823,39 +779,126 @@ with tab7:
                 "tooltip": f"{base} {w}".strip()
             })
 
-        btn_clicked = None
-        for row in range(5):
-            # 각 행을 flex row로 감싸는 div 주입
-            st.markdown('<div class="t7-frag-row">', unsafe_allow_html=True)
-            cols = st.columns(5, gap="small")
-            for col in range(5):
-                idx = row * 5 + col
-                if idx >= len(word_items):
-                    continue
-                item = word_items[idx]
-                with cols[col]:
-                    # 버튼 색상을 inline으로 강제 주입
-                    st.markdown(f"""
-                    <style>
-                    [data-testid="stBaseButton-secondary"]:nth-of-type({idx + 1}) {{
-                        background-color: {item['color']} !important;
-                        animation-duration: {item['duration']}s !important;
-                        animation-delay: {item['delay']}s !important;
-                        color: #000 !important;
-                    }}
-                    [data-testid="stBaseButton-secondary"]:nth-of-type({idx + 1}) p {{
-                        color: #000 !important;
-                    }}
-                    </style>""", unsafe_allow_html=True)
-                    if st.button(item["word"], key=f"t7_w_{idx}",
-                                 help=item["tooltip"], use_container_width=False):
-                        btn_clicked = item["word"]
-            st.markdown('</div>', unsafe_allow_html=True)
+        # ── 숨겨진 st.radio (실제 선택 로직 담당) ──
+        st.markdown("""
+        <style>
+        div[data-testid="stRadio"] { display: none !important; }
+        </style>
+        """, unsafe_allow_html=True)
 
-        if btn_clicked:
-            st.session_state.t7_selected_word = btn_clicked
+        radio_choice = st.radio(
+            "word_select",
+            options=["__none__"] + words,
+            index=0,
+            key="t7_radio",
+            label_visibility="collapsed"
+        )
+
+        if radio_choice and radio_choice != "__none__":
+            st.session_state.t7_selected_word = radio_choice
             st.session_state.t7_step = 3
+            # radio 초기화
+            st.session_state["t7_radio"] = "__none__"
             st.rerun()
+
+        # ── components.html fragment 그리드 ──
+        word_items_json = json.dumps(word_items, ensure_ascii=False)
+
+        fragment_html = f"""<!DOCTYPE html><html><head>{FONT_CSS}
+        <style>
+        * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+        body {{ font-family: 'Eulyoo1945-Regular', serif; background: transparent; padding: 10px 8px 50px 8px; }}
+        @keyframes t7float {{
+            0%   {{ transform: translateY(0px) rotate(0deg); }}
+            50%  {{ transform: translateY(-10px) rotate(1.5deg); }}
+            100% {{ transform: translateY(0px) rotate(0deg); }}
+        }}
+        #grid {{
+            display: grid;
+            grid-template-columns: repeat(5, max-content);
+            justify-content: center;
+            gap: 12px;
+        }}
+        .tag {{
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 9px 18px;
+            border: 1.5px solid #000; border-radius: 2px;
+            font-family: 'Eulyoo1945-Regular', serif;
+            font-size: 1.05rem; font-weight: bold; color: #000;
+            cursor: pointer; white-space: nowrap;
+            animation: t7float ease-in-out infinite;
+            transition: border 0.15s, color 0.15s;
+            user-select: none;
+        }}
+        .tag:hover {{
+            border: 2px solid #d32f2f !important;
+            color: #d32f2f !important;
+            animation-play-state: paused !important;
+            transform: translateY(-3px) scale(1.05);
+        }}
+        .tag.clicked {{
+            background-color: #d32f2f !important;
+            color: #fff !important;
+            border-color: #d32f2f !important;
+            animation: none !important;
+        }}
+        #tip {{
+            position: fixed; display: none;
+            background: #111; color: #fff;
+            padding: 5px 10px; border-radius: 2px;
+            font-size: 0.85rem; white-space: nowrap;
+            pointer-events: none; z-index: 9999;
+            font-family: 'Eulyoo1945-Regular', serif;
+        }}
+        </style></head><body>
+        <div id="grid"></div>
+        <div id="tip"></div>
+        <script>
+        const items = {word_items_json};
+        const grid = document.getElementById('grid');
+        const tip  = document.getElementById('tip');
+
+        function clickRadioLabel(word) {{
+            // 부모 문서의 숨겨진 radio에서 해당 단어 label을 찾아 클릭
+            const parentDoc = window.parent.document;
+            const labels = parentDoc.querySelectorAll('[data-testid="stRadio"] label');
+            for (const label of labels) {{
+                if (label.innerText.trim() === word) {{
+                    label.click();
+                    return;
+                }}
+            }}
+        }}
+
+        items.forEach(item => {{
+            const tag = document.createElement('div');
+            tag.className = 'tag';
+            tag.textContent = item.word;
+            tag.style.backgroundColor = item.color;
+            tag.style.animationDuration = item.duration + 's';
+            tag.style.animationDelay    = item.delay + 's';
+
+            tag.addEventListener('mouseenter', () => {{
+                tip.textContent = item.tooltip;
+                tip.style.display = 'block';
+            }});
+            tag.addEventListener('mousemove', e => {{
+                tip.style.left = (e.clientX + 14) + 'px';
+                tip.style.top  = (e.clientY + 18) + 'px';
+            }});
+            tag.addEventListener('mouseleave', () => {{ tip.style.display = 'none'; }});
+
+            tag.addEventListener('click', () => {{
+                tip.style.display = 'none';
+                tag.classList.add('clicked');
+                clickRadioLabel(item.word);
+            }});
+
+            grid.appendChild(tag);
+        }});
+        </script></body></html>"""
+
+        components.html(fragment_html, height=420, scrolling=False)
 
         st.markdown("---")
         col1, col2 = st.columns(2)
