@@ -770,16 +770,14 @@ with tab7:
         base = st.session_state.t7_base_phrase
 
         # ── 숨겨진 Streamlit 버튼 25개 (실제 로직 담당) ──
-        # JS iframe이 window.parent.document에서 버튼 텍스트로 찾아 클릭
-        # CSS로 완전히 숨겨서 시각적으로는 보이지 않음
+        # display:none으로 완전히 숨기고, JS iframe이 텍스트로 찾아 클릭
         st.markdown("""
         <style>
-        div[data-testid="t7-hidden-row"] { display: none !important; }
-        /* 숨겨진 버튼들이 들어갈 컨테이너를 height:0으로 압축 */
-        div.t7-hidden-container > div[data-testid="stHorizontalBlock"] {
-            position: absolute !important;
-            height: 0px !important; overflow: hidden !important;
-            opacity: 0 !important; pointer-events: none !important;
+        .t7-hidden-container {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            overflow: hidden !important;
         }
         </style>
         """, unsafe_allow_html=True)
@@ -798,7 +796,7 @@ with tab7:
             st.session_state.t7_step = 3
             st.rerun()
 
-        # ── fragment-tag 시각 레이어 (5×5 CSS Grid) ──
+        # ── fragment-tag 시각 레이어 (flex-wrap, 단어 길이에 맞는 너비) ──
         word_items = []
         for i, w in enumerate(words):
             color = WASHED_COLORS[i % len(WASHED_COLORS)]
@@ -829,16 +827,15 @@ with tab7:
                 100% {{ transform: translateY(0px) rotate(0deg); }}
             }}
             #grid {{
-                display: grid;
-                grid-template-columns: repeat(5, 1fr);
-                gap: 12px;
-                width: 100%;
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 10px;
+                padding: 10px 0;
             }}
             .frag-tag {{
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 10px 6px;
+                display: inline-block;
+                padding: 8px 16px;
                 border: 1px solid #000000;
                 border-radius: 2px;
                 font-family: 'Eulyoo1945-Regular', serif;
@@ -847,11 +844,10 @@ with tab7:
                 color: #000000;
                 cursor: pointer;
                 position: relative;
-                text-align: center;
+                white-space: nowrap;
                 animation: float ease-in-out infinite;
                 transition: border 0.15s ease, color 0.15s ease;
                 user-select: none;
-                min-height: 48px;
             }}
             .frag-tag:hover {{
                 border: 2px solid #d32f2f !important;
@@ -860,7 +856,6 @@ with tab7:
                 z-index: 10;
                 transform: translateY(-4px) scale(1.06);
             }}
-            /* 툴팁 */
             .frag-tag::after {{
                 content: attr(data-tooltip);
                 position: absolute;
@@ -894,12 +889,10 @@ with tab7:
                 const items = {word_items_json};
                 const grid = document.getElementById('grid');
 
-                // 부모 Streamlit에서 숨겨진 버튼을 찾아 클릭하는 함수
                 function clickHiddenBtn(word) {{
                     try {{
                         const parentDoc = window.parent.document;
-                        // 모든 Streamlit 버튼을 순회하며 텍스트가 일치하는 것을 클릭
-                        const buttons = parentDoc.querySelectorAll('button[kind="secondary"], button');
+                        const buttons = parentDoc.querySelectorAll('button');
                         for (const btn of buttons) {{
                             if (btn.innerText.trim() === word) {{
                                 btn.click();
@@ -912,23 +905,19 @@ with tab7:
                     return false;
                 }}
 
-                items.forEach((item, idx) => {{
-                    const tag = document.createElement('div');
+                items.forEach((item) => {{
+                    const tag = document.createElement('span');
                     tag.className = 'frag-tag';
                     tag.innerText = item.word;
                     tag.style.backgroundColor = item.color;
                     tag.style.animationDuration = item.duration + 's';
                     tag.style.animationDelay = item.delay + 's';
                     tag.setAttribute('data-tooltip', item.tooltip);
-                    tag.setAttribute('data-word', item.word);
 
                     tag.addEventListener('click', () => {{
-                        // 클릭 피드백
                         tag.classList.add('clicked');
-                        // 숨겨진 Streamlit 버튼 트리거
                         const found = clickHiddenBtn(item.word);
                         if (!found) {{
-                            // 혹시 못 찾으면 0.3초 후 재시도
                             setTimeout(() => clickHiddenBtn(item.word), 300);
                         }}
                     }});
@@ -939,7 +928,7 @@ with tab7:
         </body>
         </html>
         """
-        components.html(fragment_html, height=400, scrolling=False)
+        components.html(fragment_html, height=360, scrolling=False)
 
         st.markdown("---")
         col1, col2 = st.columns(2)
