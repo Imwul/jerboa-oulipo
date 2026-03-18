@@ -786,19 +786,22 @@ with tab7:
         </style>
         """, unsafe_allow_html=True)
 
+        if "t7_radio_ver" not in st.session_state:
+            st.session_state.t7_radio_ver = 0
+
+        radio_key = f"t7_radio_{st.session_state.t7_radio_ver}"
         radio_choice = st.radio(
             "word_select",
             options=["__none__"] + words,
             index=0,
-            key="t7_radio",
+            key=radio_key,
             label_visibility="collapsed"
         )
 
         if radio_choice and radio_choice != "__none__":
             st.session_state.t7_selected_word = radio_choice
             st.session_state.t7_step = 3
-            # radio 초기화
-            st.session_state["t7_radio"] = "__none__"
+            st.session_state.t7_radio_ver += 1  # 다음 렌더시 새 key → 자동 초기화
             st.rerun()
 
         # ── components.html fragment 그리드 ──
