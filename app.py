@@ -731,8 +731,7 @@ with tab7:
     if 't7_initial_phrase' not in st.session_state: st.session_state.t7_initial_phrase = ""
     if 't7_base_phrase' not in st.session_state: st.session_state.t7_base_phrase = ""
     if 't7_selected_word' not in st.session_state: st.session_state.t7_selected_word = ""
-    # ★ postMessage로 전달된 선택 단어를 임시 저장하는 key
-    if 't7_pending_word' not in st.session_state: st.session_state.t7_pending_word = ""
+
 
     # ----------------------------------------
     # Step 1: 시간의 파편 던지기
@@ -753,7 +752,7 @@ with tab7:
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택 (components.html 기반 fragment-tag 스타일)
+    # Step 2: 5×5 fragment-tag 그리드 선택
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
         words_list = st.session_state.t7_initial_phrase.strip().split()
@@ -770,7 +769,36 @@ with tab7:
         words = st.session_state.t7_generated_words
         base = st.session_state.t7_base_phrase
 
-        # 단어 데이터를 JSON으로 직렬화하여 HTML에 주입
+        # ── 숨겨진 Streamlit 버튼 25개 (실제 로직 담당) ──
+        # JS iframe이 window.parent.document에서 버튼 텍스트로 찾아 클릭
+        # CSS로 완전히 숨겨서 시각적으로는 보이지 않음
+        st.markdown("""
+        <style>
+        div[data-testid="t7-hidden-row"] { display: none !important; }
+        /* 숨겨진 버튼들이 들어갈 컨테이너를 height:0으로 압축 */
+        div.t7-hidden-container > div[data-testid="stHorizontalBlock"] {
+            position: absolute !important;
+            height: 0px !important; overflow: hidden !important;
+            opacity: 0 !important; pointer-events: none !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        st.markdown('<div class="t7-hidden-container">', unsafe_allow_html=True)
+        hidden_cols = st.columns(25)
+        btn_clicked = None
+        for i, word in enumerate(words):
+            with hidden_cols[i]:
+                if st.button(word, key=f"t7_hw_{i}"):
+                    btn_clicked = word
+        st.markdown('</div>', unsafe_allow_html=True)
+
+        if btn_clicked:
+            st.session_state.t7_selected_word = btn_clicked
+            st.session_state.t7_step = 3
+            st.rerun()
+
+        # ── fragment-tag 시각 레이어 (5×5 CSS Grid) ──
         word_items = []
         for i, w in enumerate(words):
             color = WASHED_COLORS[i % len(WASHED_COLORS)]
@@ -778,11 +806,8 @@ with tab7:
             duration = round(4.5 + (i % 7) * 0.35, 2)
             tooltip = f"{base} {w}".strip()
             word_items.append({
-                "word": w,
-                "color": color,
-                "delay": delay,
-                "duration": duration,
-                "tooltip": tooltip
+                "word": w, "color": color,
+                "delay": delay, "duration": duration, "tooltip": tooltip
             })
         word_items_json = json.dumps(word_items, ensure_ascii=False)
 
@@ -796,41 +821,44 @@ with tab7:
             body {{
                 font-family: 'Eulyoo1945-Regular', serif;
                 background: transparent;
-                padding: 10px 20px 30px 20px;
+                padding: 10px 10px 20px 10px;
             }}
             @keyframes float {{
                 0%   {{ transform: translateY(0px) rotate(0deg); }}
-                50%  {{ transform: translateY(-12px) rotate(1.5deg); }}
+                50%  {{ transform: translateY(-10px) rotate(1.5deg); }}
                 100% {{ transform: translateY(0px) rotate(0deg); }}
             }}
-            #fragment-container {{
-                display: flex;
-                flex-wrap: wrap;
-                justify-content: center;
-                gap: 8px;
-                padding: 10px 0;
+            #grid {{
+                display: grid;
+                grid-template-columns: repeat(5, 1fr);
+                gap: 12px;
+                width: 100%;
             }}
             .frag-tag {{
-                display: inline-block;
-                padding: 8px 18px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 10px 6px;
                 border: 1px solid #000000;
                 border-radius: 2px;
                 font-family: 'Eulyoo1945-Regular', serif;
-                font-size: 1.15rem;
+                font-size: 1.1rem;
                 font-weight: bold;
                 color: #000000;
                 cursor: pointer;
                 position: relative;
-                animation: float linear infinite;
-                transition: transform 0.15s ease, border 0.15s ease, color 0.15s ease;
+                text-align: center;
+                animation: float ease-in-out infinite;
+                transition: border 0.15s ease, color 0.15s ease;
                 user-select: none;
+                min-height: 48px;
             }}
             .frag-tag:hover {{
-                transform: translateY(-4px) scale(1.08) !important;
                 border: 2px solid #d32f2f !important;
                 color: #d32f2f !important;
                 animation-play-state: paused !important;
                 z-index: 10;
+                transform: translateY(-4px) scale(1.06);
             }}
             /* 툴팁 */
             .frag-tag::after {{
@@ -843,88 +871,75 @@ with tab7:
                 color: #fff;
                 padding: 5px 10px;
                 border-radius: 2px;
-                font-size: 0.85rem;
+                font-size: 0.8rem;
                 white-space: nowrap;
                 pointer-events: none;
                 opacity: 0;
                 transition: opacity 0.2s;
                 z-index: 100;
             }}
-            .frag-tag:hover::after {{
-                opacity: 1;
+            .frag-tag:hover::after {{ opacity: 1; }}
+            .frag-tag.clicked {{
+                background-color: #d32f2f !important;
+                color: #fff !important;
+                border-color: #d32f2f !important;
+                animation: none !important;
+                transform: scale(0.95) !important;
             }}
         </style>
         </head>
         <body>
-            <div id="fragment-container"></div>
+            <div id="grid"></div>
             <script>
                 const items = {word_items_json};
-                const container = document.getElementById('fragment-container');
+                const grid = document.getElementById('grid');
 
-                items.forEach(item => {{
-                    const tag = document.createElement('span');
+                // 부모 Streamlit에서 숨겨진 버튼을 찾아 클릭하는 함수
+                function clickHiddenBtn(word) {{
+                    try {{
+                        const parentDoc = window.parent.document;
+                        // 모든 Streamlit 버튼을 순회하며 텍스트가 일치하는 것을 클릭
+                        const buttons = parentDoc.querySelectorAll('button[kind="secondary"], button');
+                        for (const btn of buttons) {{
+                            if (btn.innerText.trim() === word) {{
+                                btn.click();
+                                return true;
+                            }}
+                        }}
+                    }} catch(e) {{
+                        console.warn('parent access failed:', e);
+                    }}
+                    return false;
+                }}
+
+                items.forEach((item, idx) => {{
+                    const tag = document.createElement('div');
                     tag.className = 'frag-tag';
                     tag.innerText = item.word;
                     tag.style.backgroundColor = item.color;
                     tag.style.animationDuration = item.duration + 's';
                     tag.style.animationDelay = item.delay + 's';
                     tag.setAttribute('data-tooltip', item.tooltip);
+                    tag.setAttribute('data-word', item.word);
 
                     tag.addEventListener('click', () => {{
-                        // Streamlit 부모 창으로 선택 단어 전달
-                        window.parent.postMessage({{
-                            type: 'streamlit:setComponentValue',
-                            value: item.word
-                        }}, '*');
+                        // 클릭 피드백
+                        tag.classList.add('clicked');
+                        // 숨겨진 Streamlit 버튼 트리거
+                        const found = clickHiddenBtn(item.word);
+                        if (!found) {{
+                            // 혹시 못 찾으면 0.3초 후 재시도
+                            setTimeout(() => clickHiddenBtn(item.word), 300);
+                        }}
                     }});
 
-                    container.appendChild(tag);
+                    grid.appendChild(tag);
                 }});
             </script>
         </body>
         </html>
         """
-
-        # ★ components.html로 fragment 그리드 렌더링
-        # key가 없으므로 반환값을 직접 못 받지만, postMessage 대신
-        # 숨겨진 Streamlit 버튼 25개를 쓰는 폴백 방식을 병행합니다.
-        # → 실제로는 아래 숨김 버튼이 클릭을 처리합니다.
-        components.html(fragment_html, height=320, scrolling=False)
-
-        # ── 숨김 버튼 레이어 (CSS로 완전히 숨김, 클릭은 JS가 트리거) ──
-        # postMessage를 통한 직접 연동이 Streamlit에서 불안정하므로
-        # 폴백으로 일반 Streamlit 버튼을 유지하되 시각적으로 숨깁니다.
-        st.markdown("""
-        <style>
-        div[data-testid="stHorizontalBlock"].hidden-row {
-            position: absolute !important;
-            opacity: 0 !important;
-            pointer-events: none !important;
-            height: 0 !important;
-            overflow: hidden !important;
-        }
-        </style>
-        """, unsafe_allow_html=True)
-
-        # 실제로 선택 가능한 visible 버튼 그리드 (fragment 스타일 CSS 적용)
-        # — fragment_html이 시각을 담당하고, 이 버튼들은 로직만 담당
-        # — 두 레이어가 겹치지 않도록 fragment_html 아래에 배치
-        st.markdown("---")
-        st.markdown("<p style='text-align:center; color:#888; font-size:0.9rem;'>👆 위 파편을 클릭하거나, 아래 버튼으로도 선택 가능합니다</p>", unsafe_allow_html=True)
-
-        _, center_col, _ = st.columns([1, 4, 1])
-        with center_col:
-            for i in range(0, len(words), 5):
-                cols = st.columns(5, gap="small")
-                for j in range(5):
-                    if i + j < len(words):
-                        word = words[i + j]
-                        replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
-                        with cols[j]:
-                            if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence, type="primary"):
-                                st.session_state.t7_selected_word = word
-                                st.session_state.t7_step = 3
-                                st.rerun()
+        components.html(fragment_html, height=400, scrolling=False)
 
         st.markdown("---")
         col1, col2 = st.columns(2)
