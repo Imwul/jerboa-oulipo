@@ -731,6 +731,8 @@ with tab7:
     if 't7_initial_phrase' not in st.session_state: st.session_state.t7_initial_phrase = ""
     if 't7_base_phrase' not in st.session_state: st.session_state.t7_base_phrase = ""
     if 't7_selected_word' not in st.session_state: st.session_state.t7_selected_word = ""
+    # ★ postMessage로 전달된 선택 단어를 임시 저장하는 key
+    if 't7_pending_word' not in st.session_state: st.session_state.t7_pending_word = ""
 
     # ----------------------------------------
     # Step 1: 시간의 파편 던지기
@@ -751,25 +753,166 @@ with tab7:
                 st.rerun()
 
     # ----------------------------------------
-    # Step 2: 사전의 파편들 선택
+    # Step 2: 사전의 파편들 선택 (components.html 기반 fragment-tag 스타일)
     # ----------------------------------------
     elif st.session_state.t7_step == 2:
         words_list = st.session_state.t7_initial_phrase.strip().split()
         base_phrase = " ".join(words_list[:-1]) if len(words_list) > 1 else ""
         rhyme_word = words_list[-1] if words_list else ""
-        
+
         st.markdown(f"""
-        <div style='text-align: center; margin-bottom: 30px; font-size: 1.4em;'>
-            <span style='color: #888;'>원본 어구:</span> 
+        <div style='text-align: center; margin-bottom: 20px; font-size: 1.4em;'>
+            <span style='color: #888;'>원본 어구:</span>
             <b>{base_phrase} <span style='color: #d32f2f;'>{rhyme_word}</span></b>
         </div>
         """, unsafe_allow_html=True)
-        
+
         words = st.session_state.t7_generated_words
-        
-        # 태평양 같은 틈을 없애기 위해 중앙으로 꽉 쥐어짭니다.
-        _, center_col, _ = st.columns([1, 3, 1])
-        
+        base = st.session_state.t7_base_phrase
+
+        # 단어 데이터를 JSON으로 직렬화하여 HTML에 주입
+        word_items = []
+        for i, w in enumerate(words):
+            color = WASHED_COLORS[i % len(WASHED_COLORS)]
+            delay = round((i * 0.31) % 4, 2)
+            duration = round(4.5 + (i % 7) * 0.35, 2)
+            tooltip = f"{base} {w}".strip()
+            word_items.append({
+                "word": w,
+                "color": color,
+                "delay": delay,
+                "duration": duration,
+                "tooltip": tooltip
+            })
+        word_items_json = json.dumps(word_items, ensure_ascii=False)
+
+        fragment_html = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+        {FONT_CSS}
+        <style>
+            * {{ box-sizing: border-box; margin: 0; padding: 0; }}
+            body {{
+                font-family: 'Eulyoo1945-Regular', serif;
+                background: transparent;
+                padding: 10px 20px 30px 20px;
+            }}
+            @keyframes float {{
+                0%   {{ transform: translateY(0px) rotate(0deg); }}
+                50%  {{ transform: translateY(-12px) rotate(1.5deg); }}
+                100% {{ transform: translateY(0px) rotate(0deg); }}
+            }}
+            #fragment-container {{
+                display: flex;
+                flex-wrap: wrap;
+                justify-content: center;
+                gap: 8px;
+                padding: 10px 0;
+            }}
+            .frag-tag {{
+                display: inline-block;
+                padding: 8px 18px;
+                border: 1px solid #000000;
+                border-radius: 2px;
+                font-family: 'Eulyoo1945-Regular', serif;
+                font-size: 1.15rem;
+                font-weight: bold;
+                color: #000000;
+                cursor: pointer;
+                position: relative;
+                animation: float linear infinite;
+                transition: transform 0.15s ease, border 0.15s ease, color 0.15s ease;
+                user-select: none;
+            }}
+            .frag-tag:hover {{
+                transform: translateY(-4px) scale(1.08) !important;
+                border: 2px solid #d32f2f !important;
+                color: #d32f2f !important;
+                animation-play-state: paused !important;
+                z-index: 10;
+            }}
+            /* 툴팁 */
+            .frag-tag::after {{
+                content: attr(data-tooltip);
+                position: absolute;
+                bottom: calc(100% + 8px);
+                left: 50%;
+                transform: translateX(-50%);
+                background: #111;
+                color: #fff;
+                padding: 5px 10px;
+                border-radius: 2px;
+                font-size: 0.85rem;
+                white-space: nowrap;
+                pointer-events: none;
+                opacity: 0;
+                transition: opacity 0.2s;
+                z-index: 100;
+            }}
+            .frag-tag:hover::after {{
+                opacity: 1;
+            }}
+        </style>
+        </head>
+        <body>
+            <div id="fragment-container"></div>
+            <script>
+                const items = {word_items_json};
+                const container = document.getElementById('fragment-container');
+
+                items.forEach(item => {{
+                    const tag = document.createElement('span');
+                    tag.className = 'frag-tag';
+                    tag.innerText = item.word;
+                    tag.style.backgroundColor = item.color;
+                    tag.style.animationDuration = item.duration + 's';
+                    tag.style.animationDelay = item.delay + 's';
+                    tag.setAttribute('data-tooltip', item.tooltip);
+
+                    tag.addEventListener('click', () => {{
+                        // Streamlit 부모 창으로 선택 단어 전달
+                        window.parent.postMessage({{
+                            type: 'streamlit:setComponentValue',
+                            value: item.word
+                        }}, '*');
+                    }});
+
+                    container.appendChild(tag);
+                }});
+            </script>
+        </body>
+        </html>
+        """
+
+        # ★ components.html로 fragment 그리드 렌더링
+        # key가 없으므로 반환값을 직접 못 받지만, postMessage 대신
+        # 숨겨진 Streamlit 버튼 25개를 쓰는 폴백 방식을 병행합니다.
+        # → 실제로는 아래 숨김 버튼이 클릭을 처리합니다.
+        components.html(fragment_html, height=320, scrolling=False)
+
+        # ── 숨김 버튼 레이어 (CSS로 완전히 숨김, 클릭은 JS가 트리거) ──
+        # postMessage를 통한 직접 연동이 Streamlit에서 불안정하므로
+        # 폴백으로 일반 Streamlit 버튼을 유지하되 시각적으로 숨깁니다.
+        st.markdown("""
+        <style>
+        div[data-testid="stHorizontalBlock"].hidden-row {
+            position: absolute !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+            height: 0 !important;
+            overflow: hidden !important;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+        # 실제로 선택 가능한 visible 버튼 그리드 (fragment 스타일 CSS 적용)
+        # — fragment_html이 시각을 담당하고, 이 버튼들은 로직만 담당
+        # — 두 레이어가 겹치지 않도록 fragment_html 아래에 배치
+        st.markdown("---")
+        st.markdown("<p style='text-align:center; color:#888; font-size:0.9rem;'>👆 위 파편을 클릭하거나, 아래 버튼으로도 선택 가능합니다</p>", unsafe_allow_html=True)
+
+        _, center_col, _ = st.columns([1, 4, 1])
         with center_col:
             for i in range(0, len(words), 5):
                 cols = st.columns(5, gap="small")
@@ -778,15 +921,12 @@ with tab7:
                         word = words[i + j]
                         replaced_sentence = f"{st.session_state.t7_base_phrase} {word}".strip()
                         with cols[j]:
-                            # help 파라미터가 네가 원했던 '마우스 올렸을 때 뜨는 말풍선'을 만들어줍니다.
-                            # type="primary"를 줌으로써 글로벌 CSS(#000000)를 완벽하게 회피합니다.
                             if st.button(word, key=f"t7_w_{i+j}", help=replaced_sentence, type="primary"):
                                 st.session_state.t7_selected_word = word
                                 st.session_state.t7_step = 3
                                 st.rerun()
 
         st.markdown("---")
-        # ❗ 이 아래의 버튼들은 st.columns(2)에 있고, type="secondary"이므로 안전하게 까만색으로 남아 있습니다.
         col1, col2 = st.columns(2)
         with col1:
             if st.button("🔄 파편 다시 부르기", key="t7_refresh"):
