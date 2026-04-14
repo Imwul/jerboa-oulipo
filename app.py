@@ -96,9 +96,11 @@ st.markdown(f"""
         margin-bottom: 25px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
         display: flex; align-items: flex-start; gap: 20px;
     }}
-    .history-img {{
-        width: 110px; height: 140px; object-fit: cover; border-radius: 4px; border: 1px solid #bbb;
-        filter: grayscale(100%) contrast(1.2); flex-shrink: 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
+  .history-img {{
+        width: 110px; height: 140px; object-fit: cover; border-radius: 4px; border: none;
+        filter: grayscale(100%) contrast(1.2); flex-shrink: 0; box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+        mix-blend-mode: multiply; /* 사진의 흰 배경을 투명하게 녹여버리는 마법 */
+        background-color: transparent;
     }}
     .history-content {{ flex: 1; }}
     .history-content h4 {{ margin-top: 0; color: #000 !important; font-weight: 900; font-size: 1.15rem; margin-bottom: 10px; }}
