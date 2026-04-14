@@ -10,9 +10,6 @@ import base64
 # ==========================================
 # 🖼️ 역사적 인물 사진 설정 구역 (직접 삽입!)
 # ==========================================
-# 1. 원하는 사진을 다운로드하여 app.py와 같은 폴더에 넣으세요.
-# 2. 아래 파일명과 일치시키면 엔진이 자동으로 흑백 처리하여 화면에 띄웁니다.
-# 3. 파일이 없으면 "사진 없음" 빈 박스가 안전하게 표시됩니다. (URL을 직접 넣어도 작동함)
 HISTORY_IMAGES = {
     "tab1": "queneau.jpg",       # 탭 1 (레몽 크노)
     "tab2": "burroughs.jpg",     # 탭 2 (윌리엄 버로스)
@@ -27,22 +24,17 @@ HISTORY_IMAGES = {
 def get_img_tag(image_source, alt_text):
     """로컬 이미지를 Base64로 강제 변환하여 HTML에 주입하는 특수 엔진"""
     if not image_source: return ""
-    
-    # 1. 인터넷 URL인 경우 그대로 사용
     if image_source.startswith("http"):
         src = image_source
-    # 2. 로컬 파일인 경우 Base64 텍스트로 변환 (보안 뚫기)
     elif os.path.exists(image_source):
         with open(image_source, "rb") as img_file:
             encoded = base64.b64encode(img_file.read()).decode("utf-8")
             mime = "image/png" if image_source.lower().endswith("png") else "image/jpeg"
             src = f"data:{mime};base64,{encoded}"
-    # 3. 파일이 폴더에 없는 경우 (안내용 빈 박스 출력)
     else:
-        return f'<div class="history-img" style="display:flex; align-items:center; justify-content:center; background:#eee; color:#888; font-size:0.8rem; text-align:center; font-family:\'Eulyoo1945-Regular\', serif;">사진 없음<br>({image_source})</div>'
+        return f'<div class="history-img" style="display:flex; align-items:center; justify-content:center; background:#eee; color:#888; font-size:0.8rem; text-align:center; font-family:\'Eulyoo1945-Regular\', serif; mix-blend-mode: normal;">사진 없음<br>({image_source})</div>'
     
     return f'<img src="{src}" class="history-img" alt="{alt_text}">'
-
 
 # --- 1. 공통 폰트 로더 ---
 FONT_CSS = """
@@ -90,18 +82,23 @@ st.markdown(f"""
         margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem; color: #000000 !important;
     }}
 
-    /* 💡 각 탭의 역사 박스 (사진 좌측 배열) */
+    /* 💡 각 탭의 역사 박스 */
     .history-box {{
         background-color: #fdfdfd; border-left: 5px solid #d32f2f; padding: 20px;
         margin-bottom: 25px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
         display: flex; align-items: flex-start; gap: 20px;
     }}
-  .history-img {{
-        width: 110px; height: 140px; object-fit: cover; border-radius: 4px; border: none;
-        filter: grayscale(100%) contrast(1.2); flex-shrink: 0; box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
-        mix-blend-mode: multiply; /* 사진의 흰 배경을 투명하게 녹여버리는 마법 */
+    
+    /* ❗ 배경 투명화 및 그림자 효과가 적용된 사진 CSS ❗ */
+    .history-img {{
+        width: 110px; height: 140px; object-fit: cover; border-radius: 4px; 
+        border: none; /* 테두리 제거 */
+        filter: grayscale(100%) contrast(1.2); flex-shrink: 0; 
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.3); /* 입체적인 그림자 */
+        mix-blend-mode: multiply; /* 하얀 배경을 투명하게 녹이는 핵심 마법 */
         background-color: transparent;
     }}
+    
     .history-content {{ flex: 1; }}
     .history-content h4 {{ margin-top: 0; color: #000 !important; font-weight: 900; font-size: 1.15rem; margin-bottom: 10px; }}
     .history-content p {{ margin-bottom: 0; color: #444 !important; font-size: 0.95rem; line-height: 1.65; word-break: keep-all; }}
@@ -372,7 +369,7 @@ with tab3:
 # TAB 4: The Erasure
 # ==========================================
 with tab4:
-    img_tag = get_img_tag(HISTORY_IMAGES["tab4"], "Marcel Duchamp")
+    img_tag = get_img_tag(HISTORY_IMAGES["tab4"], "Marcel Duchamp / Avant-Garde Erasure")
     st.markdown(f"""
     <div class="history-box">
         {img_tag}
@@ -397,7 +394,7 @@ with tab4:
 # TAB 5: Cadavre Exquis
 # ==========================================
 with tab5:
-    img_tag = get_img_tag(HISTORY_IMAGES["tab5"], "Salvador Dalí")
+    img_tag = get_img_tag(HISTORY_IMAGES["tab5"], "Salvador Dalí / Surrealist Group")
     st.markdown(f"""
     <div class="history-box">
         {img_tag}
@@ -557,50 +554,53 @@ def get_all_matched_words(target_rhyme, dictionary_data):
 # TAB 7: The Roussel Bridge 
 # ==========================================
 with tab7:
-    img_tag = get_img_tag(HISTORY_IMAGES["tab7"], "Raymond Roussel")
-    st.markdown(f"""
+    st.markdown("""
     <style>
-    /* 5칸짜리 Grid 안에 있는 파편 버튼 타겟팅 */
+    /* 5칸짜리 Grid 안에 있는 파편 버튼 타겟팅 (애니메이션 제거) */
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"],
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] {{
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] {
         height: auto !important; padding: 8px 16px !important; margin: 5px 0px !important; border-radius: 2px !important;
         border: 1px solid #000000 !important; box-shadow: none !important; animation: none !important;
         background-color: transparent !important; 
-    }}
+    }
 
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"] p,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"] p,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"] p,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"] p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] p {{
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] p {
         color: #000000 !important; font-weight: bold !important; font-size: 1.15rem !important; margin: 0 !important;
-    }}
+    }
 
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"]:hover,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"]:hover,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"]:hover,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"]:hover,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"]:hover {{
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"]:hover {
         transform: translateY(-3px) scale(1.05) !important; border: 2px solid #d32f2f !important; animation: none !important;
-    }}
+    }
     
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"]:hover p,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"]:hover p,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"]:hover p,
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"]:hover p,
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"]:hover p {{
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"]:hover p {
         color: #d32f2f !important;
-    }}
+    }
 
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"] {{ background-color: #ffc9c9 !important; animation-delay: 0s !important; animation-duration: 4.5s !important;}}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"] {{ background-color: #ffe3b3 !important; animation-delay: 1s !important; animation-duration: 6s !important;}}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"] {{ background-color: #fff3b5 !important; animation-delay: 2s !important; animation-duration: 4.5s !important;}}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"] {{ background-color: #d4f0d4 !important; animation-delay: 0.5s !important; animation-duration: 7s !important;}}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] {{ background-color: #c9ebff !important; animation-delay: 1.5s !important; animation-duration: 5.5s !important;}}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"] { background-color: #ffc9c9 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"] { background-color: #ffe3b3 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"] { background-color: #fff3b5 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"] { background-color: #d4f0d4 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] { background-color: #c9ebff !important; }
     </style>
+    """, unsafe_allow_html=True)
+
+    img_tag = get_img_tag(HISTORY_IMAGES["tab7"], "Raymond Roussel")
+    st.markdown(f"""
     <div class="history-box">
         {img_tag}
         <div class="history-content">
