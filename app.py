@@ -30,24 +30,32 @@ st.markdown(f"""
         font-family: 'Eulyoo1945-Regular', serif !important; 
     }}
 
+    /* ❗ 모든 소제목, 슬라이더 라벨, 텍스트를 검은색으로 강제 고정 */
     h2, h3, h4, h5, h6, p, label, .stMarkdown, .stText, [data-testid="stWidgetLabel"] p, [data-testid="stMarkdownContainer"] p {{
         color: #000000 !important;
     }}
 
+    /* ❗ 제목 폰트 Trattatello 복구 및 보호 */
     h1, [data-testid="stHeadingWithActionElements"] h1, h1 * {{
         font-family: 'Trattatello', 'Apple Chancery', fantasy, cursive !important;
         font-size: 3.8rem !important; color: #000000 !important;
         text-align: center; margin-bottom: 1.5rem !important; padding-top: 1rem !important;
     }}
 
+    /* ❗ 탭(Tab) 글씨가 하얗게 변하는 현상 픽스 */
     button[data-baseweb="tab"] *, div[data-testid="stTabs"] button * {{
-        color: #000000 !important; font-weight: bold !important;
+        color: #000000 !important;
+        font-weight: bold !important;
     }}
 
+    /* 해부대(입력창) 하얀 글씨 강제 고정 */
     .stTextArea textarea, .stTextInput input {{
-        background-color: #111111 !important; color: #FFFFFF !important;
-        -webkit-text-fill-color: #FFFFFF !important; border: 2px solid #000000 !important;
-        caret-color: #FFFFFF !important; font-size: 1.1rem !important;
+        background-color: #111111 !important;
+        color: #FFFFFF !important;
+        -webkit-text-fill-color: #FFFFFF !important;
+        border: 2px solid #000000 !important;
+        caret-color: #FFFFFF !important;
+        font-size: 1.1rem !important;
     }}
     
     .instruction-box {{
@@ -55,9 +63,9 @@ st.markdown(f"""
         margin-bottom: 25px; line-height: 1.7; font-size: 0.95rem; color: #000000 !important;
     }}
 
-    /* 💡 각 탭의 역사와 기원을 설명하는 박스 (사진 좌측 배열) */
+    /* 각 탭의 역사와 기원을 설명하는 박스 스타일 */
     .history-box {{
-        background-color: #fdfdfd; border-left: 5px solid #d32f2f; padding: 20px;
+        background-color: #fdfdfd; border-left: 5px solid #d32f2f; padding: 15px 20px;
         margin-bottom: 25px; box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
         display: flex; align-items: flex-start; gap: 20px;
     }}
@@ -66,8 +74,8 @@ st.markdown(f"""
         filter: grayscale(100%) contrast(1.2); flex-shrink: 0; box-shadow: 2px 2px 5px rgba(0,0,0,0.2);
     }}
     .history-content {{ flex: 1; }}
-    .history-content h4 {{ margin-top: 0; color: #000 !important; font-weight: 900; font-size: 1.15rem; margin-bottom: 10px; }}
-    .history-content p {{ margin-bottom: 0; color: #444 !important; font-size: 0.95rem; line-height: 1.65; word-break: keep-all; }}
+    .history-content h4 {{ margin-top: 0; color: #000 !important; font-weight: 900; font-size: 1.1rem; margin-bottom: 8px; }}
+    .history-content p {{ margin-bottom: 0; color: #444 !important; font-size: 0.95rem; line-height: 1.6; word-break: keep-all; }}
 
     /* 하단 파편 애니메이션 CSS */
     @keyframes float {{
@@ -81,7 +89,7 @@ st.markdown(f"""
         font-weight: bold; cursor: default; color: #000000 !important;
     }}
 
-    /* 글로벌 버튼 스타일 (둥둥 떠다니는 애니메이션 완전 차단) */
+    /* 글로벌 버튼 스타일 (secondary는 까만색, primary는 붉은색 고정) */
     div.stButton > button[kind="secondary"], div[data-testid="stFormSubmitButton"] > button {{ 
         background-color: #000000 !important; color: #FFFFFF !important; 
         border-radius: 0px !important; width: 100% !important;
@@ -130,7 +138,7 @@ tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8 = st.tabs([
 with tab1:
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/1/1d/Raymond_Queneau_1938.jpg" class="history-img" alt="Raymond Queneau">
+        <img src="https://upload.wikimedia.org/wikipedia/en/thumb/5/5a/Raymond_Queneau.jpg/320px-Raymond_Queneau.jpg" class="history-img" alt="Raymond Queneau">
         <div class="history-content">
             <h4>📖 기원과 역사: S+7 기법 (S+7 Method)</h4>
             <p>1960년대 수학자와 문학가들이 결성한 아방가르드 집단 <b>'울리포(Oulipo, 잠재적 문학 작업실)'</b>의 창립 멤버 레몽 크노(Raymond Queneau)와 장 레스퀴르가 고안한 기법입니다. 기존 텍스트 내의 모든 명사를 사전에서 그보다 N번째 뒤에 있는 명사로 기계적으로 치환합니다. 작가의 의도와 영감을 완전히 배제한 채 알고리즘적 치환만으로도 서사를 파괴하고 초현실적인 낯선 문맥이 창조될 수 있음을 증명한 수학적-문학적 실험입니다.</p>
@@ -196,7 +204,7 @@ with tab1:
 with tab2:
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/8/87/William_S._Burroughs_%281920-1997%29.jpg" class="history-img" alt="William S. Burroughs">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/87/William_S._Burroughs_%281920-1997%29.jpg/320px-William_S._Burroughs_%281920-1997%29.jpg" class="history-img" alt="William S. Burroughs">
         <div class="history-content">
             <h4>📖 기원과 역사: 컷업 기법 (Cut-up Technique)</h4>
             <p>1920년대 다다이즘의 선구자 트리스탄 차라가 모자에서 오려낸 단어들을 무작위로 뽑아 시를 짓던 퍼포먼스에서 출발했습니다. 이후 1950년대 소설가 <b>윌리엄 S. 버로스(William S. Burroughs)</b>와 화가 브리온 기신이 이를 '컷업 기법'으로 정립했습니다. 기존 텍스트를 물리적으로 해체하고 무작위로 재조립하여, 텍스트가 숨기고 있던 무의식의 언어와 예언적 메시지를 탐구합니다. 훗날 데이비드 보위와 라디오헤드의 작사법으로도 쓰였습니다.</p>
@@ -302,7 +310,7 @@ with tab2:
 with tab3:
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/d/d4/Andr%C3%A9_Breton_1924.jpg" class="history-img" alt="André Breton">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Andr%C3%A9_Breton_1924.jpg/320px-Andr%C3%A9_Breton_1924.jpg" class="history-img" alt="André Breton">
         <div class="history-content">
             <h4>📖 기원과 역사: 자동 기술법 (Écriture Automatique)</h4>
             <p>1924년 <b>앙드레 브르통(André Breton)</b>이 발표한 『초현실주의 선언』에서 주창한 가장 핵심적인 초현실주의 문학 기법입니다. 지그문트 프로이트의 정신분석학(자유 연상 기법)에 영향을 받아, 이성적 통제나 도덕적, 미학적 검열을 완전히 배제한 채 손이 가는 대로 무의식의 흐름을 논스톱으로 받아 적는 방식입니다. 의식의 통제를 뚫고 억압된 심연을 날것의 언어로 끌어올리는 것을 목표로 합니다.</p>
@@ -346,7 +354,7 @@ with tab3:
 with tab4:
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/1/15/Marcel_Duchamp_1912.jpg" class="history-img" alt="Marcel Duchamp / Avant-Garde Erasure">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Marcel_Duchamp.jpg/320px-Marcel_Duchamp.jpg" class="history-img" alt="Marcel Duchamp">
         <div class="history-content">
             <h4>📖 기원과 역사: 소거시 (Blackout Poetry / Erasure Art)</h4>
             <p>인쇄된 기존의 텍스트(신문, 잡지, 소설 등)에서 불필요한 단어들을 검은 잉크나 펜으로 지워나가며 남은 파편들만으로 새로운 문맥과 시를 조각하는 네거티브(Negative) 창작법입니다. 무에서 유를 창조하는 것이 아니라, 마르셀 뒤샹의 레디메이드처럼 <b>'파괴와 억압적 선택'</b>을 통해 기존 매체를 예술로 탈바꿈시킵니다. 1960년대 톰 필립스(Tom Phillips)의 『A Humument』를 통해 시각 예술과 문학의 경계를 무너뜨리는 현대적 기법으로 자리 잡았습니다.</p>
@@ -370,7 +378,7 @@ with tab4:
 with tab5:
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/2/24/Salvador_Dal%C3%AD_1939.jpg" class="history-img" alt="Salvador Dalí / Surrealist Group">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Salvador_Dal%C3%AD_1939.jpg/320px-Salvador_Dal%C3%AD_1939.jpg" class="history-img" alt="Salvador Dalí / Surrealist Group">
         <div class="history-content">
             <h4>📖 기원과 역사: 우아한 시체 (Cadavre Exquis)</h4>
             <p>1925년 파리 샤토 가(Rue du Château)에 모인 초현실주의자들(이브 탕기, 자크 프레베르, 앙드레 브르통, 마르셀 뒤아멜 등)이 고안한 집단 무의식 창작 놀이입니다. 종이를 접어 앞사람이 쓴 문장(또는 그림)의 끝부분만 본 채로 다음을 이어나가는 방식입니다. <b>"우아한 시체가 햇포도주를 마실 것이다(Le cadavre exquis boira le vin nouveau)"</b>라는 이 놀이의 첫 플레이 결과물에서 이름이 유래했습니다. 타자의 맥락을 철저히 배제한 채 단절된 파편에만 접속함으로써, 기괴하고 매혹적인 집단적 혼종을 낳습니다.</p>
@@ -403,7 +411,7 @@ with tab5:
 with tab6:
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/3/36/Raoul_Hausmann_-_ABCD_%281923-24%29.jpg" class="history-img" alt="Raoul Hausmann">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Raoul_Hausmann_-_ABCD_%281923-24%29.jpg/320px-Raoul_Hausmann_-_ABCD_%281923-24%29.jpg" class="history-img" alt="Raoul Hausmann">
         <div class="history-content">
             <h4>📖 기원과 역사: 다다이즘과 글리치 (Dada & Glitch Art)</h4>
             <p>제1차 세계대전의 참상에 반발하며 기존의 이성과 논리를 철저히 거부했던 다다이스트(Dadaist)들은 활자를 무작위로 섞고 찢어 붙이는 타이포그래피 콜라주(Typography Collage)를 선보였습니다. <b>라울 하우스만(Raoul Hausmann)</b>의 실험에서 엿볼 수 있듯, 완벽한 문법을 지닌 문장을 기계적 오류나 폰트 충돌로 고의 손상시킴으로써 텍스트를 의미 전달의 도구가 아닌 '이미지적 물성' 그 자체로 전락시킵니다. 현대의 데이터 오류를 예술로 승화시키는 '글리치 아트'의 정신적 기원이기도 합니다.</p>
@@ -528,14 +536,14 @@ def get_all_matched_words(target_rhyme, dictionary_data):
 with tab7:
     st.markdown("""
     <style>
-    /* 5칸짜리 Grid 안에 있는 파편 버튼 타겟팅 */
+    /* 5칸짜리 Grid 안에 있는 파편 버튼 타겟팅 (애니메이션 제거) */
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"],
     div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] {
         height: auto !important; padding: 8px 16px !important; margin: 5px 0px !important; border-radius: 2px !important;
-        border: 1px solid #000000 !important; box-shadow: none !important; animation: float 5s ease-in-out infinite !important;
+        border: 1px solid #000000 !important; box-shadow: none !important; animation: none !important;
         background-color: transparent !important; 
     }
 
@@ -563,17 +571,17 @@ with tab7:
         color: #d32f2f !important;
     }
 
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"] { background-color: #ffc9c9 !important; animation-delay: 0s !important; animation-duration: 4.5s !important;}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"] { background-color: #ffe3b3 !important; animation-delay: 1s !important; animation-duration: 6s !important;}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"] { background-color: #fff3b5 !important; animation-delay: 2s !important; animation-duration: 4.5s !important;}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"] { background-color: #d4f0d4 !important; animation-delay: 0.5s !important; animation-duration: 7s !important;}
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] { background-color: #c9ebff !important; animation-delay: 1.5s !important; animation-duration: 5.5s !important;}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(1):nth-last-child(5) div.stButton > button[kind="primary"] { background-color: #ffc9c9 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(2):nth-last-child(4) div.stButton > button[kind="primary"] { background-color: #ffe3b3 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3):nth-last-child(3) div.stButton > button[kind="primary"] { background-color: #fff3b5 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(4):nth-last-child(2) div.stButton > button[kind="primary"] { background-color: #d4f0d4 !important; }
+    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(5):nth-last-child(1) div.stButton > button[kind="primary"] { background-color: #c9ebff !important; }
     </style>
     """, unsafe_allow_html=True)
 
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/c/cd/Raymond_Roussel.jpg" class="history-img" alt="Raymond Roussel">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/c/cd/Raymond_Roussel.jpg/320px-Raymond_Roussel.jpg" class="history-img" alt="Raymond Roussel">
         <div class="history-content">
             <h4>📖 기원과 역사: 루셀의 기법 (Le Procédé Roussel)</h4>
             <p>프랑스의 기인 작가 <b>레몽 루셀(Raymond Roussel)</b>이 평생을 바쳐 고안한 비밀 작법입니다. 발음은 거의 똑같지만 의미가 완전히 다른 두 문장(혹은 파편)을 이야기의 맨 처음과 맨 끝에 배치하고, 그 불가능해 보이는 두 극단의 거대한 심연을 메우기 위해 억지스럽고 기괴한 논리의 서사를 강제로 축조해 나가는 기법입니다. 언어의 우연성을 필연적 서사로 강제 통합하는 이 훈련은 미셸 푸코와 초현실주의자들에게 엄청난 문학적 충격을 주었습니다.</p>
@@ -674,7 +682,7 @@ with tab7:
 with tab8:
     st.markdown("""
     <div class="history-box">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/9/9b/Georges_Perec_1965.jpg" class="history-img" alt="Georges Perec">
+        <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Georges_Perec_1965.jpg/320px-Georges_Perec_1965.jpg" class="history-img" alt="Georges Perec">
         <div class="history-content">
             <h4>📖 기원과 역사: 립포그램과 실종 (La Disparition)</h4>
             <p>특정 알파벳이나 글자를 의도적으로 배제하고 글을 쓰는 고대의 <b>'립포그램(Lipogram)'</b> 기법을 현대적으로 극한까지 밀어붙인 실험입니다. 가장 극단적인 성취는 울리포(Oulipo)의 거장 <b>조르주 페렉(Georges Perec)</b>이 1969년에 발표한 소설 『실종』입니다. 그는 프랑스어에서 가장 빈도수가 높은 모음인 'e'를 단 한 번도 쓰지 않고 300쪽의 서사를 완성하는 기염을 토했습니다. 이처럼 강력한 결핍과 물리적 제약은 습관적인 언어 사용을 강제로 마비시키고, 오히려 작가의 상상력을 한계까지 쥐어짜내는 파괴적인 트리거가 됩니다.</p>
@@ -693,18 +701,18 @@ with tab8:
     if 't8_step' not in st.session_state: st.session_state.t8_step = 1
     if 't8_forbidden_words' not in st.session_state: st.session_state.t8_forbidden_words = set()
     if 't8_forbidden_letters' not in st.session_state: st.session_state.t8_forbidden_letters = set()
-    if 't8_word_input_val' not in st.session_state: st.session_state.t8_word_input_val = ""
 
     CHO_LIST = ['ㄱ','ㄴ','ㄷ','ㄹ','ㅁ','ㅂ','ㅅ','ㅇ','ㅈ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ','ㄲ','ㄸ','ㅃ','ㅆ','ㅉ']
     JUNG_LIST = ['ㅏ','ㅑ','ㅓ','ㅕ','ㅗ','ㅛ','ㅜ','ㅠ','ㅡ','ㅣ','ㅐ','ㅒ','ㅔ','ㅖ','ㅘ','ㅙ','ㅚ','ㅝ','ㅞ','ㅟ','ㅢ']
 
+    # 무한 새로고침 버그를 막기 위한 on_change 콜백 함수
     def add_forbidden_words():
         val = st.session_state.t8_word_input
         if val:
             for w in val.split(','):
                 w = w.strip()
                 if w: st.session_state.t8_forbidden_words.add(w)
-        # 콜백 내에서 입력값을 비워 무한 새로고침 버그 완전 차단!
+        # 입력값을 즉시 비워 무한 갱신 차단
         st.session_state.t8_word_input = ""
 
     # --- Step 1: 제약 설정 ---
@@ -737,7 +745,6 @@ with tab8:
                     letter = CHO_LIST[i + j]
                     is_banned = letter in st.session_state.t8_forbidden_letters
                     with cols_cho[j]:
-                        # 제약 버튼에는 type="primary"(붉은색), 비활성은 "secondary"(검은색) 적용
                         if st.button(letter, key=f"t8_cho_{letter}", type="primary" if is_banned else "secondary"):
                             if is_banned: st.session_state.t8_forbidden_letters.remove(letter)
                             else: st.session_state.t8_forbidden_letters.add(letter)
@@ -757,7 +764,7 @@ with tab8:
                             st.rerun()
 
         st.markdown("<br><br>", unsafe_allow_html=True)
-        if st.button("🖋️ 이 제약으로 집필 시작", type="primary", use_container_width=True):
+        if st.button("🖋️ 이 제약으로 집필 시작", type="secondary", use_container_width=True):
             st.session_state.t8_step = 2
             st.rerun()
 
@@ -851,7 +858,6 @@ with tab8:
         </html>
         """
         components.html(editor_html, height=550)
-
 
 # ---------------------------------------------------------
 # 🏺 하단: 사전의 파편들 (Floating Animation)
