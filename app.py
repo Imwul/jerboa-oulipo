@@ -89,15 +89,18 @@ st.markdown(f"""
         display: flex; align-items: flex-start; gap: 20px;
     }}
     
-    /* ❗ 배경 투명화 및 그림자 효과가 적용된 사진 CSS ❗ */
-    .history-img {{
-        width: 110px; height: 140px; object-fit: cover; border-radius: 4px; 
-        border: none; /* 테두리 제거 */
+/* ❗ 사진 원본 비율 유지 & 배경 투명화 마법 ❗ */
+    .history-img {
+        max-height: 150px; /* 높이만 최대 150px로 제한하여 글씨와 균형 맞춤 */
+        width: auto;       /* 가로 폭은 사진 원본 비율에 따라 자유롭게 늘어났다 줄어듦 */
+        object-fit: contain; /* 사진이 절대 잘리지 않고 원본 모습 그대로 들어감 */
+        border-radius: 4px; 
+        border: none;
         filter: grayscale(100%) contrast(1.2); flex-shrink: 0; 
-        box-shadow: 4px 4px 8px rgba(0,0,0,0.3); /* 입체적인 그림자 */
-        mix-blend-mode: multiply; /* 하얀 배경을 투명하게 녹이는 핵심 마법 */
+        box-shadow: 4px 4px 8px rgba(0,0,0,0.3);
+        mix-blend-mode: multiply; /* 하얀 배경 투명화 */
         background-color: transparent;
-    }}
+    }
     
     .history-content {{ flex: 1; }}
     .history-content h4 {{ margin-top: 0; color: #000 !important; font-weight: 900; font-size: 1.15rem; margin-bottom: 10px; }}
